@@ -1,4 +1,4 @@
-import {$,setupShared,qs,esc,name,logo,tlogo,effectiveGame,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,note,getData,setNote,setExtraGroup,platform,shortDate,currentDate,toast,modal,closeModal,eventBox,fetchRoster} from '../app.js?v=7';
+import {$,setupShared,qs,esc,name,logo,tlogo,effectiveGame,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,note,getData,setNote,setExtraGroup,platform,shortDate,currentDate,toast,modal,closeModal,eventBox,fetchRoster} from '../app.js?v=8';
 import {fetchLiveBoxscore,projectStartingFive} from '../boxscore.js?v=1';
 import {exportPlayerImage,sharePlayerLink} from '../share-card.js?v=1';
 import {performanceRating,ratingLabel,topPerformance,RATING_EXPLANATION} from '../performance-rating.js?v=1';
