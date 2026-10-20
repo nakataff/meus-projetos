@@ -1,6 +1,6 @@
-import {$,setupShared,qs,esc,name,logo,tlogo,effectiveGame,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,note,getData,setNote,setExtraGroup,platform,shortDate,currentDate,toast,modal,closeModal,eventBox,fetchRoster} from '../app.js?v=9';
+import {$,setupShared,qs,esc,name,logo,tlogo,effectiveGame,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,note,getData,setNote,setExtraGroup,platform,broadcastLinks,shortDate,currentDate,toast,modal,closeModal,eventBox,fetchRoster} from '../app.js?v=9';
 import {fetchLiveBoxscore,projectStartingFive} from '../boxscore.js?v=1';
-import {exportPlayerImage,sharePlayerLink} from '../share-card.js?v=2';
+import {exportPlayerImage} from '../share-card.js?v=2';
 import {performanceRating,ratingLabel,topPerformance,RATING_EXPLANATION} from '../performance-rating.js?v=1';
 const id=qs('id')||'',hint=qs('data')||'',root=$('#pageContent');
 setupShared('games','Centro da partida','Escalações, estatísticas e seu diário pessoal de basquete.');
@@ -101,7 +101,7 @@ async function refreshBox(force=false){
 
 const maybeMonth=hint.slice(0,7),months=MONTHS.includes(maybeMonth)?[maybeMonth]:MONTHS;
 const statFields=[
- {key:'rating',label:'NOTA',title:'Nota automática DLQ'},
+ {key:'rating',label:'NOTA DLQ',title:'NOTA DLQ'},
  {key:'pts',label:'PTS',title:'Pontos'},
  {key:'reb',label:'REB',title:'Rebotes'},
  {key:'ast',label:'AST',title:'Assistências'},
@@ -305,7 +305,7 @@ function scoreboard(){
  '<div class="center"><span class="bigscore">'+(scores?esc(scores[0])+' <span class="subtle">–</span> '+esc(scores[1]):'VS')+'</span>'+
  '<div class="small subtle">'+(final?'Partida encerrada':live?phase+(event.liveClock?' • '+esc(event.liveClock):''):'Jogo agendado')+'</div></div>'+
  '<div class="side"><a href="'+teamLink(game.home)+'">'+tlogo(game.home,76)+'</a><span class="names">'+esc(name(game.home))+'</span></div></div>'+
- '<div class="switches" style="justify-content:center"><span class="tag '+((game.platforms||[]).some(p=>['PRIME','ESPN'].includes(p))?'tv':'dim')+'">'+esc(platform(game))+'</span>'+
+ '<div class="switches game-broadcast-platforms" style="justify-content:center">'+broadcastLinks(game)+
  (live?'<span class="live-indicator"><i aria-hidden="true"></i>AO VIVO</span>':'')+'</div></section>';
 }
 function gameForm(){
@@ -337,21 +337,21 @@ function gameLeaders(){
 function leaderCards(){
  const leaders=gameLeaders();
  const best=topPerformance(Object.fromEntries([game.away,game.home].map(code=>[code,teamPlayers(code)])));
- const topCard=best?'<article class="overview-leader overview-best-player"><span class="caps">★ MELHOR NOTA DA PARTIDA</span>'+
+ const topCard=best?'<article class="overview-leader overview-best-player" role="button" tabindex="0" data-player-detail="'+esc(best.player.id)+'" data-player-team="'+esc(best.team)+'" aria-label="Ver detalhes de '+esc(best.player.name)+'"><span class="caps">★ MELHOR NOTA DA PARTIDA</span>'+
   '<div class="overview-leader-body">'+playerPortrait(best.player,best.team)+
-  '<div class="overview-leader-person"><a href="'+playerLink(best.player.id,best.team)+'">'+esc(best.player.name)+'</a>'+
+  '<div class="overview-leader-person"><strong class="overview-name">'+esc(best.player.name)+'</strong>'+
   '<span><img src="'+esc(logo(best.team))+'" alt="">'+esc(name(best.team))+'</span></div>'+
-  '<div class="overview-leader-value"><strong>'+ratingLabel(best.rating)+'</strong><small>DLQ / 10</small></div></div>'+
+  '<div class="overview-leader-value"><strong>'+ratingLabel(best.rating)+'</strong><small>NOTA DLQ</small></div></div>'+
   '<button type="button" data-rating-info class="rating-method-link">Como funciona a nota?</button></article>':'';
  return '<section class="section"><div class="section-title"><h2>Quem está se destacando</h2>'+
  '<button class="btn ghost" type="button" data-open-tab="stats">Box score completo →</button></div>'+
  '<div class="overview-leader-grid">'+topCard+leaders.map(item=>{
-  if(!item.leader)return '<article class="overview-leader"><span class="caps">'+esc(item.title)+'</span>'+
+  if(!item.leader)return '<article class="overview-leader" role="button" tabindex="0" data-player-detail="'+esc(player.id)+'" data-player-team="'+esc(code)+'" aria-label="Ver detalhes de '+esc(player.name)+'"><span class="caps">'+esc(item.title)+'</span>'+
    '<div class="overview-leader-empty">Aguardando dados</div></article>';
   const {code,player}=item.leader,num=statValue(player,item.key);
   return '<article class="overview-leader"><span class="caps">'+esc(item.title)+'</span>'+
    '<div class="overview-leader-body">'+playerPortrait(player,code)+
-   '<div class="overview-leader-person"><a href="'+playerLink(player.id,code)+'">'+esc(player.name)+'</a>'+
+   '<div class="overview-leader-person"><strong class="overview-name">'+esc(player.name)+'</strong>'+
    '<span><img src="'+esc(logo(code))+'" loading="lazy" alt="">'+esc(name(code))+'</span></div>'+
    '<div class="overview-leader-value"><strong>'+esc(num)+'</strong><small>'+item.unit+'</small></div></div></article>';
  }).join('')+'</div></section>';
@@ -426,7 +426,7 @@ function overviewHtml(current,statsReady){
  const complete=statsReady && [game.away,game.home].every(code=>teamPlayers(code).length>0);
  return '<section class="overview-quickfacts"><div><span class="caps">Competição</span><strong>'+esc(gameType)+'</strong></div>'+
  '<div><span class="caps">Data e horário</span><strong>'+esc(shortDate(game.date))+' • '+esc(game.time||'A definir')+' BRT</strong></div>'+
- '<div><span class="caps">Onde assistir</span><strong>'+esc(platform(game))+'</strong></div>'+
+ '<div><span class="caps">Onde assistir</span><strong>'+broadcastLinks(game)+'</strong></div>'+
  '<div><span class="caps">Meu registro</span><strong>'+(saved.watched?'✓ Assistido':saved.wish?'♡ Na minha lista':'Não avaliado')+
  (Number(saved.rating)>0?' • ★ '+esc(saved.rating)+'/10':'')+'</strong></div></section>'+
  (statsReady?leaderCards()+(complete?teamComparison():''):'' )+
