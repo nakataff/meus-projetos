@@ -1036,3 +1036,68 @@ footer{border-top:1px solid var(--border);color:#8293ab;font-size:12px;padding:2
  .dlq-score-changed[data-delta]::after{animation:none!important}
  .bigscore [data-score-team].dlq-score-changed[data-delta]::after{display:none}
 }
+
+/* Home do time favorito: resumo simples, sem novas APIs pesadas. */
+.favorite-dashboard{margin:8px 0 25px}
+.favorite-dashboard>.favorite-hero{margin:0 0 10px}
+.fav-overview-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.fav-info{display:flex;min-width:0;flex-direction:column;gap:7px;padding:15px 16px;
+ background:linear-gradient(135deg,#19283b,#121b29);border:1px solid #334862;border-radius:14px}
+a.fav-info:hover,a.fav-info:focus-visible{border-color:var(--accent);background:#203149}
+.fav-info>.caps{color:#a5bbd4;font-size:10px}
+.fav-info>b,.fav-info>strong{font-size:16px;font-weight:900;line-height:1.32;min-height:22px;overflow-wrap:anywhere}
+.fav-info>strong{color:#ffbe87;font-variant-numeric:tabular-nums}
+.fav-info>small{font-size:11px;color:#a1b6ca;line-height:1.4}
+.fav-info-teams,.fav-star{display:flex;align-items:center;gap:10px;min-width:0}
+.fav-info-teams img{width:36px;height:36px;object-fit:contain;flex:none}
+.fav-star img{height:39px;width:39px;object-fit:cover;border-radius:50%;background:#24374d;flex:none}
+.fav-info-teams b,.fav-star b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.followed-home-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.followed-home-player{display:flex;align-items:center;gap:10px;min-width:0;padding:11px 12px;background:#152235;
+ border:1px solid #33475e;border-radius:13px}
+.followed-home-player:hover,.followed-home-player:focus-visible{background:#213349;border-color:#ff9549}
+.followed-home-player>img{height:54px;width:47px;flex:none;object-fit:cover;object-position:top;background:#1d2e42;border-radius:9px}
+.followed-home-player>div{min-width:0;display:flex;flex-direction:column;gap:3px}
+.followed-home-player strong{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.followed-home-player span{color:#a5b8cc;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.followed-home-player small{color:#ffbe87;font-size:10px;font-weight:800}
+.followed-profile-list{display:flex;flex-direction:column;gap:8px}
+.followed-profile-item{display:flex;align-items:center;justify-content:space-between;gap:12px;
+ border:1px solid #34465c;border-radius:12px;background:#152233;padding:10px 13px}
+.followed-profile-main{display:flex;align-items:center;gap:11px;min-width:0;flex:1}
+.followed-profile-main>img{height:54px;width:47px;flex:none;object-fit:cover;object-position:top;background:#24364c;border-radius:9px}
+.followed-profile-main>span{display:flex;flex-direction:column;gap:4px;min-width:0}
+.followed-profile-main strong{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.followed-profile-main small{font-size:11px;color:#9bb2c9}
+.followed-profile-item .btn{flex:none}
+.league-compare-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+.league-compare-card{display:flex;flex-direction:column;gap:11px;background:linear-gradient(140deg,#1a2a3d,#141e2c);
+ border:1px solid #34485d;padding:16px;border-radius:14px;min-width:0}
+.league-compare-numbers{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.league-compare-numbers strong{font-size:35px;font-weight:950;color:#ffd0a4;line-height:1}
+.league-compare-numbers span{font-size:11px;color:#afc0d0}
+.league-compare-track{height:8px;border-radius:9px;background:#293b50;overflow:hidden;position:relative}
+.league-compare-track:after{content:'';position:absolute;left:50%;top:0;bottom:0;width:2px;background:#a8b5c9}
+.league-compare-track i{height:100%;display:block;border-radius:9px;background:var(--accent)}
+.league-compare-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:11px}
+.league-compare-foot b{font-size:13px}
+.league-compare-foot span{color:#a9bdce}
+.league-compare-note{margin:9px 1px}
+@media(max-width:750px){
+ .fav-overview-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .fav-info:last-child{grid-column:1/-1}
+ .league-compare-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:520px){
+ .fav-overview-grid,.league-compare-grid{grid-template-columns:1fr}
+ .fav-info:last-child{grid-column:auto}
+ .favorite-dashboard .favorite-hero>.btn{margin-left:0}
+ .followed-home-grid{grid-template-columns:1fr 1fr}
+ .followed-home-player{padding:9px;gap:7px}
+ .followed-home-player>img{height:42px;width:37px}
+ .followed-home-player strong{font-size:11px}
+ .followed-home-player small{font-size:9px}
+ .followed-profile-item{flex-wrap:wrap}
+ .followed-profile-item .btn{margin-left:auto}
+}
+@media(max-width:360px){.followed-home-grid{grid-template-columns:1fr}}
