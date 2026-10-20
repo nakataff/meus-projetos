@@ -9,7 +9,7 @@ const highlightGame=qs('game')||'',hintDate=qs('data')||'';
 const root=$('#pageContent');
 setupShared('teams','Perfil do jogador','Médias da temporada, histórico por jogo e desempenho compartilhável.');
 let team=TEAMS[rawTeam]?rawTeam:'',player=null,gameStats=[],selectedMonth='all',selectedGame=highlightGame,
- sort='recent',onlyStarters=false,loading=false;
+ sort='recent',onlyStarters=false,loading=false,leaguePlayers=[];
 const percentField=value=>value!==undefined&&value!==null&&value!==''?value:'—';
 function getPlayer(){return getData().extras.players?.[pid]||{};}
 function refGameID(event){return String(event.id||'').replace(/^espn_/,'');}
@@ -44,6 +44,43 @@ function metrics(rows){
  renderStat('MIN / JOGO',avg(rows,'min'))+renderStat('STL / JOGO',avg(rows,'stl'))+
  renderStat('BLK / JOGO',avg(rows,'blk'))+renderStat('3PT / JOGO',avg(rows,'three'))+'</div>';
 }
+
+/* Comparação baseada nos box scores mensais já carregados nesta página. */
+function buildLeagueComparison(months){
+ const byId=new Map(),seen=new Set();
+ for(const boxes of months)for(const game of Object.values(boxes||{})){
+  for(const code of [game.away,game.home])for(const p of game.players?.[code]||[]){
+   if(!p.id||!p.name)continue;
+   const nums=['pts','reb','ast'].map(key=>statNumber(p,key));
+   if(nums.some(x=>x===null))continue;
+   const id=String(p.id),key=String(game.id||game.date+'-'+game.away+'-'+game.home)+':'+id;
+   if(seen.has(key))continue;
+   seen.add(key);
+   const row=byId.get(id)||{id,name:p.name,gp:0,pts:0,reb:0,ast:0};
+   row.gp++;
+   ['pts','reb','ast'].forEach((field,i)=>row[field]+=nums[i]);
+   byId.set(id,row);
+  }
+ }
+ return [...byId.values()].filter(p=>p.gp>=2);
+}
+function leagueComparison(){
+ const own=leaguePlayers.find(x=>x.id===pid);
+ if(!own)return '<section class="card section"><h3>Comparação com a liga</h3><p class="small subtle">Ainda não há jogos suficientes para comparar este jogador.</p></section>';
+ const fmt=v=>v.toFixed(1).replace('.',',');
+ return '<section class="section"><div class="section-title"><h2>Comparação com a liga</h2><span class="small subtle">'+leaguePlayers.length+' jogadores na amostra</span></div>'+
+ '<div class="league-compare-grid">'+[['pts','Pontos'],['reb','Rebotes'],['ast','Assistências']].map(([key,label])=>{
+  const sorted=leaguePlayers.slice().sort((a,b)=>b[key]/b.gp-a[key]/a.gp);
+  const rank=sorted.findIndex(p=>p.id===pid)+1,average=own[key]/own.gp;
+  const league=sorted.reduce((sum,x)=>sum+x[key]/x.gp,0)/sorted.length;
+  const relative=league?average/league:0;
+  return '<article class="league-compare-card"><span class="caps">'+label+' / jogo</span>'+
+    '<div class="league-compare-numbers"><strong>'+fmt(average)+'</strong><span>Média da amostra: '+fmt(league)+'</span></div>'+
+    '<div class="league-compare-track"><i style="width:'+Math.min(100,Math.max(0,relative*50))+'%"></i></div>'+
+    '<div class="league-compare-foot"><b>'+rank+'º de '+sorted.length+'</b><span>'+(relative>=1?'Acima':'Abaixo')+' da média</span></div></article>';
+ }).join('')+'</div><p class="small subtle league-compare-note">Médias dos box scores importados nesta temporada (inclusive pré-temporada). Considera atletas com pelo menos 2 jogos. Não representa o ranking oficial da NBA.</p></section>';
+}
+
 function matchingGames(){
  let rows=gameStats.filter(g=>
   (selectedMonth==='all'||g.date.startsWith(selectedMonth))&&
@@ -92,11 +129,11 @@ function profileHTML(){
  '<h2>'+esc(player.name)+'</h2><p>#'+esc(player.number||'—')+' • Temporada 2026/27</p>'+
  '<div class="controls"><a href="'+teamLink(team)+'" class="btn ghost">← Elenco</a>'+
  (franchise?'<span class="tag accent">★ Meu franchise player</span>':'')+
- (p.favorite?'<span class="tag">♥ Favorito</span>':'')+'</div></div></section>'+
+ '<button type="button" id="followPlayer" class="btn '+(p.favorite?'accent':'ghost')+'" aria-pressed="'+!!p.favorite+'">'+(p.favorite?'♥ Seguindo':'♡ Seguir jogador')+'</button></div></div></section>'+
  (selected?matchDetail(selected):selectedGame?
   '<div class="info">Este jogo ainda não possui estatísticas individuais disponíveis. Os resultados aparecerão quando a fonte publicar o box score.</div>':'')+
  '<section class="section"><div class="section-title"><h2>Médias dos jogos importados</h2><span class="small subtle">'+all.length+' jogos disponíveis (inclusive pré-temporada, quando houver)</span></div>'+
- metrics(all)+'</section>'+
+ metrics(all)+'</section>'+leagueComparison()+
  '<section class="section"><div class="section-title"><h2>Histórico por partida</h2>'+
  '<span class="small subtle">'+visible.length+' partidas no filtro</span></div>'+
  '<div class="player-game-filters"><label>Mês<select class="control" id="playerMonth"><option value="all">Todos</option>'+
@@ -119,7 +156,7 @@ function profileHTML(){
  '<p>Uma nota pessoal para a temporada, sincronizada com sua conta Google.</p>'+
  '<form id="playerProfile"><div class="field"><label>Minha nota: <span id="currentRating">'+esc(p.rating||0)+'</span>/10</label>'+
  '<input class="rate-input" type="range" id="rateProfile" min="0" max="10" step="0.5" value="'+esc(p.rating||0)+'"></div>'+
- '<div class="controls"><label><input type="checkbox" id="favoritePlayer"'+(p.favorite?' checked':'')+'> Jogador favorito</label>'+
+ '<div class="controls"><label><input type="checkbox" id="favoritePlayer"'+(p.favorite?' checked':'')+'> Seguir jogador</label>'+
  '<label><input type="checkbox" id="franchisePlayer"'+(franchise?' checked':'')+'> Meu franchise player</label></div>'+
  '<button type="submit" class="btn accent">Salvar avaliação ✓</button></form></section>';
 }
@@ -159,6 +196,15 @@ root.addEventListener('submit',e=>{
  toast('Avaliação salva');profileHTML();
 });
 root.addEventListener('click',async e=>{
+ if(e.target.closest('#followPlayer')){
+  const followed=!!getPlayer().favorite;
+  modify(b=>{
+   b.extras.players[pid]={...(b.extras.players[pid]||{}),name:player.name,team,favorite:!followed};
+   b.extras.updatedAt=new Date().toISOString();
+  });
+  toast(followed?'Você deixou de seguir este jogador.':'Agora você segue este jogador!');
+  profileHTML();return;
+ }
  const exportButton=e.target.closest('#exportFeaturedCard'),shareButton=e.target.closest('#shareFeatured');
  if(!exportButton&&!shareButton)return;
  const chosen=gameStats.find(g=>refGameID(g.event)===selectedGame);
@@ -204,6 +250,7 @@ async function boot(){
   const selectedMonthHint=/^\d{4}-\d{2}-\d{2}$/.test(hintDate)?hintDate.slice(0,7):'';
   const past=MONTHS.filter(m=>m<=present||m===selectedMonthHint);
   const boxes=await Promise.all(past.map(fetchBox));
+  leaguePlayers=buildLeagueComparison(boxes);
   const found=new Set();
   for(const data of boxes)for(const item of Object.values(data)){
    const row=item.players?.[team]?.find(p=>String(p.id)===pid);
