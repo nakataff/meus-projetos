@@ -231,18 +231,49 @@ function starterList(code){
  };
  return {list:[],label:'Quinteto ainda não disponível',confirmed:false};
 }
+function lineupPlayerCard(player,code,projected=false){
+ const roster=rosters[code]?.find(x=>String(x.id)===String(player.id));
+ const position=roster?.position||player.position||'';
+ const image=playerPortrait(player,code);
+ const stats=[['pts','PTS'],['reb','REB'],['ast','AST']]
+  .filter(([key])=>statValue(player,key)!==null)
+  .map(([key,label])=>'<span><b>'+esc(player[key])+'</b> '+label+'</span>').join('');
+ const clickable=player.id&&box?.players?.[code]?.some(p=>String(p.id)===String(player.id));
+ const attrs=clickable?' data-lineup-player="'+esc(player.id)+'" data-lineup-team="'+esc(code)+'" role="button" tabindex="0"':'';
+ return '<div class="lineup-player-card"'+attrs+'>'+
+  image+'<div class="lineup-player-main"><a href="'+playerLink(player.id,code)+'">'+esc(player.name)+'</a>'+
+  '<span>'+esc((player.number?'#'+player.number+' • ':'')+(position||'Jogador'))+'</span>'+
+  (stats?'<div class="lineup-mini-stats">'+stats+'</div>':
+   '<small>'+ (projected?'Baseado em escalações anteriores':'Estatísticas desta partida ainda indisponíveis')+'</small>')+'</div>'+
+  (clickable?'<span class="lineup-player-open" aria-hidden="true">›</span>':'')+'</div>';
+}
 function lineupPanel(code){
  const info=starterList(code);
- const others=(box?.players?.[code]||[]).filter(p=>!p.starter);
- return '<section class="card"><div class="section-title"><h2>'+esc(name(code))+'</h2><a href="'+teamLink(code)+'" class="btn ghost">Ver elenco →</a></div>'+
- '<p class="lineup-caption '+(info.confirmed?'confirmed':'estimated')+'">'+
- (info.confirmed?'<span class="tag finished">✓ CONFIRMADO</span>':'<span class="tag dim">◇ NÃO OFICIAL</span>')+' '+esc(info.label)+
- (info.date?' • Base: '+shortDate(info.date):'')+'</p>'+
- (info.list.length?'<div>'+info.list.map(p=>'<div class="player-row"><div class="pname"><b><a href="'+playerLink(p.id,code)+'">'+esc(p.name)+'</a></b>'+
- '<small>'+esc(p.number?'#'+p.number+' • ':'')+(info.confirmed?'Titular informado pela fonte':'Previsão estatística, não confirmada')+'</small></div>'+
- '<a class="btn" href="'+playerLink(p.id,code)+'">Perfil</a></div>').join('')+'</div>':
- '<div class="filler">Ainda não há cinco titulares anteriores suficientes para uma projeção confiável.</div>')+
- (others.length?'<p class="small subtle" style="margin-top:16px">Outros atletas registrados no box score: '+others.length+'</p>':'')+'</section>';
+ const chosen=new Set(info.list.map(p=>String(p.id)));
+ const current=box?.players?.[code]||[];
+ const fromRoster=(rosters[code]||[]).filter(p=>!chosen.has(String(p.id)));
+ // Para um jogo futuro, o elenco da temporada substitui uma lista fictícia de reservas.
+ const bench=current.length?
+  current.filter(p=>!chosen.has(String(p.id))):
+  fromRoster;
+ const confirmed=info.confirmed;
+ return '<section class="card lineup-team-panel"><div class="lineup-team-heading">'+
+ '<img src="'+esc(logo(code))+'" alt="">'+
+ '<div><h2>'+esc(name(code))+'</h2><span>'+esc(info.label)+'</span></div>'+
+ '<a href="'+teamLink(code)+'" class="btn ghost">Ver elenco →</a></div>'+
+ '<div class="lineup-roster-heading"><strong>QUINTETO '+(confirmed?'TITULAR':'PROVÁVEL')+'</strong>'+
+ '<span class="tag '+(confirmed?'finished':'dim')+'">'+(confirmed?'✓ CONFIRMADO':'◇ PROJEÇÃO')+'</span></div>'+
+ (info.date?'<p class="lineup-date">Base: '+esc(shortDate(info.date))+(confirmed?' • partida atual':' • jogos anteriores')+'</p>':'')+
+ (info.list.length?'<div class="lineup-player-list starters">'+
+ info.list.map(p=>lineupPlayerCard(p,code,!confirmed)).join('')+'</div>':
+ '<div class="filler">Não há dados suficientes para confirmar ou projetar este quinteto.</div>')+
+ '<div class="lineup-roster-heading lineup-bench-title"><strong>RESERVAS / ELENCO</strong><span class="small subtle">'+bench.length+' atletas</span></div>'+
+ (bench.length?'<div class="lineup-player-list bench">'+bench.map(p=>lineupPlayerCard(p,code,false)).join('')+'</div>':
+ '<p class="small subtle">Os demais atletas ainda não foram relacionados pela fonte.</p>')+
+ '<p class="lineup-disclaimer">'+(confirmed?'Titulares identificados no box score.':
+ 'Quinteto estimado pelos últimos jogos. Não é escalação oficial.')+
+ (current.length?' As estatísticas exibidas são deste confronto.':' Reservas listados pelo elenco cadastrado, não confirmados para a partida.')+
+ '</p></section>';
 }
 function scoreboard(){
  const event=gameStatus(),p=note(game.id),final=event.status==='final',live=event.status==='live';
