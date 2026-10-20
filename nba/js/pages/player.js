@@ -1,4 +1,4 @@
-import {$,setupShared,qs,TEAMS,name,logo,esc,fetchRoster,fetchBox,MONTHS,currentDate,getData,modify,playerLink,teamLink,gameLink,loadGames,shortDate,toast} from '../app.js?v=5';
+import {$,setupShared,qs,TEAMS,name,logo,esc,fetchRoster,fetchBox,MONTHS,currentDate,getData,modify,playerLink,teamLink,gameLink,loadGames,shortDate,toast} from '../app.js?v=6';
 const pid=qs('id')||'',rawTeam=(qs('team')||'').toUpperCase();
 const root=$('#pageContent');setupShared('teams','Perfil do jogador','Estatísticas importadas, desempenho recente e suas avaliações pessoais.');
 let team=TEAMS[rawTeam]?rawTeam:'',player=null,gameStats=[];
