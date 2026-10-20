@@ -764,3 +764,16 @@ footer{border-top:1px solid var(--border);color:#8293ab;font-size:12px;padding:2
  .player-game-num b{font-size:13px}
  .player-game-filters{grid-template-columns:1fr 1fr}
 }
+
+
+/* Seletor visual: BOS | BOS + DET | DET, com ranking misto em Ambos */
+.boxscore-team-choice{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.boxscore-choice-logos{display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.boxscore-choice-logos img{display:block;object-fit:contain;width:23px;height:23px}
+.boxscore-choice-logos span{font-size:13px;font-weight:900;color:#a9bacd}
+.boxscore-choice-label{font-size:10px;letter-spacing:.01em}
+@media(max-width:780px){
+ .boxscore-team-choice{display:flex;flex-direction:column;gap:4px;min-height:57px}
+ .boxscore-choice-logos img{width:25px;height:25px}
+ .boxscore-team-choice .boxscore-choice-label{font-size:9px}
+}
