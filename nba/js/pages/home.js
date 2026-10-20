@@ -1,28 +1,37 @@
-import { $, setupShared, loadGames, currentDate, gameRow, groupGames, path, asset, getData, note, handleWishes, getSpoilers, esc, broadcastInfo, name, toast, MONTHS, niceDate } from '../app.js';
-setupShared('home','Seu basquete. Seu histórico.','Acompanhe os jogos, visite suas equipes favoritas e continue seu diário de NBA.');
-const root=$('#pageContent'),today=currentDate();
-let games=[];
-function cards(){
- const records=getData(),p=records.saved.notes,notes=Object.values(p);
- const watched=notes.filter(x=>x.watched).length,wished=notes.filter(x=>x.wish&&!x.watched).length,rated=notes.filter(x=>+x.rating>0).length;
- const avg=rated?(notes.reduce((acc,n)=>acc+(+n.rating||0),0)/rated).toFixed(1).replace('.',','):'—';
- return '<div class="grid four"><a class="card link" href="'+path('jogos/')+'"><div class="caps">Jogos cadastrados</div><h3>'+games.length+'</h3><p>Calendário consultado</p></a><a class="card link" href="'+path('meu-quadra/')+'"><div class="caps">Já assisti</div><h3>'+watched+'</h3><p>Partidas marcadas</p></a><a class="card link" href="'+path('meu-quadra/?tab=desejos')+'"><div class="caps">Quero assistir</div><h3>'+wished+'</h3><p>Na sua lista</p></a><a class="card link" href="'+path('meu-quadra/')+'"><div class="caps">Minha nota média</div><h3>'+avg+'</h3><p>'+rated+' jogos avaliados</p></a></div>';
+import {$,setupShared,loadGames,currentDate,dayShift,groupGames,path,getData,note,handleWishes,esc,broadcastInfo,name,logo,MONTHS,shortDate} from '../app.js';
+setupShared('home','A NBA acontece aqui.','Jogos do dia, transmissões brasileiras e tudo que você quer acompanhar — sem estatísticas pessoais ocupando a tela.');
+const root=$('#pageContent');
+let games=[],loaded=false;
+function section(title,actionLabel,href,body,empty){
+ return '<section class="section"><div class="section-title"><h2>'+esc(title)+'</h2><a class="btn ghost" href="'+path(href)+'">'+esc(actionLabel)+' ↗</a></div>'+
+ (body.length?groupGames(body):'<div class="filler">'+empty+'</div>')+'</section>';
 }
 function render(){
- const upcoming=games.filter(g=>g.date>=today),now=upcoming.filter(g=>g.date===today);
- const br=upcoming.filter(broadcastInfo).slice(0,4);
- const fav=getData().settings.fav,favGames=fav?upcoming.filter(g=>g.away===fav||g.home===fav).slice(0,4):[];
- root.innerHTML=cards()+
- '<section class="section"><div class="section-title"><h2>Jogos de hoje</h2><a class="btn" href="'+path('jogos/')+'">Ver agenda completa →</a></div>'+
- (now.length?groupGames(now.slice(0,10)):'<div class="filler"><b>Nenhum jogo listado hoje</b>Veja os próximos confrontos abaixo.</div>')+'</section>'+
- '<section class="section"><div class="section-title"><h2>Próximos com transmissão BR</h2><a class="btn ghost" href="'+path('jogos/?tv=br')+'">Todas as transmissões ↗</a></div>'+
- (br.length?groupGames(br):'<div class="filler">Não há transmissões brasileiras confirmadas no período carregado.</div>')+'</section>'+
- '<div class="grid two"><section class="card"><h3>🏀 Explorar as franquias</h3><p>Conferências Leste e Oeste, elencos, titulares e suas avaliações de atletas.</p><p style="margin-top:18px"><a class="btn accent" href="'+path('equipes/')+'">Ver 30 equipes →</a></p></section>'+
- '<section class="card"><h3>★ Meu QUADRA</h3><p>Seu ranking pessoal, jogadores favoritos, partidas assistidas e sincronização com Google.</p><p style="margin-top:18px"><a class="btn" href="'+path('meu-quadra/')+'">Meu histórico →</a></p></section></div>'+
- (fav?'<section class="section"><div class="section-title"><h2>Meu time: '+esc(name(fav))+'</h2><a class="btn ghost" href="'+path('equipe/?id='+fav)+'">Abrir elenco</a></div>'+(favGames.length?groupGames(favGames):'<p class="subtle">Próximos jogos serão exibidos quando divulgados.</p>')+'</section>':'');
+ if(!loaded)return;
+ const today=currentDate(),tomorrow=dayShift(today,1),week=dayShift(today,7);
+ const future=games.filter(g=>g.date>=today);
+ const todayGames=future.filter(g=>g.date===today);
+ const tv=future.filter(broadcastInfo).slice(0,5);
+ const {settings}=getData(),fav=settings.fav;
+ const teamGames=fav?future.filter(g=>g.away===fav||g.home===fav).slice(0,3):[];
+ const watchlist=future.filter(g=>g.date<week&&note(g.id).wish&&!note(g.id).watched).slice(0,6);
+ const nextTomorrow=future.filter(g=>g.date===tomorrow);
+ const favHeader=fav?'<div class="favorite-hero"><img src="'+esc(logo(fav))+'" alt="" width="64" height="64"><div><span class="caps">Meu time favorito</span><strong>'+esc(name(fav))+'</strong><span class="small subtle">'+(teamGames.length?'Próximos confrontos na agenda':'Aguardando próximos jogos')+'</span></div><a class="btn" href="'+path('equipe/?id='+encodeURIComponent(fav))+'">Ver equipe ↗</a></div>':
+ '<div class="favorite-hero empty"><div><span class="caps">Personalize sua NBA</span><strong>Qual é a sua franquia?</strong><span class="small subtle">Escolha um time para acompanhar seus próximos jogos aqui.</span></div><a class="btn accent" href="'+path('equipes/')+'">Escolher time →</a></div>';
+ root.innerHTML=
+ favHeader+
+ section('Jogos de hoje','Agenda completa','jogos/',todayGames.slice(0,14),'Nenhuma partida prevista para hoje no calendário consultado.')+
+ (todayGames.length===0&&nextTomorrow.length?'<div class="small subtle">Próximos jogos amanhã: <a href="'+path('jogos/')+'">'+nextTomorrow.length+' confrontos →</a></div>':'')+
+ (fav?section('Próximos jogos do '+name(fav),'Página do time','equipe/?id='+encodeURIComponent(fav),teamGames,'Ainda não há jogos futuros desta equipe no período carregado.'):'')+
+ section('Onde assistir no Brasil','Todas as transmissões','jogos/?tv=br',tv,'Ainda não há transmissões brasileiras confirmadas no período carregado.')+
+ '<section class="section"><div class="section-title"><h2>Minha agenda da semana</h2><a class="btn ghost" href="'+path('perfil/?tab=atividade&filtro=desejos')+'">Minha lista ↗</a></div>'+
+ (watchlist.length?groupGames(watchlist):'<div class="filler"><b>Você ainda não marcou jogos para esta semana</b>Toque no ♡ dos confrontos para montar sua agenda personalizada.</div>')+'</section>'+
+ '<div class="grid two"><a class="card link" href="'+path('equipes/')+'"><div class="caps">Explore</div><h3>🏀 As 30 franquias</h3><p>Conferências, elencos, quintetos e próximos jogos.</p></a>'+
+ '<a class="card link" href="'+path('perfil/')+'"><div class="caps">Sua jornada</div><h3>☆ Meu perfil</h3><p>Partidas assistidas, rankings, conquistas e dados pessoais.</p></a></div>';
 }
-root.innerHTML='<div class="filler">Carregando a agenda do mês…</div>';
-const m=today.slice(0,7),i=MONTHS.indexOf(m),chosen=i===-1?['2026-10']:MONTHS.slice(i,i+2);
-loadGames(chosen).then(rows=>{games=rows;render()}).catch(e=>{console.error(e);root.innerHTML='<div class="filler">Agenda indisponível. Tente novamente.</div>'});
+root.innerHTML='<div class="filler">Carregando os jogos de hoje…</div>';
+const idx=Math.max(MONTHS.indexOf(currentDate().slice(0,7)),0);
+loadGames(MONTHS.slice(idx,Math.min(idx+2,MONTHS.length))).then(rows=>{games=rows;loaded=true;render()})
+ .catch(e=>{console.error(e);root.innerHTML='<div class="filler">Agenda indisponível no momento. Atualize a página para tentar novamente.</div>'});
 root.addEventListener('click',e=>{if(handleWishes(e.target,render))e.preventDefault()});
 window.addEventListener('quadra:refresh',render);
