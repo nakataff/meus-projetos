@@ -1,4 +1,4 @@
-import {$,setupShared,qs,esc,name,logo,tlogo,effectiveGame,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,groupGames,note,getData,setNote,setExtraGroup,modify,platform,shortDate,currentDate,toast,modal,closeModal,eventBox,newestStarting,fetchRoster} from '../app.js?v=5';
+import {$,setupShared,qs,esc,name,logo,tlogo,effectiveGame,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,groupGames,note,getData,setNote,setExtraGroup,modify,platform,shortDate,currentDate,toast,modal,closeModal,eventBox,newestStarting,fetchRoster} from '../app.js?v=6';
 const id=qs('id')||'',hint=qs('data')||'',root=$('#pageContent');
 setupShared('games','Centro da partida','Escalações, estatísticas e seu diário pessoal de basquete.');
 let game=null,boxes={},box=null,probable={},rosters={},tab='resumo',loading=true;
