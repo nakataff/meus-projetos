@@ -1,11 +1,11 @@
-import {$,setupShared,loadGames,MONTHS,getData,groupGames,esc,path,backup,restore,handleWishes,note,TEAMS,teamLink,playerLink,gameLink,logo,modal,closeModal,setSettings,toast} from '../app.js?v=10';
+import {$,setupShared,loadGames,MONTHS,getData,modify,groupGames,esc,path,backup,restore,handleWishes,note,TEAMS,teamLink,playerLink,gameLink,logo,modal,closeModal,setSettings,toast} from '../app.js?v=10';
 setupShared('personal','Meu perfil','Sua jornada na NBA: avaliações, jogos assistidos, jogadores favoritos e conquistas.');
 const root=$('#pageContent');
 let games=[],loaded=false,tab=new URLSearchParams(location.search).get('tab')||'resumo';
 let filter=new URLSearchParams(location.search).get('filtro')||'assistidos';
 let limit=30,account=window.QUADRA_ACCOUNT||null;
 if(['assistidos','desejos','notas'].includes(tab)){filter=tab;tab='atividade';}
-const tabs={resumo:'Resumo',atividade:'Atividade',rankings:'Rankings',conquistas:'Conquistas'};
+const tabs={resumo:'Resumo',atividade:'Atividade',rankings:'Rankings',conquistas:'Conquistas',seguindo:'Seguindo'};
 if(!tabs[tab])tab='resumo';
 const filters={assistidos:'Assistidos',desejos:'Quero assistir',notas:'Avaliados'};
 if(!filters[filter])filter='assistidos';
@@ -39,7 +39,7 @@ function header(s){
 function metrics(s){
  const watched=s.watched.length,wishes=s.wishlist.length;
  return '<div class="grid four profile-metrics">'+
- [['✓ Jogos assistidos',watched,'Seu histórico'],['♡ Quero assistir',wishes,'Na sua lista'],['★ Minha nota média',s.average,'Em '+s.rated.length+' avaliações'],['☆ Jogadores avaliados',s.players.length,'Na temporada']].map(([title,value,label])=>
+ [['✓ Jogos assistidos',watched,'Seu histórico'],['♡ Quero assistir',wishes,'Na sua lista'],['★ Minha nota média',s.average,'Em '+s.rated.length+' avaliações'],['♥ Jogadores seguidos',Object.values(s.bundle.extras.players||{}).filter(p=>p?.favorite).length,'Na sua lista']].map(([title,value,label])=>
  '<div class="card profile-metric"><div class="caps">'+title+'</div><strong>'+esc(value)+'</strong><span>'+esc(label)+'</span></div>').join('')+'</div>';
 }
 function gameLinkOf(id,g){return g?gameLink(g):path('jogos/');}
@@ -70,7 +70,7 @@ function prefs(s){
 }
 function favoriteSections(s){
  const extra=s.bundle.extras;
- const loved=Object.entries(extra.players||{}).filter(([,p])=>p?.favorite).slice(0,6);
+ const loved=Object.entries(extra.players||{}).filter(([,p])=>p?.favorite).slice(0,8);
  const franchises=Object.entries(extra.franchise||{}).filter(([code,id])=>TEAMS[code]&&id).slice(0,8);
  const full=Object.entries(extra.lineups||{}).filter(([code,ids])=>TEAMS[code]&&Array.isArray(ids)&&ids.length===5);
  function person(id,p,team){
@@ -78,8 +78,8 @@ function favoriteSections(s){
   return '<div class="profile-rank-item"><div class="rank-body">'+(team?'<a href="'+playerLink(id,team)+'">'+esc(label)+'</a>':'<b>'+esc(label)+'</b>')+
   '<span class="small subtle">'+(team&&TEAMS[team]?esc(TEAMS[team][0]):'Favorito pessoal')+'</span></div></div>';
  }
- return '<div class="grid two section"><section class="card"><h2>Jogadores favoritos ♡</h2><p class="small subtle">Seus atletas marcados como favoritos</p>'+
- (loved.length?loved.map(([id,p])=>person(id,p,p.team)).join(''):'<div class="filler">Marque seus jogadores favoritos nos perfis dos atletas.</div>')+'</section>'+
+ return '<div class="grid two section"><section class="card"><h2>Jogadores que sigo ♡</h2><p class="small subtle">Abra o perfil para comparar estatísticas com a liga.</p>'+
+ (loved.length?loved.map(([id,p])=>person(id,p,p.team)).join(''):'<div class="filler">Siga jogadores nos perfis dos atletas para acompanhá-los aqui.</div>')+'</section>'+
  '<section class="card"><h2>Franchise players ★</h2><p class="small subtle">Quem você escolheu para liderar cada franquia</p>'+
  (franchises.length?franchises.map(([code,id])=>person(id,extra.players?.[id],code)).join(''):'<div class="filler">Escolha um franchise player nas páginas das equipes.</div>')+'</section></div>'+
  (full.length?'<section class="card section"><h2>Meus quintetos completos</h2><p class="small subtle">Escalações pessoais que você montou</p>'+
@@ -133,11 +133,23 @@ function achievements(s){
  return '<article class="card achievement '+(ok?'earned':'')+'"><span class="achievement-icon" aria-hidden="true">'+x.icon+'</span><div class="achievement-copy"><strong>'+esc(x.title)+'</strong><span class="small subtle">'+esc(x.desc)+'</span><div class="achievement-track"><i style="width:'+pc+'%"></i></div><span class="micro">'+(ok?'✓ Desbloqueada':Math.min(x.progress,x.goal)+' / '+x.goal)+'</span></div></article>';
  }).join('')+'</div>';
 }
+function followingTab(s){
+ const people=Object.entries(s.bundle.extras.players||{}).filter(([,p])=>p?.favorite)
+  .sort((a,b)=>String(a[1].name||'').localeCompare(String(b[1].name||''),'pt-BR'));
+ return '<section class="section"><div class="section-title"><h2>Jogadores que sigo</h2><span class="small subtle">'+people.length+' atletas</span></div>'+
+ (people.length?'<div class="followed-profile-list">'+people.map(([id,p])=>
+  '<article class="followed-profile-item"><a class="followed-profile-main" href="'+(p.team?playerLink(id,p.team):path('jogador/?id='+encodeURIComponent(id)))+'">'+
+  '<img src="https://a.espncdn.com/i/headshots/nba/players/full/'+encodeURIComponent(id)+'.png" loading="lazy" alt="" referrerpolicy="no-referrer">'+
+  '<span><strong>'+esc(p.name||'Jogador #'+id)+'</strong><small>'+esc(p.team?TEAMS[p.team]?.[0]||p.team:'NBA')+' • Médias, jogos e comparação na liga</small></span></a>'+
+  '<button class="btn ghost" type="button" data-unfollow="'+esc(id)+'">Deixar de seguir</button></article>').join('')+'</div>':
+ '<div class="card"><p>Você ainda não segue jogadores. Abra o perfil de um atleta e toque em “Seguir jogador”.</p><a class="btn" href="'+path('equipes/')+'">Explorar equipes →</a></div>')+'</section>';
+}
+
 function render(){
  const s=snapshot(),heading='<nav class="tabs profile-tabs" aria-label="Áreas do perfil">'+Object.entries(tabs).map(([key,label])=>
  '<button type="button" class="tab '+(tab===key?'active':'')+'" data-tab="'+key+'">'+label+'</button>').join('')+'</nav>';
  root.innerHTML=header(s)+metrics(s)+heading+
- (tab==='resumo'?summary(s):tab==='atividade'?activity(s):tab==='rankings'?rankings(s):achievements(s));
+ (tab==='resumo'?summary(s):tab==='atividade'?activity(s):tab==='rankings'?rankings(s):tab==='seguindo'?followingTab(s):achievements(s));
  window.dispatchEvent(new Event('quadra:profile-render'));
 }
 function editNickname(){
@@ -146,6 +158,12 @@ function editNickname(){
  $('#nicknameForm').onsubmit=e=>{e.preventDefault();setSettings({nickname:$('#nickname').value.trim().slice(0,28)});closeModal();render();toast('Perfil atualizado!');};
 }
 root.addEventListener('click',e=>{
+ const unfollow=e.target.closest('[data-unfollow]');
+ if(unfollow){
+  const id=unfollow.dataset.unfollow;
+  modify(b=>{if(b.extras.players?.[id])b.extras.players[id]={...b.extras.players[id],favorite:false};});
+  render();return;
+ }
  const t=e.target.closest('[data-tab]');if(t){tab=t.dataset.tab;limit=30;if(t.dataset.filter)filter=t.dataset.filter;history.replaceState(null,'','?tab='+encodeURIComponent(tab)+(tab==='atividade'?'&filtro='+encodeURIComponent(filter):''));render();return;}
  const f=e.target.closest('[data-filter]');if(f){filter=f.dataset.filter;limit=30;history.replaceState(null,'','?tab=atividade&filtro='+encodeURIComponent(filter));render();return;}
  if(handleWishes(e.target,render)){e.preventDefault();return;}
