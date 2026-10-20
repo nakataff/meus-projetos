@@ -1,10 +1,11 @@
 import {$,setupShared,qs,esc,name,logo,tlogo,effectiveGame,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,note,getData,setNote,setExtraGroup,platform,shortDate,currentDate,toast,modal,closeModal,eventBox,fetchRoster} from '../app.js?v=7';
 import {fetchLiveBoxscore,projectStartingFive} from '../boxscore.js?v=1';
 import {exportPlayerImage,sharePlayerLink} from '../share-card.js?v=1';
+import {performanceRating,ratingLabel,topPerformance,RATING_EXPLANATION} from '../performance-rating.js?v=1';
 const id=qs('id')||'',hint=qs('data')||'',root=$('#pageContent');
 setupShared('games','Centro da partida','Escalações, estatísticas e seu diário pessoal de basquete.');
 let game=null,boxes={},box=null,probable={},rosters={},tab='resumo';
-let statsSort='pts',statsAsc=false;
+let statsSort='rating',statsAsc=false;
 let statsTeam='both'; // No mobile, Ambos mostra ranking misto das duas franquias.
 let statsDetail=false;
 let remoteBox=null,remoteStatus=null,lastStatsCheck=0,checkingStats=false,statsMessage='',lastSuccess=null;
@@ -100,6 +101,7 @@ async function refreshBox(force=false){
 
 const maybeMonth=hint.slice(0,7),months=MONTHS.includes(maybeMonth)?[maybeMonth]:MONTHS;
 const statFields=[
+ {key:'rating',label:'NOTA',title:'Nota automática QUADRA'},
  {key:'pts',label:'PTS',title:'Pontos'},
  {key:'reb',label:'REB',title:'Rebotes'},
  {key:'ast',label:'AST',title:'Assistências'},
@@ -112,6 +114,7 @@ const statFields=[
  {key:'plusMinus',label:'+/-',title:'Saldo de pontos'}
 ];
 function statValue(player,key){
+ if(key==='rating')return performanceRating(player);
  const value=player?.[key];
  if(value===undefined||value===null||value===''||value==='—')return null;
  if(key==='min'){
@@ -156,6 +159,7 @@ function playerPortrait(p,code){
  '<span class="boxscore-placeholder" aria-hidden="true">'+esc(String(p.name||'?').charAt(0))+'</span>';
 }
 function statText(player,key){
+ if(key==='rating')return ratingLabel(performanceRating(player));
  const value=player?.[key];
  if(value===undefined||value===null||value===''||value==='—')return '—';
  return esc(value);
@@ -164,9 +168,9 @@ function playerStats(code,mixed=false){
  const rows=mixed?mixedPlayers():scorePlayers(code);
  if(!rows.length)return '<div class="filler">O box score ainda não foi disponibilizado.</div>';
  const ratings=getData().extras,chosenMvp=String(ratings.gameMvp?.[game.id]||'');
- const basic=['min','pts','reb','ast','three'];
+ const basic=['rating','pts','reb','ast','three'];
  if(!basic.includes(statsSort))basic[basic.length-1]=statsSort;
- const cols=statsDetail?['min','pts','reb','ast','stl','blk','fg','three','to','plusMinus']:basic;
+ const cols=statsDetail?['rating','min','pts','reb','ast','stl','blk','fg','three','to','plusMinus']:basic;
  const tr=rows.map(p=>{
   const playerTeam=mixed?p.teamCode:code;
   const id=String(p.id),rating=ratings.gameRatings?.[game.id+':'+id],mvp=chosenMvp===id;
@@ -199,7 +203,8 @@ function boxscorePanel(code){
 function boxscoreArea(){
  const teams=[['both','Ambos'],['away',game.away],['home',game.home]];
  const sortOptions=statFields.map(f=>'<option value="'+f.key+'"'+(statsSort===f.key?' selected':'')+'>'+f.title+'</option>').join('');
- return '<div class="boxscore-interface">'+
+ return '<div class="boxscore-interface"><div class="boxscore-rating-help"><span><strong>NOTA QUADRA</strong> é uma avaliação automática baseada nas estatísticas, separada da sua nota pessoal.</span>'+
+ '<button type="button" class="btn ghost" data-rating-info>Como funciona?</button></div>'+
  '<div class="boxscore-toolbar"><div class="boxscore-filter" aria-label="Visualizar estatísticas da equipe">'+
  teams.map(([key,label])=>{
   const logos=key==='both'?
@@ -288,9 +293,9 @@ function lineupPanel(code){
 }
 function scoreboard(){
  const event=gameStatus(),p=note(game.id),final=event.status==='final',live=event.status==='live';
- const hasManual=p.scoreAway!==''&&p.scoreHome!==''&&p.scoreAway!=null&&p.scoreHome!=null;
+
  const scoreAvailable=(final||live)&&event.scoreAway!=null&&event.scoreHome!=null;
- const scores=scoreAvailable?[event.scoreAway,event.scoreHome]:hasManual?[p.scoreAway,p.scoreHome]:null;
+ const scores=scoreAvailable?[event.scoreAway,event.scoreHome]:null;
  const type=typeof game.stage==='string' && isNaN(Number(game.stage))?game.stage:
   Number(game.stage)===1?'Pré-temporada':Number(game.stage)===3?'Playoffs':'Temporada regular';
  const period=Number(event.livePeriod||0);
@@ -301,14 +306,13 @@ function scoreboard(){
  '<div class="small subtle">'+(final?'Partida encerrada':live?phase+(event.liveClock?' • '+esc(event.liveClock):''):'Jogo agendado')+'</div></div>'+
  '<div class="side"><a href="'+teamLink(game.home)+'">'+tlogo(game.home,76)+'</a><span class="names">'+esc(name(game.home))+'</span></div></div>'+
  '<div class="switches" style="justify-content:center"><span class="tag '+((game.platforms||[]).some(p=>['PRIME','ESPN'].includes(p))?'tv':'dim')+'">'+esc(platform(game))+'</span>'+
- (final?'<span class="tag finished">Resultado confirmado pela fonte</span>':live?'<span class="live-indicator"><i aria-hidden="true"></i>AO VIVO</span>':'')+'</div></section>';
+ (live?'<span class="live-indicator"><i aria-hidden="true"></i>AO VIVO</span>':'')+'</div></section>';
 }
 function gameForm(){
  const p=note(game.id),rated=Number(p.rating)||0;
  return '<section class="card"><h3>Meu diário da partida</h3><p>Suas notas ficam salvas no navegador e sincronizadas no Firebase quando você estiver conectado.</p><form id="saveGame">'+
  '<div class="controls"><label class="small"><input type="checkbox" id="watched" '+(p.watched?'checked':'')+'> Já assisti</label><label class="small"><input type="checkbox" id="wish" '+(p.wish?'checked':'')+'> Quero assistir</label></div>'+
  '<div class="field"><label>Nota do jogo • <span id="gameRatingValue">'+(rated||'—')+'</span>/10</label><input class="rate-input" type="range" id="gameRating" min="0" max="10" step="0.5" value="'+rated+'"></div>'+
- '<div class="two-cols"><div class="field"><label>Placar visitante (manual)</label><input class="control" type="number" id="awayScore" min="0" max="250" value="'+esc(p.scoreAway??'')+'" placeholder="Opcional"></div><div class="field"><label>Placar mandante (manual)</label><input class="control" type="number" id="homeScore" min="0" max="250" value="'+esc(p.scoreHome??'')+'" placeholder="Opcional"></div></div>'+
  '<div class="field"><label>Comentários e observações</label><textarea class="control" id="comment" maxlength="1400" placeholder="Melhor jogador, lances importantes e o que achou da partida…">'+esc(p.comment||'')+'</textarea></div>'+
  '<div class="modal-footer"><button class="btn accent" type="submit">Salvar avaliação ✓</button></div></form></section>';
 }
@@ -332,9 +336,16 @@ function gameLeaders(){
 }
 function leaderCards(){
  const leaders=gameLeaders();
+ const best=topPerformance(Object.fromEntries([game.away,game.home].map(code=>[code,teamPlayers(code)])));
+ const topCard=best?'<article class="overview-leader overview-best-player"><span class="caps">★ MELHOR NOTA DA PARTIDA</span>'+
+  '<div class="overview-leader-body">'+playerPortrait(best.player,best.team)+
+  '<div class="overview-leader-person"><a href="'+playerLink(best.player.id,best.team)+'">'+esc(best.player.name)+'</a>'+
+  '<span><img src="'+esc(logo(best.team))+'" alt="">'+esc(name(best.team))+'</span></div>'+
+  '<div class="overview-leader-value"><strong>'+ratingLabel(best.rating)+'</strong><small>QUADRA / 10</small></div></div>'+
+  '<button type="button" data-rating-info class="rating-method-link">Como funciona a nota?</button></article>':'';
  return '<section class="section"><div class="section-title"><h2>Quem está se destacando</h2>'+
  '<button class="btn ghost" type="button" data-open-tab="stats">Box score completo →</button></div>'+
- '<div class="overview-leader-grid">'+leaders.map(item=>{
+ '<div class="overview-leader-grid">'+topCard+leaders.map(item=>{
   if(!item.leader)return '<article class="overview-leader"><span class="caps">'+esc(item.title)+'</span>'+
    '<div class="overview-leader-empty">Aguardando dados</div></article>';
   const {code,player}=item.leader,num=statValue(player,item.key);
@@ -475,7 +486,9 @@ function openPlayerPerformance(pid,code){
   '<div class="performance-match"><img src="'+esc(logo(code))+'" alt="">'+esc(code)+
   ' <span>VS</span> '+esc(opponent)+' <img src="'+esc(logo(opponent))+'" alt="">'+
   (score?' <b>'+esc(score)+'</b>':'')+'</div>'+
-  '<div class="performance-stats">'+data.map(([key,label])=>'<div><strong>'+
+  '<div class="performance-rating"><span>Nota automática QUADRA</span><strong>'+
+ ratingLabel(performanceRating(p))+'/10</strong></div>'+
+ '<div class="performance-stats">'+data.map(([key,label])=>'<div><strong>'+
   statText(p,key)+'</strong><span>'+label+'</span></div>').join('')+'</div>'+
   '<p class="performance-source">Estatísticas '+(current.status==='live'?'parciais, sujeitas a mudanças.':'disponíveis para esta partida.')+'</p>'+
   '<div class="performance-actions">'+
@@ -512,6 +525,11 @@ function ratePlayer(pid,code){
  $('#ratePlayer').onsubmit=e=>{e.preventDefault();setExtraGroup('gameRatings',game.id+':'+pid,Number($('#rateValue').value));closeModal();draw();toast('Nota do jogador salva');};
 }
 root.addEventListener('click',e=>{
+ if(e.target.closest('[data-rating-info]')){
+  modal('<h2>Como funciona a Nota QUADRA?</h2><p>'+esc(RATING_EXPLANATION)+
+   '</p><p class="info">A nota é calculada automaticamente (1,0–10,0) e não é a sua avaliação pessoal. É experimental e usa apenas dados disponíveis. Nos jogos ao vivo ela muda com o box score.</p>');
+  return;
+ }
  const card=e.target.closest('[data-player-detail],[data-lineup-player]');
  if(card && !e.target.closest('button,a,input,select')){
   openPlayerPerformance(card.dataset.playerDetail||card.dataset.lineupPlayer,
@@ -548,9 +566,7 @@ root.addEventListener('change',e=>{
 });
 root.addEventListener('submit',e=>{
  if(e.target.id!=='saveGame')return;e.preventDefault();
- const away=$('#awayScore').value,home=$('#homeScore').value;
- if([away,home].some(x=>x!==''&&(!Number.isInteger(+x)||+x<0||+x>250))){toast('Placar inválido. Use valores de 0 a 250.');return;}
- setNote(game.id,{watched:$('#watched').checked,wish:$('#wish').checked,rating:Number($('#gameRating').value),scoreAway:away,scoreHome:home,comment:$('#comment').value.trim()});
+ setNote(game.id,{watched:$('#watched').checked,wish:$('#wish').checked,rating:Number($('#gameRating').value),comment:$('#comment').value.trim()});
  toast('Partida salva!');draw();
 });
 window.addEventListener('quadra:refresh',()=>{if(game&&tab!=='avaliar')draw()});
