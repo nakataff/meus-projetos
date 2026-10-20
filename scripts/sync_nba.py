@@ -213,9 +213,9 @@ def normalize_boxscore(payload):
 
 def sync_final_stats():
     today = NOW.astimezone(BR).date()
-    # Recupera últimos 6 dias para cobrir partidas adiadas e a primeira execução.
+    # Recupera até 20 dias de histórico e preserva o cache já importado.
     interesting = {}
-    for n in range(7):
+    for n in range(21):
         dt = today - timedelta(days=n)
         month = dt.strftime("%Y-%m")
         file = ROOT / "months" / f"{month}.json"
