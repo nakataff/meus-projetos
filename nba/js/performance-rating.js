@@ -43,4 +43,4 @@ export function topPerformance(playersByTeam){
   (Number(b.player.ast)||0)-(Number(a.player.ast)||0));
  return list[0]||null;
 }
-export const RATING_EXPLANATION='Nota QUADRA: avaliação automática e experimental (1 a 10) baseada em pontos, rebotes, assistências, roubos, tocos, desperdícios, arremessos errados e saldo de pontos. Não é uma nota oficial da NBA ou do SofaScore; os valores podem mudar durante o jogo.';
+export const RATING_EXPLANATION='Nota DLQ: avaliação automática e experimental (1 a 10) baseada em pontos, rebotes, assistências, roubos, tocos, desperdícios, arremessos errados e saldo de pontos. Não é uma nota oficial da NBA ou do SofaScore; os valores podem mudar durante o jogo.';
