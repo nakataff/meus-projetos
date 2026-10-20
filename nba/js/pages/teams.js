@@ -1,4 +1,4 @@
-import {$,setupShared,EAST,WEST,name,logo,teamLink,esc} from '../app.js';
+import {$,setupShared,EAST,WEST,name,logo,teamLink,esc} from '../app.js?v=4';
 setupShared('teams','Franquias da NBA','As 30 equipes divididas por conferência e divisão. Clique num escudo para conferir elenco, quintetos e jogos.');
 const root=$('#pageContent');
 let conference='east';
