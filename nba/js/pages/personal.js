@@ -56,7 +56,7 @@ function topPlayers(s,n=5){
 function topGames(s,n=5){
  const list=s.rated.slice().sort((a,b)=>+b[1].rating-+a[1].rating).slice(0,n);
  return list.length?list.map(([id,r],i)=>{
-  const g=s.lookup.get(id),title=g?TEAMS[g.away]?.[0]+' x '+TEAMS[g.home]?.[0]:'Jogo registrado';
+  const g=s.lookup.get(id),title=g?(TEAMS[g.away]?.[0]||g.away)+' x '+(TEAMS[g.home]?.[0]||g.home):'Jogo registrado';
   return '<div class="profile-rank-item"><span class="rank-position">'+(i+1)+'</span><div class="rank-body"><a href="'+gameLinkOf(id,g)+'">'+esc(title)+'</a><span class="small subtle">'+(g?g.date:'Partida do seu histórico')+'</span></div><span class="profile-rank-score">★ '+formatGrade(r.rating)+'</span></div>';
  }).join(''):'<div class="filler">Avalie suas partidas para ver os jogos favoritos aqui.</div>';
 }
@@ -123,7 +123,7 @@ function achievements(s){
  {icon:'👟',title:'Olheiro',desc:'Avaliar 10 jogadores',progress:players,goal:10},
  {icon:'🗳️',title:'Meu MVP',desc:'Escolher um MVP de jogo',progress:mvp,goal:1},
  {icon:'✋',title:'Técnico de sofá',desc:'Montar um quinteto pessoal',progress:fullLineup?1:0,goal:1},
- {icon:'🌎',title:'Pelos 30 times',desc:'Assistir a jogos de 10 franquias diferentes',progress:s.viewedTeams.size,goal:10}
+ {icon:'🌎',title:'Conhecendo a liga',desc:'Assistir a jogos de 10 franquias diferentes',progress:s.viewedTeams.size,goal:10}
  ];
  const done=items.filter(x=>x.progress>=x.goal).length;
  return '<div class="section-title"><h2>Minhas conquistas</h2><span class="small subtle">'+done+' de '+items.length+' desbloqueadas</span></div>'+
