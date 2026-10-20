@@ -337,7 +337,7 @@ def sync_team_summaries():
             "pointsAgainst": 0, "boxGames": 0,
             "reb": 0, "ast": 0, "stl": 0, "blk": 0,
             "fgm": 0, "fga": 0, "threeM": 0, "threeA": 0,
-            "players": []
+            "players": [], "lastLineup": None
         }
 
     output = {team: {
@@ -390,6 +390,19 @@ def sync_team_summaries():
                 continue
             record = output[team][phase]
             record["boxGames"] += 1
+            starters = [p for p in athletes if p.get("starter") and p.get("id")]
+            played_date = str(event.get("date") or "")
+            previous = record.get("lastLineup")
+            if len(starters) >= 5 and (not previous or played_date >= previous["date"]):
+                record["lastLineup"] = {
+                    "date": played_date,
+                    "players": [
+                        {"id": str(p["id"]), "name": str(p.get("name") or ""),
+                         "number": str(p.get("number") or ""),
+                         "pts": p.get("pts"), "reb": p.get("reb"), "ast": p.get("ast")}
+                        for p in starters[:5]
+                    ]
+                }
             player_maps = output[team]["_playerMaps"][phase]
             for p in athletes:
                 ident = str(p.get("id") or "")
