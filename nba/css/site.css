@@ -620,3 +620,18 @@ footer{border-top:1px solid var(--border);color:#8293ab;font-size:12px;padding:2
  .overview-lineup-players{grid-template-columns:1fr 1fr}
 }
 @media(prefers-reduced-motion:reduce){.game-sync-dot.is-live{animation:none}}
+
+
+/* Últimas atuações antes da partida, reutilizando o box score em cache */
+.overview-recent-team{
+ background:#141e2d;border:1px solid #34465c;border-radius:13px;
+ padding:15px;display:flex;flex-direction:column;gap:12px;min-width:0
+}
+.overview-recent-team .overview-lineup-head{padding-bottom:10px}
+.overview-recent-highlight{display:flex;flex-direction:column;gap:9px}
+.overview-recent-highlight .caps{font-size:10px}
+.overview-recent-highlight>div{display:flex;align-items:center;justify-content:space-between;gap:11px}
+.overview-recent-highlight a{font-size:13px;font-weight:850;line-height:1.4;color:#e7f2ff}
+.overview-recent-highlight a:hover{text-decoration:underline}
+.overview-recent-highlight b{font-size:13px;color:#ffca8b;white-space:nowrap}
+.overview-recent-team>.btn{margin-top:auto;align-self:flex-start}
