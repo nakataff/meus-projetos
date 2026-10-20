@@ -373,3 +373,129 @@ footer{border-top:1px solid var(--border);color:#8293ab;font-size:12px;padding:2
  .game-data-status{align-items:stretch}
  .game-data-status button{width:100%}
 }
+
+
+/* QUADRA — box score comparativo: duas equipes no desktop, abas no mobile */
+.boxscore-interface{min-width:0;margin:14px 0 24px}
+.boxscore-toolbar{
+ display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;
+ gap:12px;padding:12px 13px;margin-bottom:9px;
+ background:#141e2d;border:1px solid #314257;border-radius:12px
+}
+.boxscore-filter{display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-width:0}
+.boxscore-team-choice{
+ border:1px solid #37475b;background:#1a2637;color:#c4d1e1;
+ border-radius:8px;min-width:53px;padding:9px 13px;
+ font-size:12px;font-weight:900;white-space:nowrap
+}
+.boxscore-team-choice:hover{border-color:#7294bd}
+.boxscore-team-choice.active{border-color:#f4a05c;background:#453024;color:#ffd1ad}
+.boxscore-sort-controls{display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:0}
+.boxscore-sort-controls label{font-size:11px;color:#acbacb;font-weight:800}
+.boxscore-sort-controls .control{max-width:165px;min-width:125px;padding:9px 8px;font-size:12px}
+.boxscore-sort-controls .btn{font-size:11px;padding:9px 10px}
+.boxscore-hint{margin:0 0 10px;padding:0 2px;color:#8498b0;font-size:11px}
+.boxscore-panels{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:14px;align-items:start;min-width:0
+}
+.boxscore-panels.view-single{grid-template-columns:minmax(0,1fr)}
+.boxscore-panels.view-single .boxscore-team{max-width:900px;width:100%;margin-inline:auto}
+.boxscore-team{
+ min-width:0;background:linear-gradient(150deg,#161f2b,#101823);
+ border:1px solid #344258;border-radius:14px;overflow:hidden
+}
+.boxscore-team:not(.is-selected){display:none}
+.boxscore-team-head{
+ display:flex;align-items:center;gap:10px;padding:12px 14px;
+ background:#192538;border-bottom:1px solid #34445a;min-height:68px
+}
+.boxscore-team-head img{width:40px;height:40px;flex:none;object-fit:contain}
+.boxscore-team-head>div{min-width:0;display:flex;flex-direction:column;gap:3px}
+.boxscore-team-head strong{font-size:14px;line-height:1.3}
+.boxscore-team-head span{font-size:11px;color:#a4b5c8}
+.boxscore-scroll{overflow-x:auto;width:100%;scrollbar-width:thin;scrollbar-color:#50617b transparent}
+.boxscore-table{
+ width:100%;min-width:535px;border-collapse:collapse;
+ font-variant-numeric:tabular-nums;font-size:12px;line-height:1.35
+}
+.boxscore-table.expanded{min-width:760px}
+.boxscore-table thead{background:#101a28}
+.boxscore-table th,.boxscore-table td{
+ border-bottom:1px solid #2e394a;padding:9px 6px;text-align:center;
+ white-space:nowrap
+}
+.boxscore-table th:first-child,.boxscore-table td:first-child{
+ position:sticky;left:0;z-index:1;text-align:left;
+ background:#141e2c;box-shadow:1px 0 #344052;min-width:152px;width:33%;max-width:180px;
+}
+.boxscore-table thead th:first-child{background:#101a28;z-index:2;font-size:11px;color:#b6c7d9}
+.boxscore-table tbody tr:nth-child(even){background:#15202e}
+.boxscore-table tbody tr:nth-child(even) th:first-child{background:#192535}
+.boxscore-table tbody tr:hover{background:#22344a}
+.boxscore-table tbody tr:hover th:first-child{background:#22344a}
+.boxscore-table tbody tr.boxscore-starter th:first-child{border-left:3px solid #e4a365;padding-left:3px}
+.boxscore-table tbody tr:not(.boxscore-starter) th:first-child{border-left:3px solid transparent;padding-left:3px}
+.boxscore-table .stat-selected{color:#ffe1aa;background:#ad762115}
+.boxscore-table thead .stat-selected{background:#332a1d}
+.boxscore-heading,.stat-heading{
+ width:100%;padding:1px 0;border:0;background:none;
+ color:#aabbcf;font-size:10px;font-weight:900;
+ white-space:nowrap;cursor:pointer
+}
+.stat-heading:hover,.stat-heading:focus-visible{color:#fff0d0}
+.boxscore-table .stat-selected .stat-heading{color:#ffcb7c}
+.boxscore-player{display:flex;gap:7px;align-items:center;min-width:0}
+.boxscore-headshot,.boxscore-placeholder{
+ width:30px;height:34px;flex:0 0 30px;object-fit:cover;
+ border:1px solid #384b61;border-radius:7px;background:#26364a
+}
+.boxscore-placeholder{display:grid;place-items:center;color:#bdc8d8;font-size:13px}
+.boxscore-player-info{display:flex;flex-direction:column;gap:2px;min-width:0}
+.boxscore-player-info a{
+ display:block;max-width:116px;overflow:hidden;text-overflow:ellipsis;
+ color:#e6eef9;font-size:11px;font-weight:850;text-decoration:none
+}
+.boxscore-player-info a:hover{text-decoration:underline}
+.boxscore-player-info small{color:#91a5b9;font-size:9px;font-weight:700}
+.boxscore-starter .boxscore-player-info small{color:#ffba85}
+.boxscore-table .boxscore-actions{
+ white-space:nowrap;min-width:77px;padding-left:3px;padding-right:6px
+}
+.boxscore-table .boxscore-actions-title{font-size:9px;white-space:normal;color:#9eb0c4;min-width:77px}
+.boxscore-rating,.boxscore-mvp{
+ border:1px solid #43516a;border-radius:6px;background:#233248;
+ height:29px;min-width:29px;padding:0 5px;margin:0 2px 0 0;
+ font-size:10px;font-weight:900;color:#fbc982;
+}
+.boxscore-mvp{font-size:9px;color:#bfc9d6;min-width:31px}
+.boxscore-mvp.chosen{border-color:#eaaa58;background:#4b3821;color:#ffda94}
+.boxscore-rating:hover,.boxscore-mvp:hover{background:#394963}
+@media(max-width:1080px){
+ .boxscore-panels{grid-template-columns:1fr}
+ .boxscore-team{max-width:100%}
+ .boxscore-table{min-width:540px}
+}
+@media(max-width:700px){
+ .boxscore-toolbar{align-items:stretch;gap:10px;padding:11px}
+ .boxscore-filter{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+ .boxscore-team-choice{padding:9px 5px;min-width:0}
+ .boxscore-sort-controls{display:grid;grid-template-columns:1fr minmax(115px,1fr) auto auto;gap:5px;align-items:center}
+ .boxscore-sort-controls label{font-size:10px}
+ .boxscore-sort-controls .control{max-width:100%;min-width:0}
+ .boxscore-sort-controls .btn{padding:9px 7px;font-size:10px}
+ .boxscore-hint{font-size:10px}
+ .boxscore-team-head{padding:10px 12px}
+ .boxscore-team-head img{width:36px;height:36px}
+ .boxscore-table{min-width:485px;font-size:11px}
+ .boxscore-table.expanded{min-width:720px}
+ .boxscore-table th,.boxscore-table td{padding:8px 4px}
+ .boxscore-table th:first-child,.boxscore-table td:first-child{min-width:130px;width:130px;max-width:130px}
+ .boxscore-player-info a{max-width:82px;font-size:10px}
+ .boxscore-headshot,.boxscore-placeholder{width:27px;height:31px;flex-basis:27px}
+ .boxscore-player{gap:5px}
+}
+@media(max-width:395px){
+ .boxscore-sort-controls{grid-template-columns:1fr minmax(105px,1fr) auto}
+ .boxscore-sort-controls .boxscore-detail{grid-column:1/-1}
+}
