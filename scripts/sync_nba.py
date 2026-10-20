@@ -295,12 +295,152 @@ def sync_standings():
     })
     LOGS.append(f"Classificação derivada: {len(games)} jogos da temporada regular")
 
+def _shot_totals(raw):
+    try:
+        made, attempted = [int(part) for part in str(raw).split("-", 1)]
+        if 0 <= made <= attempted:
+            return made, attempted
+    except (ValueError, TypeError):
+        pass
+    return 0, 0
+
+def _minutes(raw):
+    try:
+        value = str(raw).replace("'", "").strip()
+        if ":" in value:
+            mins, secs = value.split(":", 1)
+            return round(float(mins) + float(secs) / 60, 2)
+        return float(value)
+    except (ValueError, TypeError):
+        return 0.0
+
+def sync_team_summaries():
+    """Arquivo leve por franquia; stats apenas de partidas com box score válido.
+
+    'regular' e 'preseason' são mantidos separados. Campanha é baseada nos
+    placares oficiais finalizados dos meses, enquanto reb/ast etc usam só os
+    jogos com box score importado (boxGames), com denominador explícito.
+    """
+    calendar = {}
+    for month in MONTHS:
+        for ev in read(ROOT / "months" / (month + ".json"), {}).get("events", []):
+            if ev.get("id"):
+                calendar[str(ev["id"])] = ev
+    games = {}
+    for month in MONTHS:
+        for game_id, box in read(ROOT / "stats" / (month + ".json"), {}).get("games", {}).items():
+            games[str(game_id)] = box
+
+    def blank_section():
+        return {
+            "games": 0, "wins": 0, "losses": 0, "pointsFor": 0,
+            "pointsAgainst": 0, "boxGames": 0,
+            "reb": 0, "ast": 0, "stl": 0, "blk": 0,
+            "fgm": 0, "fga": 0, "threeM": 0, "threeA": 0,
+            "players": []
+        }
+
+    output = {team: {
+        "team": team, "season": "2026-27",
+        "source": "Jogos e box scores ESPN (não oficial)",
+        "description": "Médias individuais por jogo disputado. Médias coletivas de rebotes/assistências consideram apenas box scores disponíveis.",
+        "updatedThrough": None,
+        "regular": blank_section(), "preseason": blank_section()
+    } for team in CODES}
+    for team in CODES:
+        output[team]["_playerMaps"] = {"regular": {}, "preseason": {}}
+
+    # Resultados para vitórias/derrotas e médias de pontos, apenas finais.
+    for event in calendar.values():
+        phase = "regular" if str(event.get("stage")) == "2" else (
+            "preseason" if str(event.get("stage")) == "1" else None)
+        if not phase or event.get("status") != "final":
+            continue
+        away, home = event.get("away"), event.get("home")
+        if away not in output or home not in output:
+            continue
+        try:
+            a, h = int(event["scoreAway"]), int(event["scoreHome"])
+        except (ValueError, TypeError, KeyError):
+            continue
+        if a == h:
+            continue
+        for team, own, opp in ((away, a, h), (home, h, a)):
+            row = output[team][phase]
+            row["games"] += 1
+            row["wins"] += int(own > opp)
+            row["losses"] += int(own < opp)
+            row["pointsFor"] += own
+            row["pointsAgainst"] += opp
+            date = event.get("date")
+            if date and (output[team]["updatedThrough"] is None or date > output[team]["updatedThrough"]):
+                output[team]["updatedThrough"] = date
+
+    # Box scores consolidados; cada jogo entra somente na sua fase.
+    for game_id, game in games.items():
+        event = calendar.get(game_id)
+        if not event or event.get("status") != "final":
+            continue
+        phase = "regular" if str(event.get("stage")) == "2" else (
+            "preseason" if str(event.get("stage")) == "1" else None)
+        if not phase:
+            continue
+        for team, athletes in (game.get("players") or {}).items():
+            if team not in output or not isinstance(athletes, list) or not athletes:
+                continue
+            record = output[team][phase]
+            record["boxGames"] += 1
+            player_maps = output[team]["_playerMaps"][phase]
+            for p in athletes:
+                ident = str(p.get("id") or "")
+                if not ident or not p.get("name"):
+                    continue
+                if ident not in player_maps:
+                    player_maps[ident] = {
+                        "id": ident, "name": p["name"], "number": str(p.get("number") or ""),
+                        "gp": 0, "starts": 0, "pts": 0, "reb": 0, "ast": 0,
+                        "stl": 0, "blk": 0, "to": 0, "minutes": 0,
+                        "fgm": 0, "fga": 0, "threeM": 0, "threeA": 0
+                    }
+                r = player_maps[ident]
+                r["name"] = p["name"]
+                r["gp"] += 1
+                r["starts"] += int(bool(p.get("starter")))
+                r["minutes"] += _minutes(p.get("min"))
+                for stat in ("pts", "reb", "ast", "stl", "blk", "to"):
+                    try:
+                        amount = int(float(p.get(stat) or 0))
+                    except (ValueError, TypeError):
+                        amount = 0
+                    r[stat] += amount
+                    if stat in ("reb", "ast", "stl", "blk"):
+                        record[stat] += amount
+                fgm, fga = _shot_totals(p.get("fg"))
+                tm, ta = _shot_totals(p.get("three"))
+                r["fgm"] += fgm
+                r["fga"] += fga
+                r["threeM"] += tm
+                r["threeA"] += ta
+                for key, amount in (("fgm", fgm), ("fga", fga), ("threeM", tm), ("threeA", ta)):
+                    record[key] += amount
+
+    for team, data in output.items():
+        player_maps = data.pop("_playerMaps")
+        for phase in ("regular", "preseason"):
+            rows = list(player_maps[phase].values())
+            for row in rows:
+                row["minutes"] = round(row["minutes"], 1)
+            rows.sort(key=lambda p: (-(p["pts"] / max(p["gp"], 1)), -p["gp"], p["name"]))
+            data[phase]["players"] = rows
+        save(ROOT / "team-stats" / (team + ".json"), data)
+
 def main():
     ROOT.mkdir(parents=True, exist_ok=True)
     sync_calendar()
     sync_standings()
     sync_rosters()
     sync_final_stats()
+    sync_team_summaries()
     print("\n".join(LOGS))
     # Sem matar o site quando uma fonte externa ficar temporariamente indisponível.
     return 0
