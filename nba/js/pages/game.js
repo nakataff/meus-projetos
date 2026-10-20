@@ -111,7 +111,13 @@ const statFields=[
 function statValue(player,key){
  const value=player?.[key];
  if(value===undefined||value===null||value===''||value==='—')return null;
- if(key==='min')return Number(String(value).replace(/[^0-9.]/g,''))||0;
+ if(key==='min'){
+  const text=String(value).replace("'",'').trim();
+  const mmss=text.match(/^(\d+):(\d{1,2})$/);
+  if(mmss)return Number(mmss[1])+Number(mmss[2])/60;
+  const minutes=parseFloat(text);
+  return Number.isFinite(minutes)?minutes:null;
+ }
  if(key==='three'||key==='fg'){
   const n=Number(String(value).split('-')[0]);
   return Number.isFinite(n)?n:null;
