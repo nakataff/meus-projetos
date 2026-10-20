@@ -1,5 +1,6 @@
 import {$,setupShared,qs,esc,name,logo,tlogo,effectiveGame,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,note,getData,setNote,setExtraGroup,platform,shortDate,currentDate,toast,modal,closeModal,eventBox,fetchRoster} from '../app.js?v=7';
 import {fetchLiveBoxscore,projectStartingFive} from '../boxscore.js?v=1';
+import {exportPlayerImage,sharePlayerLink} from '../share-card.js?v=1';
 const id=qs('id')||'',hint=qs('data')||'',root=$('#pageContent');
 setupShared('games','Centro da partida','Escalações, estatísticas e seu diário pessoal de basquete.');
 let game=null,boxes={},box=null,probable={},rosters={},tab='resumo';
@@ -438,6 +439,61 @@ function draw(){
  }
  root.innerHTML=content;
 }
+function playerPerformanceUrl(pid,code){
+ return playerLink(pid,code)+'&game='+encodeURIComponent(String(game.externalId||game.id))+
+  '&data='+encodeURIComponent(game.date);
+}
+function openPlayerPerformance(pid,code){
+ if(!game || ![game.away,game.home].includes(code))return;
+ const p=(box?.players?.[code]||[]).find(x=>String(x.id)===String(pid));
+ if(!p)return toast('Dados do atleta ainda indisponíveis.');
+ const portrait=rosters[code]?.find(x=>String(x.id)===String(pid))?.headshot||'';
+ const url=playerPerformanceUrl(pid,code),opponent=code===game.away?game.home:game.away;
+ const myRating=getData().extras.gameRatings?.[game.id+':'+pid];
+ const data=[['pts','PTS'],['reb','REB'],['ast','AST'],['min','MIN'],
+  ['stl','ROUBOS'],['blk','TOCOS'],['fg','FG'],['three','3PT'],['to','TOV'],['plusMinus','+/-']];
+ const current=gameStatus(),score=current.scoreAway!=null&&current.scoreHome!=null?
+   current.scoreAway+' - '+current.scoreHome:'';
+ modal('<div class="performance-dialog">'+
+  '<div class="performance-player"><div class="performance-portrait">'+
+    (portrait?'<img src="'+esc(portrait)+'" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display=\'none\'">':playerPortrait(p,code))+
+  '</div><div><span class="caps">DESEMPENHO NA PARTIDA</span><h2>'+esc(p.name)+'</h2>'+
+  '<div class="performance-team"><img src="'+esc(logo(code))+'" alt="">'+esc(name(code))+
+  ' • '+esc(shortDate(game.date))+'</div>'+
+  '<p class="small subtle">'+(p.starter?'✓ Titular':'Reserva / relacionado')+
+  (myRating!==undefined?' • Minha nota: '+esc(myRating)+'/10':'')+'</p></div></div>'+
+  '<div class="performance-match"><img src="'+esc(logo(code))+'" alt="">'+esc(code)+
+  ' <span>VS</span> '+esc(opponent)+' <img src="'+esc(logo(opponent))+'" alt="">'+
+  (score?' <b>'+esc(score)+'</b>':'')+'</div>'+
+  '<div class="performance-stats">'+data.map(([key,label])=>'<div><strong>'+
+  statText(p,key)+'</strong><span>'+label+'</span></div>').join('')+'</div>'+
+  '<p class="performance-source">Estatísticas '+(current.status==='live'?'parciais, sujeitas a mudanças.':'disponíveis para esta partida.')+'</p>'+
+  '<div class="performance-actions">'+
+  '<button type="button" class="btn accent" id="playerExportImage">⇩ Gerar imagem</button>'+
+  '<button type="button" class="btn" id="playerShareLink">↗ Compartilhar link</button>'+
+  '<a class="btn ghost" href="'+esc(url)+'">Perfil completo →</a></div></div>');
+ const share=document.getElementById('playerShareLink');
+ const imageButton=document.getElementById('playerExportImage');
+ share.onclick=async()=>{
+  try{
+   const outcome=await sharePlayerLink(url,'QUADRA • '+p.name+' — '+name(code)+' x '+name(opponent));
+   if(outcome==='copied')toast('Link do jogador copiado!');
+  }catch(err){toast('Não foi possível compartilhar: '+err.message);}
+ };
+ imageButton.onclick=async()=>{
+  imageButton.disabled=true;imageButton.textContent='Preparando imagem…';
+  try{
+   await exportPlayerImage({
+    player:p,teamName:name(code),teamCode:code,teamLogo:logo(code),headshot:portrait,
+    gameLabel:name(game.away)+' x '+name(game.home),date:shortDate(game.date),
+    score,opponent:name(opponent),opponentLogo:logo(opponent),
+    filename:'QUADRA-'+p.name.replace(/\s+/g,'-')+'-'+game.date
+   });
+   toast('Card PNG gerado!');
+  }catch(e){console.warn('QUADRA: PNG do atleta',e);toast('Não foi possível gerar a imagem. '+e.message);}
+  finally{imageButton.disabled=false;imageButton.textContent='⇩ Gerar imagem';}
+ };
+}
 function ratePlayer(pid,code){
  const info=(box?.players?.[code]||[]).find(p=>String(p.id)===String(pid));if(!info)return toast('Jogador indisponível.');
  const old=getData().extras.gameRatings?.[game.id+':'+pid]||0;
@@ -446,6 +502,11 @@ function ratePlayer(pid,code){
  $('#ratePlayer').onsubmit=e=>{e.preventDefault();setExtraGroup('gameRatings',game.id+':'+pid,Number($('#rateValue').value));closeModal();draw();toast('Nota do jogador salva');};
 }
 root.addEventListener('click',e=>{
+ const card=e.target.closest('[data-player-detail],[data-lineup-player]');
+ if(card && !e.target.closest('button,a,input,select')){
+  openPlayerPerformance(card.dataset.playerDetail||card.dataset.lineupPlayer,
+    card.dataset.playerTeam||card.dataset.lineupTeam);return;
+ }
  if(e.target.closest('#refreshBox')){refreshBox(true);return;}
  const setTeam=e.target.closest('[data-stats-team]');
  if(setTeam){statsTeam=setTeam.dataset.statsTeam;draw();return;}
@@ -462,6 +523,12 @@ root.addEventListener('click',e=>{
  const t=e.target.closest('[data-tab],[data-open-tab]');if(t){tab=t.dataset.tab||t.dataset.openTab;draw();return;}
  const r=e.target.closest('[data-player-rating]');if(r){ratePlayer(r.dataset.playerRating,r.dataset.playerTeam);return;}
  const m=e.target.closest('[data-mvp]');if(m){setExtraGroup('gameMvp',game.id,String(m.dataset.mvp));draw();toast('MVP da partida escolhido!');return;}
+});
+root.addEventListener('keydown',e=>{
+ if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-player-detail],[data-lineup-player]')){
+  e.preventDefault();openPlayerPerformance(e.target.dataset.playerDetail||e.target.dataset.lineupPlayer,
+   e.target.dataset.playerTeam||e.target.dataset.lineupTeam);
+ }
 });
 root.addEventListener('input',e=>{if(e.target.id==='gameRating')$('#gameRatingValue').textContent=e.target.value;});
 root.addEventListener('change',e=>{
