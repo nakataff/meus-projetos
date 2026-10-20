@@ -1,5 +1,5 @@
 /* Classificação QUADRA 2026/27 — só jogos oficiais da fase regular finalizados. */
-import {$,setupShared,EAST,WEST,TEAMS,name,logo,esc,path,teamLink,jsonFile,shortDate} from '../app.js?v=7';
+import {$,setupShared,EAST,WEST,TEAMS,name,logo,esc,path,teamLink,jsonFile,shortDate} from '../app.js?v=8';
 
 setupShared('standings','Classificação da NBA','Tabela geral, conferências Leste e Oeste e divisões da temporada regular 2026/27.');
 const root=$('#pageContent');
