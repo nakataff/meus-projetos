@@ -29,6 +29,14 @@ O app utiliza **`nba/css/site.css` e `nba/js/app.js`** como recursos compartilha
 
 **Compatibilidade:** os registros antigos em `quadra_nba_2026_27_v1`, `quadra_nba_settings_v1` e `quadra_nba_extra_2026_27_v1` continuam válidos. A integração Google/Firebase utiliza a mesma `QuadraBridge` e os mesmos documentos de usuário. A versão anterior foi preservada em [nba/legacy.html](./nba/legacy.html).
 
+### Centro da Partida: titulares e estatísticas sem API paga
+
+- **Antes da partida:** o provável quinteto é estimado com base na frequência de titularidade nas cinco partidas anteriores com dados suficientes, limitado ao elenco atual quando disponível. É uma **projeção**, não um anúncio oficial.
+- **Durante a partida:** o navegador tenta buscar o box score individual da fonte pública ESPN diretamente para este jogo, com titulares marcados somente quando confirmados no retorno. A consulta automática ocorre aproximadamente a cada 2 minutos enquanto a página estiver visível, e há um botão **Atualizar estatísticas**. Os dados podem atrasar ou falhar.
+- **Após a partida:** exibe o box score final diretamente, ou o arquivo JSON já importado pelo GitHub Actions como reserva. Após a transição de ao vivo para final, tenta obter a versão consolidada e interrompe consultas quando ela está completa.
+- **Desempenho:** a página consulta somente os últimos meses necessários para a projeção e o box score do jogo aberto, sem baixar estatísticas de todos os confrontos. Os dados esportivos não são gravados no Firebase.
+- **Fonte:** interface pública não oficial da ESPN, gratuita, sem chave e **sem SLA ou garantia de licença de redistribuição**. Em falhas de conexão ou indisponibilidade da fonte, a interface informa o problema e preserva o histórico.
+
 Na nova página de partida, o quinteto antes do jogo é indicado **como projeção baseada em titularidades anteriores**, nunca como escalação oficial. Titulares oficiais são marcados somente quando já existem no box score. O calendário abre no dia atual, permite voltar e avançar um dia, escolher uma data no calendário ou alternar para Próximos jogos e Temporada inteira. Resultados e estatísticas aparecem normalmente, sem ocultação de placares.
 
 **Antes de começar a usar a nova versão intensivamente, faça um backup JSON** na página Meu QUADRA, teste uma avaliação no computador e verifique se ela surge no celular com a mesma conta Google.
