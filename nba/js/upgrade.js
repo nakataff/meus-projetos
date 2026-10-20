@@ -21,7 +21,7 @@
   if (!state.franchise || typeof state.franchise!=='object') state.franchise={};
   if (!state.gameRatings || typeof state.gameRatings!=='object') state.gameRatings={};
   if (!state.gameMvp || typeof state.gameMvp!=='object') state.gameMvp={};
-  let conf='east',selectedTeam=settings.fav||'BOS',teamTab='roster',listMode='all',fullStatus='Buscando calendário completo…';
+  let conf=settings.fav&&Object.values(western).some(group=>group.includes(settings.fav))?'west':'east',selectedTeam=settings.fav||'BOS',teamTab='roster',listMode='all',fullStatus='Buscando calendário completo…';
   const monthData=new Map(),rosterData=new Map(),statsData=new Map(),requests=new Map();
   const baseAllGames=allGames,baseRender=render,baseGameHtml=gameHtml,baseEditModal=editModal;
   const BRfmt = new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
@@ -154,7 +154,7 @@
       try{raw=await getJson('./data/teams/'+code+'.json');}catch{}
       if(!raw?.players?.length){
         try{
-          const esp=await getJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/'+code.toLowerCase()+'/roster');
+          const esp=await getJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/'+({NOP:'no',UTA:'utah'}[code]||code.toLowerCase())+'/roster');
           const arr=(esp.athletes||[]).flatMap(group=>group.items||[group]).map(x=>x.athlete||x).filter(x=>x.id&&x.displayName);
           raw={players:arr.map(p=>({id:String(p.id),name:p.displayName,number:p.jersey||'',position:p.position?.abbreviation||'',headshot:p.headshot?.href||''}))};
         }catch{}
