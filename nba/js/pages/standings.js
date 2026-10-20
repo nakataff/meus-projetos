@@ -1,4 +1,4 @@
-/* Classificação QUADRA 2026/27 — só jogos oficiais da fase regular finalizados. */
+/* Classificação DE LA QUADRA 2026/27 — resultados finais com projeção ao vivo opcional. */
 import {$,setupShared,EAST,WEST,TEAMS,name,logo,esc,path,teamLink,jsonFile,shortDate,gameLink} from '../app.js?v=10';
 
 setupShared('standings','Classificação da NBA','Tabela geral, conferências Leste e Oeste e divisões da temporada regular 2026/27.');
@@ -111,7 +111,7 @@ function render(){
  '<div class="standings-summary"><div><span class="caps">TEMPORADA REGULAR 2026/27</span>'+
  '<h2>'+board.gamesCount+' '+(board.gamesCount===1?'partida finalizada':'partidas finalizadas')+'</h2>'+
  '<span class="small subtle">Último jogo finalizado: '+(board.lastGameDate?shortDate(board.lastGameDate):'nenhum')+'</span></div>'+
- '<div class="standings-help"><span>'+(fixtures.length?fixtures.length+' '+(fixtures.length===1?'jogo ao vivo':'jogos ao vivo')+' • placar atualizado automaticamente':'Resultados oficiais do site')+'</span>'+
+ '<div class="standings-help"><span>'+(fixtures.length?fixtures.length+' '+(fixtures.length===1?'jogo ao vivo':'jogos ao vivo')+' • consulta a cada 15s':'Resultados finais importados')+'</span>'+
  '<button type="button" class="btn ghost" id="standingsRefresh">↻ Atualizar</button></div></div>'+
  liveScorecards(fixtures)+
  '<div class="standings-live-options"><label><input id="standingsIncludeLive" type="checkbox" '+(includeLive?'checked':'')+'> Considerar resultados parciais na classificação</label>'+ (fixtures.length&&includeLive?'<span>'+projected+' '+(projected===1?'jogo projetado':'jogos projetados')+' • apenas enquanto houver vantagem no placar</span>':'')+'</div>'+ 
