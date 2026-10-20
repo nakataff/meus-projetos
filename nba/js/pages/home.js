@@ -14,10 +14,10 @@ function section(title,actionLabel,href,body,empty){
 function isTeamGame(g,code){return g.away===code||g.home===code;}
 function lastAndNext(fav){
  const today=currentDate(),mine=games.filter(g=>isTeamGame(g,fav));
- const past=mine.filter(g=>effectiveGame(g).status==='final')
+ const past=mine.filter(g=>g.date<=today&&effectiveGame(g).status==='final')
   .sort((a,b)=>(b.date+' '+b.time).localeCompare(a.date+' '+a.time))[0]||null;
- const next=mine.filter(g=>effectiveGame(g).status==='live'||
-  (effectiveGame(g).status!=='final'&&g.date>=today))
+ const next=mine.filter(g=>effectiveGame(g).status!=='final'&&
+  effectiveGame(g).status!=='live'&&g.date>=today)
   .sort((a,b)=>(a.date+' '+a.time).localeCompare(b.date+' '+b.time))[0]||null;
  return {past,next};
 }
@@ -101,7 +101,6 @@ function render(){
  const todayGames=future.filter(g=>g.date===today);
  const tv=future.filter(broadcastInfo).slice(0,5);
  const {settings}=getData(),fav=settings.fav;
- const teamGames=fav?future.filter(g=>isTeamGame(g,fav)).slice(0,3):[];
  const watchlist=future.filter(g=>g.date<week&&note(g.id).wish&&!note(g.id).watched).slice(0,6);
  const nextTomorrow=future.filter(g=>g.date===tomorrow);
  const liveNow=future.filter(g=>effectiveGame(g).status==='live');
