@@ -263,8 +263,8 @@
     let sections='';
     for(const code of [g.away,g.home]){
       const rows=(box.players||{})[code]||[];
-      sections+='<h3>'+esc(teamName(code))+'</h3><div class="qscroll"><table class="qstats-table"><thead><tr><th>Jogador</th><th>MIN</th><th>PTS</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th><th>Minha nota</th><th>MVP</th></tr></thead><tbody>'+
-        rows.map(p=>'<tr><td>'+esc(p.name)+(p.starter?' <span class="qtag green">T</span>':'')+'</td><td>'+esc(p.min)+'</td><td>'+esc(p.pts)+'</td><td>'+esc(p.reb)+'</td><td>'+esc(p.ast)+'</td><td>'+esc(p.stl)+'</td><td>'+esc(p.blk)+'</td><td><button type="button" data-grade-game="'+esc(g.id)+'" data-player-id="'+esc(p.id)+'">'+(state.gameRatings[g.id+':'+p.id]??'Dar nota')+'</button></td><td><button type="button" data-mvp-game="'+esc(g.id)+'" data-player-id="'+esc(p.id)+'">'+(state.gameMvp[g.id]===p.id?'★ Escolhido':'☆ Votar')+'</button></td></tr>').join('')+'</tbody></table></div>';
+      sections+='<h3>'+esc(teamName(code))+'</h3><div class="qscroll"><table class="qstats-table"><thead><tr><th>Jogador</th><th>MIN</th><th>PTS</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th><th>FG</th><th>3PT</th><th>TO</th><th>+/-</th><th>Minha nota</th><th>MVP</th></tr></thead><tbody>'+
+        rows.map(p=>'<tr><td>'+esc(p.name)+(p.starter?' <span class="qtag green">T</span>':'')+'</td><td>'+esc(p.min)+'</td><td>'+esc(p.pts)+'</td><td>'+esc(p.reb)+'</td><td>'+esc(p.ast)+'</td><td>'+esc(p.stl)+'</td><td>'+esc(p.blk)+'</td><td>'+esc(p.fg)+'</td><td>'+esc(p.three)+'</td><td>'+esc(p.to)+'</td><td>'+esc(p.plusMinus)+'</td><td><button type="button" data-grade-game="'+esc(g.id)+'" data-player-id="'+esc(p.id)+'">'+(state.gameRatings[g.id+':'+p.id]??'Dar nota')+'</button></td><td><button type="button" data-mvp-game="'+esc(g.id)+'" data-player-id="'+esc(p.id)+'">'+(state.gameMvp[g.id]===p.id?'★ Escolhido':'☆ Votar')+'</button></td></tr>').join('')+'</tbody></table></div>';
     }
     return sections;
   }
