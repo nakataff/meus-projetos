@@ -1,5 +1,5 @@
 /* QUADRA — só carrega o controlador da página que foi aberta. */
-import {toast} from './app.js?v=9';
+import {toast} from './app.js?v=10';
 const page=document.body.dataset.page;
 const allowed=new Set(['home','games','teams','team','player','game','personal','standings']);
 if(!allowed.has(page))throw Error('Página DE LA QUADRA desconhecida: '+page);
