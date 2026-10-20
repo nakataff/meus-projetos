@@ -1,4 +1,4 @@
-import {$,setupShared,MONTHS,loadGames,TEAMS,groupGames,handleWishes,currentDate,dayShift,niceDate,note,esc,qs} from '../app.js?v=5';
+import {$,setupShared,MONTHS,loadGames,TEAMS,groupGames,handleWishes,currentDate,dayShift,niceDate,note,esc,qs} from '../app.js?v=6';
 
 setupShared('games','Agenda NBA','Veja os jogos de hoje, avance ou volte pelo calendário e filtre os confrontos da temporada.');
 const root=$('#pageContent'),today=currentDate();
