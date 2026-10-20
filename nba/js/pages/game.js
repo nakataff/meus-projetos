@@ -201,8 +201,15 @@ function boxscoreArea(){
  const sortOptions=statFields.map(f=>'<option value="'+f.key+'"'+(statsSort===f.key?' selected':'')+'>'+f.title+'</option>').join('');
  return '<div class="boxscore-interface">'+
  '<div class="boxscore-toolbar"><div class="boxscore-filter" aria-label="Visualizar estatísticas da equipe">'+
- teams.map(([key,label])=>'<button type="button" class="boxscore-team-choice'+(statsTeam===key?' active':'')+
- '" data-stats-team="'+key+'" aria-pressed="'+(statsTeam===key)+'">'+esc(label)+'</button>').join('')+'</div>'+
+ teams.map(([key,label])=>{
+  const logos=key==='both'?
+   '<img src="'+esc(logo(game.away))+'" alt=""><span>+</span><img src="'+esc(logo(game.home))+'" alt="">':
+   '<img src="'+esc(logo(label))+'" alt="">';
+  return '<button type="button" class="boxscore-team-choice'+(statsTeam===key?' active':'')+
+   '" data-stats-team="'+key+'" aria-label="'+(key==='both'?'Ambas as equipes':esc(name(label)))+
+   '" aria-pressed="'+(statsTeam===key)+'"><span class="boxscore-choice-logos">'+logos+'</span>'+
+   '<span class="boxscore-choice-label">'+esc(label)+'</span></button>';
+ }).join('')+'</div>'+
  '<div class="boxscore-sort-controls"><label for="boxscoreSort">Ordenar por</label>'+
  '<select id="boxscoreSort" class="control" aria-label="Ordenar jogadores por estatística">'+sortOptions+'</select>'+
  '<button type="button" class="btn ghost boxscore-order" data-toggle-stats-direction title="Inverter ordem">'+(statsAsc?'↑ Crescente':'↓ Decrescente')+'</button>'+
