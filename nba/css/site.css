@@ -940,3 +940,7 @@ footer{border-top:1px solid var(--border);color:#8293ab;font-size:12px;padding:2
  .team-leader-number strong{font-size:21px}
  .team-last-lineup-head .tag{font-size:9px}
 }
+
+
+/* Campanha resumida na seleção das 30 franquias */
+.team-tile-campaign{display:block;color:#95b2cc;font-size:10px;font-weight:750;margin-top:5px}
