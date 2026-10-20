@@ -306,6 +306,8 @@
     };
     reader.readAsText(file);
   };
+  // O listener antigo capturava a função original antes do carregamento da extensão.
+  E('exportBackupTop').onclick=exportBackup;
   // Clique nas logos/nos nomes dos times nos cards para navegar à franquia.
   const baseTeamHtml=teamHtml;
   teamHtml = (code,right=false)=>baseTeamHtml(code,right).replace('class="team ','data-open-team="'+esc(code)+'" role="button" tabindex="0" title="Abrir elenco" class="team ');
