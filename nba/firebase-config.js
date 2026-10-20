@@ -1,17 +1,14 @@
-/* QUADRA — Configuração pública do aplicativo Web Firebase.
-   Cole aqui o firebaseConfig fornecido no Console do Firebase.
-   Isto NÃO é uma senha privada; são identificadores públicos do aplicativo.
-   Nunca cole serviceAccount, private_key ou tokens de administração.
-*/
-window.QUADRA_FIREBASE_CONFIG = null;
-
-/* EXEMPLO (troque o null pelo objeto obtido no seu Firebase):
+/* Configuração pública do Firebase Web para QUADRA.
+ * Apenas IDs públicos do aplicativo; NÃO adicionar chaves privadas de contas de serviço.
+ * Segurança dos registros: Firebase Authentication + Firestore Rules.
+ */
 window.QUADRA_FIREBASE_CONFIG = {
-  apiKey: "AIza...",
-  authDomain: "SEU_PROJETO.firebaseapp.com",
-  projectId: "SEU_PROJETO",
-  storageBucket: "SEU_PROJETO.firebasestorage.app",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:..."
+  apiKey: "AIzaSyCx1kujDJvx6IyOMSjbmBOA6MIYylfr8HI",
+  authDomain: "nakataff-projetos.firebaseapp.com",
+  databaseURL: "https://nakataff-projetos-default-rtdb.firebaseio.com",
+  projectId: "nakataff-projetos",
+  storageBucket: "nakataff-projetos.firebasestorage.app",
+  messagingSenderId: "445699310937",
+  appId: "1:445699310937:web:5deafcb025cdfa93163848",
+  measurementId: "G-BS1W0RDHZM"
 };
-*/
