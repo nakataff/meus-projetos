@@ -62,10 +62,13 @@ function normalizePlayers(payload,game){
     if(!id)continue;
     const previous=players.get(id)||{};
     const stats=parseStats(row,group);
+    const merged={...previous};
+    for(const [field,value] of Object.entries(stats)){
+      if(value!==null || !(field in merged))merged[field]=value;
+    }
     const name=athlete.displayName||athlete.fullName||previous.name||'Jogador';
     players.set(id,{
-      ...previous,
-      ...stats,
+      ...merged,
       id,name,number:String(athlete.jersey||previous.number||''),
       starter:previous.starter===true||row.starter===true,
       hasStats:previous.hasStats===true||stats.hasStats
