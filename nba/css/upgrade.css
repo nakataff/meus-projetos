@@ -48,3 +48,13 @@
 .qsmallmenu button{padding:9px 10px;font-size:11px;background:#1b2736;border-radius:9px;border:1px solid var(--border);color:#e4ecf6;cursor:pointer}
 @media(max-width:900px){.qtiles{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:620px){.qtiles{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.qteamhero{padding:17px}.qteamhero img{width:63px;height:63px}.qteamhero h2{font-size:19px}.qteamcard img{width:42px;height:42px}.qteamcard{min-height:85px}.qplayerrow{gap:8px}.qplayerrow .avatar{height:42px;width:42px}}
+
+/* Indicador de login e sincronização Firebase — independente do Tracker */
+.qcloud{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 15px;border:1px solid #34435b;border-radius:13px;background:#111c2a;margin:-3px 0 22px;color:#cad7e6;font-size:12px}
+.qcloud-info{display:flex;align-items:center;gap:9px;min-width:0;line-height:1.5}
+.qcloud-icon{font-size:17px;color:#97b9ef}
+.qcloud-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.qcloud-button{border:1px solid #466086;background:#20304a;color:#e7eef9;font-weight:800;font-size:11px;border-radius:9px;padding:8px 11px;cursor:pointer;white-space:nowrap}
+.qcloud-button:hover{background:#304568}
+.qcloud-button:focus-visible{outline:2px solid #ff9143;outline-offset:2px}
+@media(max-width:680px){.qcloud{margin:2px 0 19px;padding:11px}.qcloud-actions{width:100%}.qcloud-button{flex:1}}
