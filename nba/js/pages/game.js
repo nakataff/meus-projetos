@@ -140,19 +140,29 @@ function gameForm(){
 function tabs(){return '<nav class="tabs">'+[['resumo','Resumo'],['quintetos','Escalações'],['stats','Estatísticas'],['avaliar','Minha avaliação']].map(([key,label])=>'<button class="tab '+(tab===key?'active':'')+'" data-tab="'+key+'">'+label+'</button>').join('')+'</nav>';}
 function draw(){
  if(!game){root.innerHTML='<div class="filler">Partida não encontrada. <a href="'+path('jogos/')+'">Ver calendário</a></div>';return;}
- let content=scoreboard()+tabs();
+ const statsReady=!!box&&Object.values(box.players||{}).some(list=>list.some(p=>p.hasStats===true||p.pts!==null&&p.pts!==undefined));
+ const current=gameStatus();
+ let content=scoreboard()+tabs()+sourceNotice();
  if(tab==='resumo'){
   const b=getData().extras;
   content+='<div class="grid two"><section class="card"><h3>Onde assistir</h3><p>'+esc(platform(game))+'</p><p style="margin-top:8px">A confirmação de emissora refere-se às listas brasileiras cadastradas. Disponibilidade do League Pass depende dos direitos locais.</p></section><section class="card"><h3>Meu acompanhamento</h3><p>'+(note(game.id).watched?'✓ Já assisti':'Ainda não marcado como assistido')+'</p><p style="margin-top:10px">Nota: '+(note(game.id).rating||'—')+'/10'+(b.gameMvp?.[game.id]?' • MVP escolhido':'')+'</p><button class="btn" data-open-tab="avaliar">Avaliar partida →</button></section></div>'+
   '<section class="section"><div class="section-title"><h2>Quintetos e estatísticas</h2><button class="btn" data-open-tab="quintetos">Ver escalações</button></div>'+
-  '<p class="info">Quintetos prováveis são projeções obtidas a partir da última escalação confirmada disponível. Não representam anúncio oficial para este jogo.</p></section>';
+  '<p class="info">'+(current.status==='live'?'Confira os titulares identificados e as estatísticas parciais, conforme a fonte disponibilizar.':
+  current.status==='final'?'Confira o box score final e os titulares que começaram a partida.':
+  'Antes do jogo, o QUADRA estima o quinteto considerando quem mais iniciou as últimas cinco partidas. A escalação real pode mudar.')+
+  ' <button class="btn ghost" data-open-tab="stats">Ver estatísticas →</button></p></section>';
  }else if(tab==='quintetos'){
   content+='<div class="grid two">'+lineupPanel(game.away)+lineupPanel(game.home)+'</div>';
  }else if(tab==='stats'){
-  content+=box?'<div class="section"><div class="section-title"><h2>Estatísticas individuais</h2><span class="subtle small">Dados importados após a partida</span></div><div class="card"><h3>'+esc(name(game.away))+'</h3>'+playerStats(game.away)+'</div><div class="card section"><h3>'+esc(name(game.home))+'</h3>'+playerStats(game.home)+'</div></div>':
-  '<div class="filler"><b>Box score ainda não disponível</b>As estatísticas serão exibidas após a importação dos resultados finais.</div>';
+  content+=statsReady?'<div class="section"><div class="section-title"><h2>'+(current.status==='live'?'Estatísticas parciais':'Estatísticas individuais')+'</h2>'+
+  '<span class="subtle small">'+(current.status==='live'?'Parciais, sujeitas a correções':current.status==='final'?'Box score final':'Dados preliminares')+'</span></div>'+
+  '<div class="card"><h3>'+esc(name(game.away))+'</h3>'+playerStats(game.away)+'</div>'+
+  '<div class="card section"><h3>'+esc(name(game.home))+'</h3>'+playerStats(game.home)+'</div></div>':
+  '<div class="filler"><b>Estatísticas individuais ainda indisponíveis</b>'+
+  (current.status==='scheduled'?'Antes do início, confira a aba Escalações para ver o quinteto provável.':
+  'A fonte ainda não publicou os dados desta partida. Você pode atualizar manualmente ou aguardar a próxima consulta.')+'</div>';
  }else if(tab==='avaliar'){
-  content+=gameForm()+(box?'<section class="section"><div class="section-title"><h2>Avaliar jogadores e escolher MVP</h2></div><div class="card"><h3>'+esc(name(game.away))+'</h3>'+playerStats(game.away)+'</div><div class="card section"><h3>'+esc(name(game.home))+'</h3>'+playerStats(game.home)+'</div></section>':'');
+  content+=gameForm()+(statsReady?'<section class="section"><div class="section-title"><h2>Avaliar jogadores e escolher MVP</h2></div><div class="card"><h3>'+esc(name(game.away))+'</h3>'+playerStats(game.away)+'</div><div class="card section"><h3>'+esc(name(game.home))+'</h3>'+playerStats(game.home)+'</div></section>':'');
  }
  root.innerHTML=content;
 }
@@ -164,6 +174,7 @@ function ratePlayer(pid,code){
  $('#ratePlayer').onsubmit=e=>{e.preventDefault();setExtraGroup('gameRatings',game.id+':'+pid,Number($('#rateValue').value));closeModal();draw();toast('Nota do jogador salva');};
 }
 root.addEventListener('click',e=>{
+ if(e.target.closest('#refreshBox')){refreshBox(true);return;}
  const t=e.target.closest('[data-tab],[data-open-tab]');if(t){tab=t.dataset.tab||t.dataset.openTab;draw();return;}
  const r=e.target.closest('[data-player-rating]');if(r){ratePlayer(r.dataset.playerRating,r.dataset.playerTeam);return;}
  const m=e.target.closest('[data-mvp]');if(m){setExtraGroup('gameMvp',game.id,String(m.dataset.mvp));draw();toast('MVP da partida escolhido!');return;}
@@ -177,7 +188,21 @@ root.addEventListener('submit',e=>{
  toast('Partida salva!');draw();
 });
 window.addEventListener('quadra:refresh',()=>{if(game&&tab!=='avaliar')draw()});
-window.addEventListener('quadra:live-update',()=>{if(game&&tab!=='avaliar')draw()});
+window.addEventListener('quadra:live-update',()=>{
+ if(!game)return;
+ if(tab!=='avaliar')draw();
+ const status=gameStatus().status;
+ if(status==='live'||(status!=='final'&&game.date<=currentDate()))refreshBox(false);
+});
+document.addEventListener('visibilitychange',()=>{
+ if(!document.hidden && game && (gameStatus().status!=='final'||!box))refreshBox(false);
+});
+window.addEventListener('online',()=>{if(game&&gameStatus().status!=='final')refreshBox(false)});
+setInterval(()=>{
+ if(!game || document.hidden)return;
+ const status=gameStatus().status;
+ if(status==='live'||(status!=='final'&&game.date<=currentDate()))refreshBox(false);
+},REFRESH_MS);
 async function load(){
  try{
   const games=await loadGames(months);game=games.find(g=>String(g.id)===id||String(g.externalId)===id);
