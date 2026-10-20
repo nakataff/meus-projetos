@@ -63,7 +63,7 @@ function topGames(s,n=5){
 function prefs(s){
  return '<section class="card profile-settings"><div class="section-title"><h2>Conta e preferências</h2></div>'+
  
- '<div class="profile-setting-row"><div><b>Sincronização Google</b><span class="small subtle">'+(account?'Conta conectada. O status da nuvem aparece logo acima.':'Entre pelo botão Google para sincronizar entre aparelhos.')+'</span></div></div>'+
+ '<div class="profile-setting-row"><div><b>Conta Google</b><span class="small subtle">Suas avaliações continuam sendo salvas automaticamente entre dispositivos quando você está conectado.</span></div><div id="firebaseAccountControl" class="profile-cloud-slot"></div></div>'+
  '<div class="profile-setting-row"><div><b>Seus dados</b><span class="small subtle">Exportar um backup antes de trocar ou limpar o navegador.</span></div>'+
  '<div class="profile-backup-actions"><button class="btn accent" id="backup">↓ Baixar JSON</button><button class="btn" id="importBackup">↑ Restaurar</button><input type="file" id="backupFile" accept=".json,application/json" hidden></div></div>'+
  '</section>';
@@ -138,6 +138,7 @@ function render(){
  '<button type="button" class="tab '+(tab===key?'active':'')+'" data-tab="'+key+'">'+label+'</button>').join('')+'</nav>';
  root.innerHTML=header(s)+metrics(s)+heading+
  (tab==='resumo'?summary(s):tab==='atividade'?activity(s):tab==='rankings'?rankings(s):achievements(s));
+ window.dispatchEvent(new Event('quadra:profile-render'));
 }
 function editNickname(){
  const v=getData().settings.nickname||'';
