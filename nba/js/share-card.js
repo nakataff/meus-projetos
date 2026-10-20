@@ -38,11 +38,17 @@ export async function exportPlayerImage({player,teamName,teamCode,teamLogo,heads
  grad.addColorStop(0,'#14263e');grad.addColorStop(1,'#0d121b');
  ctx.fillStyle=grad;ctx.fillRect(0,0,1200,630);
  ctx.fillStyle=COLOR.orange;ctx.fillRect(0,0,1200,9);
- text(ctx,'QUADRA  /  NBA 2026–27',55,58,23,COLOR.orange,true);
+ // Logotipo horizontal na arte de divulgação, com texto como fallback.
  text(ctx,'DESEMPENHO INDIVIDUAL',55,101,18,COLOR.muted,true);
- const [portrait,primary,secondary]=await Promise.all([
-  safeImage(headshot),safeImage(teamLogo),safeImage(opponentLogo)
- ]);
+ const [portrait,primary,secondary,brandImage]=await Promise.all([
+  safeImage(headshot),safeImage(teamLogo),safeImage(opponentLogo),
+   safeImage(new URL('../assets/de%20la%20quadra.webp',import.meta.url).href)
+  ]);
+  if(brandImage){
+   const scale=Math.min(188/brandImage.naturalWidth,67/brandImage.naturalHeight);
+   ctx.drawImage(brandImage,55,23,brandImage.naturalWidth*scale,brandImage.naturalHeight*scale);
+  }else text(ctx,'DE LA QUADRA',55,57,22,COLOR.orange,true);
+  text(ctx,'NBA 2026–27',265,58,19,COLOR.orange,true);
  rounded(ctx,51,146,250,320,23,'#25384f');
  if(portrait){
   const iw=portrait.naturalWidth,ih=portrait.naturalHeight,scale=Math.max(250/iw,320/ih);
@@ -66,11 +72,11 @@ export async function exportPlayerImage({player,teamName,teamCode,teamLogo,heads
  text(ctx,'vs '+(opponent||''),240,547,23,COLOR.white,true,520);
  text(ctx,(score||'').trim(),870,548,28,COLOR.orange,true,245);
  text(ctx,'Dados da partida • Fonte pública não oficial',55,612,13,COLOR.muted);
- text(ctx,'QUADRA',1050,612,19,COLOR.orange,true);
+ text(ctx,'DE LA QUADRA',981,612,18,COLOR.orange,true);
  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png',.95));
  if(!blob)throw Error('Não foi possível criar o PNG');
  const url=URL.createObjectURL(blob),link=document.createElement('a');
- link.href=url;link.download=(filename||'quadra-jogador').replace(/[^a-z0-9._-]/gi,'-')+'.png';
+ link.href=url;link.download=(filename||'dlq-jogador').replace(/[^a-z0-9._-]/gi,'-')+'.png';
  document.body.append(link);link.click();link.remove();
  setTimeout(()=>URL.revokeObjectURL(url),2500);
 }
