@@ -1,4 +1,4 @@
-import {$,setupShared,TEAMS,EAST,WEST,name,logo,esc,qs,fetchRoster,fetchBox,loadGames,MONTHS,currentDate,shortDate,teamLink,playerLink,path,getData,setSettings,setExtraGroup,modify,modal,closeModal,toast,newestStarting,groupGames,handleWishes,showError} from '../app.js?v=4';
+import {$,setupShared,TEAMS,EAST,WEST,name,logo,esc,qs,fetchRoster,fetchBox,loadGames,MONTHS,currentDate,shortDate,teamLink,playerLink,path,getData,setSettings,setExtraGroup,modify,modal,closeModal,toast,newestStarting,groupGames,handleWishes,showError} from '../app.js?v=5';
 const code=(qs('id')||'BOS').toUpperCase(),root=$('#pageContent'),valid=!!TEAMS[code];
 setupShared('teams',valid?name(code):'Equipe não encontrada','Elenco, quintetos confirmados, suas avaliações e próximas partidas.');
 let roster=[],box={},games=[],active='elenco',loadError='',best=null;
