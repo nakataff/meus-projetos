@@ -21,7 +21,9 @@ O QUADRA foi dividido em rotas reais (arquivos HTML próprios), mantendo **exata
 | Página da franquia | [nba/equipe/?id=BOS](./nba/equipe/?id=BOS) |
 | Perfil de atleta | `nba/jogador/?id=ID&team=BOS` |
 | Centro da partida | `nba/jogo/?id=ID&data=2026-10-20` |
-| Meu QUADRA | [nba/meu-quadra/](./nba/meu-quadra/) |
+| Perfil | [nba/perfil/](./nba/perfil/) |
+
+O menu principal agora usa **Perfil** no lugar de “Meu QUADRA”. A página inicial prioriza jogos de hoje, próximos confrontos do time favorito, transmissões brasileiras e partidas marcadas para a semana. As métricas pessoais foram transferidas para o Perfil, com abas **Resumo, Atividade, Rankings e Conquistas**. As conquistas são calculadas dos registros já salvos, sem novos serviços ou consultas ao Firestore. A rota antiga [`nba/meu-quadra/`](./nba/meu-quadra/) continua funcionando para links existentes.
 
 O app utiliza **`nba/css/site.css` e `nba/js/app.js`** como recursos compartilhados. Cada página tem um controlador próprio em `nba/js/pages/`; a página atual carrega somente o controlador necessário. Dados esportivos chegam dos JSON mensais/equipe, e os box scores são carregados apenas ao acessar páginas que precisam deles.
 
