@@ -98,11 +98,33 @@ export function joinGames(remote){
 }
 export async function loadGames(months=MONTHS){const list=(await Promise.all(months.map(fetchMonth))).flat();return joinGames(list);}
 export function platform(g){const p=g.platforms||[];return p.includes('PRIME')&&p.includes('ESPN')?'Prime Video + ESPN':p.includes('PRIME')?'Prime Video':p.includes('ESPN')?'ESPN / Disney+':p.includes('LEAGUE')?'Sem TV BR informada':'Outra transmissão';}
+export function platformLines(g){
+ const channels=g.platforms||[];
+ const espn=channels.includes('ESPN'),prime=channels.includes('PRIME');
+ if(espn&&prime)return {lines:['ESPN / DISNEY+','PRIME VIDEO'],variant:'tv'};
+ if(espn)return {lines:['ESPN / DISNEY+'],variant:'tv'};
+ if(prime)return {lines:['PRIME VIDEO'],variant:'tv'};
+ return {lines:['NBA LEAGUE PASS'],variant:'league'};
+}
 export function gameRow(g){
- const p=note(g.id),tv=(g.platforms||[]).some(x=>x==='ESPN'||x==='PRIME');
- const score=g.status==='final'&&Number.isFinite(Number(g.scoreAway))&&Number.isFinite(Number(g.scoreHome))?'<span class="tag finished">'+esc(g.scoreAway)+' – '+esc(g.scoreHome)+'</span>':'';
- const scoreManual=g.status!=='final'&&p.scoreAway!==undefined&&p.scoreAway!==''&&p.scoreHome!==undefined&&p.scoreHome!==''?'<span class="tag">'+esc(p.scoreAway)+' – '+esc(p.scoreHome)+'</span>':'';
- return '<article class="game-card"><div class="time">'+esc(g.time||'—')+'<small>BRASÍLIA</small></div><a class="matchup" href="'+esc(gameLink(g))+'"><span class="club">'+tlogo(g.away,42)+'<span><strong>'+esc(name(g.away))+'</strong><small>'+esc(g.away)+'</small></span></span><span class="versus">VS</span><span class="club right">'+tlogo(g.home,42)+'<span><strong>'+esc(name(g.home))+'</strong><small>'+esc(g.home)+'</small></span></span></a><div class="game-meta">'+score+scoreManual+(tv?'<span class="tag tv">'+esc(platform(g))+'</span>':'')+(p.watched?'<span class="tag finished">✓ Assistido</span>':'')+(p.rating?'<span class="tag accent">★ '+esc(p.rating)+'</span>':'')+'<button class="fav" title="Quero assistir" aria-label="Quero assistir" data-wish="'+esc(g.id)+'">'+(p.wish?'♥':'♡')+'</button><a class="btn" href="'+esc(gameLink(g))+'">Detalhes ↗</a></div></article>';
+ const p=note(g.id),tv=platformLines(g),href=gameLink(g);
+ const hasFinalScore=g.status==='final'&&g.scoreAway!=null&&g.scoreHome!=null
+   &&Number.isFinite(Number(g.scoreAway))&&Number.isFinite(Number(g.scoreHome));
+ const score=hasFinalScore?'<span class="tag finished">'+esc(g.scoreAway)+' – '+esc(g.scoreHome)+'</span>':'';
+ const manual=g.status!=='final'&&p.scoreAway!==undefined&&p.scoreAway!==''&&p.scoreHome!==undefined&&p.scoreHome!==''?
+   '<span class="tag">'+esc(p.scoreAway)+' – '+esc(p.scoreHome)+'</span>':'';
+ const status=score+manual+(p.watched?'<span class="tag finished">✓ Assistido</span>':'')
+   +(p.rating?'<span class="tag accent">★ '+esc(p.rating)+'</span>':'');
+ const channels=tv.lines.map(label=>'<span>'+esc(label)+'</span>').join('');
+ const broadcast='<span class="broadcast-badge '+tv.variant+(tv.lines.length>1?' multi':'')+'" title="Transmissão: '+esc(tv.lines.join(' / '))+'">'+channels+'</span>';
+ return '<article class="game-card game-card-link">'+
+ '<div class="time">'+esc(g.time||'—')+'<small>BRASÍLIA</small></div>'+
+ '<a class="matchup" href="'+esc(href)+'" aria-label="Abrir partida: '+esc(name(g.away))+' x '+esc(name(g.home))+'">'+
+ '<span class="club">'+tlogo(g.away,42)+'<span><strong>'+esc(name(g.away))+'</strong><small>'+esc(g.away)+'</small></span></span>'+
+ '<span class="versus">VS</span>'+
+ '<span class="club right">'+tlogo(g.home,42)+'<span><strong>'+esc(name(g.home))+'</strong><small>'+esc(g.home)+'</small></span></span></a>'+
+ '<div class="game-meta"><div class="game-status">'+status+'</div>'+broadcast+
+ '<button type="button" class="fav" title="'+(p.wish?'Remover da minha lista':'Quero assistir')+'" aria-label="'+(p.wish?'Remover da lista':'Quero assistir')+'" aria-pressed="'+!!p.wish+'" data-wish="'+esc(g.id)+'">'+(p.wish?'♥':'♡')+'</button></div></article>';
 }
 export function groupGames(list){let out='',last='';for(const g of list){if(g.date!==last){last=g.date;out+='<h3 class="dayhead">'+esc(niceDate(last))+'</h3>';}out+=gameRow(g);}return out||'<div class="filler"><b>Nenhum jogo encontrado</b>Tente outro filtro ou período.</div>';}
 export function handleWishes(target,callback){const b=target.closest('[data-wish]');if(!b)return false;const id=b.dataset.wish;toggleWish({id});callback?.();return true;}
