@@ -54,7 +54,7 @@ A rotina **não é placar ao vivo**. Box scores são dados importados após o t�
 
 ### Dados pessoais e Firebase (futuro)
 
-**Nenhum Firebase foi ativado.** As avaliações ficam no `localStorage` do navegador. Use o botão **Backup** antes de trocar de dispositivo ou limpar dados. O backup versão 2 inclui as notas individuais de jogadores e seus votos. Futuramente podemos acrescentar login Google/Firebase para sincronizar essas informações.
+**Firebase pronto para configurar.** A interface já oferece login Google e sincronização opcional com Cloud Firestore, mas **só funciona depois que o proprietário criar o projeto no Firebase e configurar as regras**. Enquanto isso, as avaliações continuam no `localStorage`. Leia o [passo a passo de instalação](./nba/firebase/SETUP.md). O backup JSON continua disponível e deve ser feito antes da primeira migração.
 
 Não comite tokens, credenciais privadas ou chaves administrativas no repositório público.
 
