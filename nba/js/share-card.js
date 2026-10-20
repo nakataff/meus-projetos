@@ -29,7 +29,7 @@ function metric(ctx,x,y,n,caption){
  text(ctx,caption,x+25,y+102,18,COLOR.muted,true);
 }
 function valid(v){return v!==null&&v!==undefined&&v!=='' ?String(v):'—';}
-export async function exportPlayerImage({player,teamName,teamCode,teamLogo,headshot,gameLabel,date,score,opponent,opponentLogo,filename}){
+export async function exportPlayerImage({player,teamName,teamCode,teamLogo,headshot,gameLabel,date,score,opponent,opponentLogo,filename,mode='download',rating}){
  const canvas=document.createElement('canvas');
  canvas.width=SIZE.width;canvas.height=SIZE.height;
  const ctx=canvas.getContext('2d',{alpha:false});
@@ -45,10 +45,15 @@ export async function exportPlayerImage({player,teamName,teamCode,teamLogo,heads
    safeImage(new URL('../assets/de%20la%20quadra.webp',import.meta.url).href)
   ]);
   if(brandImage){
-   const scale=Math.min(188/brandImage.naturalWidth,67/brandImage.naturalHeight);
-   ctx.drawImage(brandImage,55,23,brandImage.naturalWidth*scale,brandImage.naturalHeight*scale);
+   const scale=Math.min(240/brandImage.naturalWidth,78/brandImage.naturalHeight);
+   ctx.drawImage(brandImage,55,18,brandImage.naturalWidth*scale,brandImage.naturalHeight*scale);
   }else text(ctx,'DE LA QUADRA',55,57,22,COLOR.orange,true);
-  text(ctx,'NBA 2026–27',265,58,19,COLOR.orange,true);
+  text(ctx,'NBA 2026–27',325,58,19,COLOR.orange,true);
+  if(rating!==undefined&&rating!==null&&rating!==''){
+   rounded(ctx,963,27,187,105,17,'#23364d');
+   text(ctx,'NOTA DLQ',979,48,16,COLOR.muted,true);
+   text(ctx,String(rating)+'/10',979,96,40,COLOR.orange,true,153);
+  }
  rounded(ctx,51,146,250,320,23,'#25384f');
  if(portrait){
   const iw=portrait.naturalWidth,ih=portrait.naturalHeight,scale=Math.max(250/iw,320/ih);
@@ -75,10 +80,25 @@ export async function exportPlayerImage({player,teamName,teamCode,teamLogo,heads
  text(ctx,'DE LA QUADRA',981,612,18,COLOR.orange,true);
  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png',.95));
  if(!blob)throw Error('Não foi possível criar o PNG');
+ const safeName=(filename||'dlq-jogador').replace(/[^a-z0-9._-]/gi,'-')+'.png';
+ if(mode==='share'){
+  const file=new File([blob],safeName,{type:'image/png'});
+  if(typeof navigator.share==='function'&&(!navigator.canShare||navigator.canShare({files:[file]}))){
+   try{
+    await navigator.share({files:[file],title:'DE LA QUADRA',text:'Desempenho de '+String(player?.name||'jogador')});
+    return 'shared';
+   }catch(e){if(e?.name==='AbortError')return 'cancelled';}
+  }
+  if(navigator.clipboard?.write&&typeof ClipboardItem!=='undefined'){
+   try{await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);return 'copied';}
+   catch(e){/* navegador sem permissão para copiar imagens */ }
+  }
+ }
  const url=URL.createObjectURL(blob),link=document.createElement('a');
- link.href=url;link.download=(filename||'dlq-jogador').replace(/[^a-z0-9._-]/gi,'-')+'.png';
+ link.href=url;link.download=safeName;
  document.body.append(link);link.click();link.remove();
  setTimeout(()=>URL.revokeObjectURL(url),2500);
+ return 'downloaded';
 }
 export async function sharePlayerLink(url,title){
  if(typeof navigator.share==='function'){
