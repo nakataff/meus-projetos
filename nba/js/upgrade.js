@@ -30,7 +30,7 @@
   const teamGroup=code=>Object.entries({...eastern,...western}).find(([,codes])=>codes.includes(code))?.[0]||'';
   const teamConf=code=>Object.values(eastern).some(g=>g.includes(code))?'Leste':'Oeste';
   const isFuture=g=>g.date>=todayBR();
-  function persistExtra(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch{toast('Não foi possível salvar as notas dos jogadores. Faça backup.');}}
+  function persistExtra(){try{state.updatedAt=new Date().toISOString();localStorage.setItem(KEY,JSON.stringify(state));window.dispatchEvent(new Event('quadra:local-change'))}catch{toast('Não foi possível salvar as notas dos jogadores. Faça backup.');}}
   function apiCode(x){x=String(x||'').toUpperCase();return aliases[x]||x;}
   async function getJson(url){
     const controller=new AbortController(),t=setTimeout(()=>controller.abort(),12000);
@@ -351,4 +351,27 @@
   loadStats(todayBR().slice(0,7)).then(()=>{if(view==='teams')render();});
   const previous=dateShift(todayBR(),-30).slice(0,7);
   if(previous!==todayBR().slice(0,7))loadStats(previous).then(()=>{if(view==='teams')render();});
+
+  // Ponte controlada para sincronização: reutiliza estado do aplicativo em memória.
+  window.QuadraBridge = {
+    snapshot() {
+      return JSON.parse(JSON.stringify({saved,settings,extras:state}));
+    },
+    applyRemote(bundle) {
+      if(!bundle || !bundle.saved || !bundle.settings || !bundle.extras)return;
+      saved={notes:bundle.saved.notes||{},custom:bundle.saved.custom||[]};
+      settings={...bundle.settings};
+      state={...stateDefault,...bundle.extras};
+      // Não dispara quadra:local-change: atualizações vindas da nuvem não são edições.
+      try {
+        localStorage.setItem(STORAGE,JSON.stringify(saved));
+        localStorage.setItem(SETTINGS,JSON.stringify(settings));
+        localStorage.setItem(KEY,JSON.stringify(state));
+      } catch(e){console.warn('QUADRA: espaço local insuficiente',e);}
+      E('favTeam').value=settings.fav||'';
+      syncSpoilers();
+      refreshMonths();
+      if(!E('modalRoot').firstChild)render();
+    }
+  };
 })();
