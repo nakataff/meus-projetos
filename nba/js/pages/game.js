@@ -1,7 +1,7 @@
-import {$,setupShared,qs,esc,name,logo,tlogo,effectiveGame,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,note,getData,setNote,setExtraGroup,platform,broadcastLinks,shortDate,currentDate,toast,modal,closeModal,eventBox,fetchRoster} from '../app.js?v=9';
+import {$,setupShared,qs,esc,name,logo,tlogo,effectiveGame,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,note,getData,setNote,setExtraGroup,platform,broadcastLinks,shortDate,currentDate,toast,modal,closeModal,eventBox,fetchRoster} from '../app.js?v=10';
 import {fetchLiveBoxscore,projectStartingFive} from '../boxscore.js?v=1';
-import {exportPlayerImage} from '../share-card.js?v=2';
-import {performanceRating,ratingLabel,topPerformance,RATING_EXPLANATION} from '../performance-rating.js?v=1';
+import {exportPlayerImage} from '../share-card.js?v=3';
+import {performanceRating,ratingLabel,topPerformance,RATING_EXPLANATION} from '../performance-rating.js?v=2';
 const id=qs('id')||'',hint=qs('data')||'',root=$('#pageContent');
 setupShared('games','Centro da partida','Escalações, estatísticas e seu diário pessoal de basquete.');
 let game=null,boxes={},box=null,probable={},rosters={},tab='resumo';
