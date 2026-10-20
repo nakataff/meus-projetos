@@ -9,6 +9,28 @@ Central pessoal de aplicativos e ferramentas web da conta **nakataff**.
 
 **Links quando o GitHub Pages estiver publicado:** [Central](https://nakataff.github.io/meus-projetos/) · [NBA Tracker](https://nakataff.github.io/meus-projetos/nba/)
 
+## QUADRA 3 — páginas independentes
+
+O QUADRA foi dividido em rotas reais (arquivos HTML próprios), mantendo **exatamente a mesma origem, localStorage e coleção Firestore** para preservar o histórico:
+
+| Página | Endereço |
+| --- | --- |
+| Início | [nba/](./nba/) |
+| Agenda e transmissões | [nba/jogos/](./nba/jogos/) |
+| Conferências e 30 equipes | [nba/equipes/](./nba/equipes/) |
+| Página da franquia | [nba/equipe/?id=BOS](./nba/equipe/?id=BOS) |
+| Perfil de atleta | `nba/jogador/?id=ID&team=BOS` |
+| Centro da partida | `nba/jogo/?id=ID&data=2026-10-20` |
+| Meu QUADRA | [nba/meu-quadra/](./nba/meu-quadra/) |
+
+O app utiliza **`nba/css/site.css` e `nba/js/app.js`** como recursos compartilhados. Cada página tem um controlador próprio em `nba/js/pages/`; a página atual carrega somente o controlador necessário. Dados esportivos chegam dos JSON mensais/equipe, e os box scores são carregados apenas ao acessar páginas que precisam deles.
+
+**Compatibilidade:** os registros antigos em `quadra_nba_2026_27_v1`, `quadra_nba_settings_v1` e `quadra_nba_extra_2026_27_v1` continuam válidos. A integração Google/Firebase utiliza a mesma `QuadraBridge` e os mesmos documentos de usuário. A versão anterior foi preservada em [nba/legacy.html](./nba/legacy.html).
+
+Na nova página de partida, o quinteto antes do jogo é indicado **como projeção baseada em titularidades anteriores**, nunca como escalação oficial. Titulares oficiais são marcados somente quando já existem no box score. O modo sem spoilers vale em toda a navegação.
+
+**Antes de começar a usar a nova versão intensivamente, faça um backup JSON** na página Meu QUADRA, teste uma avaliação no computador e verifique se ela surge no celular com a mesma conta Google.
+
 ## QUADRA: como funciona
 
 A agenda inicial contém os jogos brasileiros da ESPN/Disney+ e do Prime Video. Os demais confrontos, elencos e estatísticas finais vêm de arquivos JSON atualizados pelo GitHub Actions.
