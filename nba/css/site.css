@@ -845,3 +845,98 @@ footer{border-top:1px solid var(--border);color:#8293ab;font-size:12px;padding:2
  .standings-team-col>a small{font-size:9px}
  .standings-rank{width:20px;font-size:10px}
 }
+
+
+/* Perfil de franquia — números coletivos e ranking individual */
+.team-tabs{gap:5px;flex-wrap:wrap;margin:13px 0 18px}
+.team-tabs .tab{font-size:12px;padding:11px 13px}
+.team-stats-switch{display:flex;gap:9px;flex-wrap:wrap;margin:16px 0 20px}
+.team-stats-switch .pill{padding:10px 15px}
+.team-no-games{padding:19px;border-radius:13px;background:#1b293a;border:1px solid #42546d;display:flex;flex-direction:column;gap:6px;color:#adbed2;font-size:12px}
+.team-no-games b{color:#f1f5fc;font-size:14px}
+.team-metrics-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.team-metric{min-width:0;padding:17px 15px;background:linear-gradient(135deg,#1a293b,#131e2c);border:1px solid #344760;border-radius:13px;display:flex;flex-direction:column;gap:6px}
+.team-metric>span{font-size:10px;font-weight:900;letter-spacing:.075em;color:#a6bcd1}
+.team-metric strong{font-weight:950;color:#f4f8ff;font-size:clamp(18px,2vw,26px);line-height:1.25;font-variant-numeric:tabular-nums}
+.team-metric small{color:#96a9c0;font-size:11px}
+.team-stats-footnote{font-size:11px;color:#91a6bb;line-height:1.65;margin:13px 2px 20px}
+.team-leaders{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+.team-leader-card{background:#172436;border:1px solid #3a4e65;border-radius:14px;padding:14px;min-width:0}
+.team-leader-card>.caps{font-size:10px;color:#a7b9ce}
+.team-leader-inner{display:flex;align-items:center;gap:10px;margin-top:13px;min-width:0}
+.team-leader-inner>img{width:56px;height:61px;object-fit:cover;background:#283a50;border:1px solid #4c617a;border-radius:9px;flex:none}
+.team-leader-inner>div:nth-child(2){flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.team-leader-inner a{font-weight:900;font-size:12px;color:#f4f8fc;line-height:1.3}
+.team-leader-inner a:hover{text-decoration:underline}
+.team-leader-inner span{font-size:10px;color:#96acc2}
+.team-leader-number{flex:none;display:flex;flex-direction:column;align-items:center;gap:2px;color:#ffc48b}
+.team-leader-number strong{font-size:25px;font-weight:950;line-height:1.1;font-variant-numeric:tabular-nums}
+.team-leader-number small{font-size:9px}
+.team-last-lineup{border:1px solid #33465e;background:#151f2d;border-radius:14px;padding:15px}
+.team-last-lineup-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:13px}
+.team-last-lineup-head>div{display:flex;flex-direction:column;gap:3px}
+.team-last-lineup-head strong{font-size:13px}
+.team-last-lineup-head span{font-size:11px;color:#9eb1c6}
+.team-last-lineup-head .tag{font-size:10px}
+.team-last-lineup-players{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}
+.team-last-lineup-players a{min-width:0;display:flex;flex-direction:column;gap:7px;align-items:center;text-align:center;padding:11px 6px;border-radius:10px;background:#1d2c3e;border:1px solid #344a63}
+.team-last-lineup-players a:hover{border-color:#dba36d;background:#2c3d52}
+.team-last-lineup-players a img{width:60px;height:66px;object-fit:cover;border-radius:9px;background:#2b3a4e}
+.team-last-lineup-players a>span{display:flex;min-width:0;flex-direction:column;gap:3px}
+.team-last-lineup-players a strong{font-size:11px;white-space:normal;overflow-wrap:anywhere}
+.team-last-lineup-players a small{font-size:10px;color:#a5b6c8}
+.team-last-lineup>p{margin:13px 0 0;font-size:10px}
+.team-quick-links{display:flex;gap:10px;flex-wrap:wrap;margin:15px 0 28px}
+.team-ranking-toolbar{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin:12px 0 14px}
+.team-ranking-toolbar label{display:flex;align-items:center;gap:9px;font-size:11px;color:#acbbcd;font-weight:850}
+.team-ranking-toolbar .control{min-width:160px;font-size:12px}
+.team-rank-scroll{width:100%;overflow-x:auto;scrollbar-width:thin;border-radius:13px;border:1px solid #37495e;background:#141e2c}
+.team-rank-table{width:100%;min-width:770px;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+.team-rank-table th,.team-rank-table td{border-bottom:1px solid #2e3e50;text-align:center;white-space:nowrap;padding:10px 9px}
+.team-rank-table thead{background:#1c2939}
+.team-rank-table thead th{font-size:10px;color:#b1c4da}
+.team-rank-table thead button{border:0;background:transparent;color:#aebfd1;font-size:10px;font-weight:850;cursor:pointer;white-space:nowrap}
+.team-rank-table thead button.selected,.team-rank-table td.selected{color:#ffd0a2;font-weight:950}
+.team-rank-table tr:nth-child(even){background:#182535}
+.team-rank-table tr:hover{background:#24374a}
+.team-rank-table th.team-rank-player{position:sticky;left:0;z-index:1;text-align:left;min-width:205px;width:205px;background:#141e2c;box-shadow:1px 0 #3c4a5e}
+.team-rank-table thead th.team-rank-player{z-index:2;background:#1c2939}
+.team-rank-table tbody tr:nth-child(even) .team-rank-player{background:#182535}
+.team-rank-table tr:hover .team-rank-player{background:#24374a}
+.team-rank-player a{display:flex;gap:9px;align-items:center;min-width:0}
+.team-rank-player img{height:38px;width:37px;object-fit:cover;border-radius:8px;border:1px solid #3d5069;background:#2b3a4c;flex:none}
+.team-rank-player a span{display:flex;flex-direction:column;gap:4px;min-width:0}
+.team-rank-player b{font-size:11px;overflow:hidden;text-overflow:ellipsis}
+.team-rank-player small{font-size:9px;color:#98a9bd}
+.team-roster-list{padding:8px 13px}
+@media(max-width:1080px){
+ .team-metrics-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .team-leaders{grid-template-columns:1fr}
+ .team-last-lineup-players{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:740px){
+ .team-tabs{display:flex;overflow-x:auto;flex-wrap:nowrap;padding:0 0 6px;scrollbar-width:thin}
+ .team-tabs .tab{white-space:nowrap;flex:none;font-size:11px;padding:10px 11px}
+ .team-metrics-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .team-metric{padding:13px 10px}
+ .team-metric strong{font-size:21px}
+ .team-metric>span{font-size:9px}
+ .team-metric small{font-size:10px}
+ .team-stats-switch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .team-stats-switch .pill{padding:10px 7px;font-size:11px}
+ .team-last-lineup-players{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+ .team-last-lineup-players a{padding:9px 4px}
+ .team-last-lineup-players a img{width:55px;height:58px}
+ .team-rank-table{min-width:690px;font-size:11px}
+ .team-rank-table th,.team-rank-table td{padding:9px 6px}
+ .team-rank-table th.team-rank-player{min-width:150px;width:150px}
+ .team-rank-player img{height:32px;width:31px}
+ .team-rank-player b{font-size:10px}
+ .team-leader-inner>img{width:52px;height:55px}
+ .team-rank-table td{font-size:11px}
+}
+@media(max-width:390px){
+ .team-leader-inner{gap:7px}
+ .team-leader-number strong{font-size:21px}
+ .team-last-lineup-head .tag{font-size:9px}
+}
