@@ -258,6 +258,97 @@ function gameForm(){
  '<div class="field"><label>Comentários e observações</label><textarea class="control" id="comment" maxlength="1400" placeholder="Melhor jogador, lances importantes e o que achou da partida…">'+esc(p.comment||'')+'</textarea></div>'+
  '<div class="modal-footer"><button class="btn accent" type="submit">Salvar avaliação ✓</button></div></form></section>';
 }
+function teamPlayers(code){
+ return (box?.players?.[code]||[]).filter(p=>p?.id && p?.name &&
+  (p.hasStats===true||statValue(p,'pts')!==null||statValue(p,'min')!==null));
+}
+function teamSum(code,key){
+ const players=teamPlayers(code),values=players.map(p=>statValue(p,key)).filter(v=>v!==null);
+ if(!values.length)return null;
+ return values.reduce((total,value)=>total+value,0);
+}
+function gameLeaders(){
+ const all=[game.away,game.home].flatMap(code=>teamPlayers(code).map(p=>({code,player:p})));
+ return [['pts','Pontos','PTS'],['reb','Rebotes','REB'],['ast','Assistências','AST']].map(([key,title,unit])=>{
+  const candidates=all.filter(x=>statValue(x.player,key)!==null);
+  candidates.sort((a,b)=>statValue(b.player,key)-statValue(a.player,key)||
+   statValue(b.player,'pts')-statValue(a.player,'pts'));
+  return {key,title,unit,leader:candidates.length&&statValue(candidates[0].player,key)>0?candidates[0]:null};
+ });
+}
+function leaderCards(){
+ const leaders=gameLeaders();
+ return '<section class="section"><div class="section-title"><h2>Quem está se destacando</h2>'+
+ '<button class="btn ghost" type="button" data-open-tab="stats">Box score completo →</button></div>'+
+ '<div class="overview-leader-grid">'+leaders.map(item=>{
+  if(!item.leader)return '<article class="overview-leader"><span class="caps">'+esc(item.title)+'</span>'+
+   '<div class="overview-leader-empty">Aguardando dados</div></article>';
+  const {code,player}=item.leader,num=statValue(player,item.key);
+  return '<article class="overview-leader"><span class="caps">'+esc(item.title)+'</span>'+
+   '<div class="overview-leader-body">'+playerPortrait(player,code)+
+   '<div class="overview-leader-person"><a href="'+playerLink(player.id,code)+'">'+esc(player.name)+'</a>'+
+   '<span><img src="'+esc(logo(code))+'" loading="lazy" alt="">'+esc(name(code))+'</span></div>'+
+   '<div class="overview-leader-value"><strong>'+esc(num)+'</strong><small>'+item.unit+'</small></div></div></article>';
+ }).join('')+'</div></section>';
+}
+function teamComparison(){
+ const metrics=[
+  {key:'reb',label:'Rebotes'},
+  {key:'ast',label:'Assistências'},
+  {key:'three',label:'Bolas de 3'},
+  {key:'stl',label:'Roubos'},
+  {key:'to',label:'Turnovers'}
+ ].map(m=>({...m,left:teamSum(game.away,m.key),right:teamSum(game.home,m.key)}))
+ .filter(m=>m.left!==null&&m.right!==null);
+ if(!metrics.length)return '';
+ return '<section class="section overview-comparison"><div class="section-title"><h2>Comparativo das equipes</h2>'+
+ '<button class="btn ghost" type="button" data-open-tab="stats">Todos os números →</button></div>'+
+ '<div class="overview-duel"><div class="overview-duel-head"><span><img src="'+esc(logo(game.away))+'" alt="">'+esc(game.away)+'</span>'+
+ '<strong>Somatório do box score</strong><span>'+esc(game.home)+'<img src="'+esc(logo(game.home))+'" alt=""></span></div>'+
+ metrics.map(m=>{
+  const maximum=Math.max(m.left,m.right,1),leftWidth=Math.round(m.left/maximum*100),rightWidth=Math.round(m.right/maximum*100);
+  return '<div class="overview-metric"><div class="overview-metric-label">'+esc(m.label)+'</div>'+
+  '<div class="overview-metric-values"><b>'+esc(m.left)+'</b>'+
+  '<div class="overview-metric-bars"><div class="overview-metric-half left"><i style="width:'+leftWidth+'%"></i></div>'+
+  '<div class="overview-metric-half right"><i style="width:'+rightWidth+'%"></i></div></div>'+
+  '<b>'+esc(m.right)+'</b></div></div>';
+ }).join('')+'</div><p class="overview-data-note">'+
+ (gameStatus().status==='live'?'Dados parciais da partida, sujeitos a correções.':
+  'Soma das estatísticas individuais disponíveis para cada equipe; pode diferir dos totais oficiais.')+
+ '</p></section>';
+}
+function summaryLineups(){
+ const teams=[game.away,game.home],content=teams.map(code=>{
+  const info=starterList(code),confirmed=info.confirmed;
+  return '<div class="overview-lineup-team"><div class="overview-lineup-head"><img src="'+esc(logo(code))+'" alt="">'+
+  '<div><strong>'+esc(name(code))+'</strong><span>'+(confirmed?'✓ Titulares informados':'◇ Provável quinteto')+'</span></div></div>'+
+  (info.list.length?'<div class="overview-lineup-players">'+info.list.slice(0,5).map(p=>
+   '<a href="'+playerLink(p.id,code)+'">'+esc(p.name)+'</a>').join('')+'</div>':
+   '<p class="small subtle">Sem escalação disponível no momento.</p>')+'</div>';
+ }).join('');
+ return '<section class="section"><div class="section-title"><h2>Quintetos do confronto</h2>'+
+ '<button class="btn ghost" type="button" data-open-tab="quintetos">Ver escalações →</button></div>'+
+ '<div class="overview-lineups">'+content+'</div>'+
+ '<p class="overview-data-note">As projeções são baseadas em jogos anteriores; somente os titulares identificados pela fonte são confirmados.</p></section>';
+}
+function overviewHtml(current,statsReady){
+ const saved=note(game.id),mvp=getData().extras.gameMvp?.[game.id];
+ const gameType=typeof game.stage==='string' && isNaN(Number(game.stage))?game.stage:
+  Number(game.stage)===1?'Pré-temporada':Number(game.stage)===3?'Playoffs':'Temporada regular';
+ const complete=statsReady && [game.away,game.home].every(code=>teamPlayers(code).length>0);
+ return '<section class="overview-quickfacts"><div><span class="caps">Competição</span><strong>'+esc(gameType)+'</strong></div>'+
+ '<div><span class="caps">Data e horário</span><strong>'+esc(shortDate(game.date))+' • '+esc(game.time||'A definir')+' BRT</strong></div>'+
+ '<div><span class="caps">Onde assistir</span><strong>'+esc(platform(game))+'</strong></div>'+
+ '<div><span class="caps">Meu registro</span><strong>'+(saved.watched?'✓ Assistido':saved.wish?'♡ Na minha lista':'Não avaliado')+
+ (Number(saved.rating)>0?' • ★ '+esc(saved.rating)+'/10':'')+'</strong></div></section>'+
+ (statsReady?leaderCards()+(complete?teamComparison():''):'' )+
+ summaryLineups()+
+ '<div class="overview-footer"><div><strong>Seu diário da partida</strong><span>'+(
+  mvp?'Você já escolheu seu MVP.':
+  saved.watched?'Partida marcada como assistida.':
+  'Dê sua nota, escolha o MVP e guarde suas observações.')+'</span></div>'+
+ '<button type="button" class="btn accent" data-open-tab="avaliar">'+(saved.watched?'Ver minha avaliação':'Avaliar partida')+' →</button></div>';
+}
 function tabs(){return '<nav class="tabs">'+[['resumo','Resumo'],['quintetos','Escalações'],['stats','Estatísticas'],['avaliar','Minha avaliação']].map(([key,label])=>'<button class="tab '+(tab===key?'active':'')+'" data-tab="'+key+'">'+label+'</button>').join('')+'</nav>';}
 function draw(){
  if(!game){root.innerHTML='<div class="filler">Partida não encontrada. <a href="'+path('jogos/')+'">Ver calendário</a></div>';return;}
@@ -265,13 +356,7 @@ function draw(){
  const current=gameStatus();
  let content=scoreboard()+tabs()+sourceNotice();
  if(tab==='resumo'){
-  const b=getData().extras;
-  content+='<div class="grid two"><section class="card"><h3>Onde assistir</h3><p>'+esc(platform(game))+'</p><p style="margin-top:8px">A confirmação de emissora refere-se às listas brasileiras cadastradas. Disponibilidade do League Pass depende dos direitos locais.</p></section><section class="card"><h3>Meu acompanhamento</h3><p>'+(note(game.id).watched?'✓ Já assisti':'Ainda não marcado como assistido')+'</p><p style="margin-top:10px">Nota: '+(note(game.id).rating||'—')+'/10'+(b.gameMvp?.[game.id]?' • MVP escolhido':'')+'</p><button class="btn" data-open-tab="avaliar">Avaliar partida →</button></section></div>'+
-  '<section class="section"><div class="section-title"><h2>Quintetos e estatísticas</h2><button class="btn" data-open-tab="quintetos">Ver escalações</button></div>'+
-  '<p class="info">'+(current.status==='live'?'Confira os titulares identificados e as estatísticas parciais, conforme a fonte disponibilizar.':
-  current.status==='final'?'Confira o box score final e os titulares que começaram a partida.':
-  'Antes do jogo, o QUADRA estima o quinteto considerando quem mais iniciou as últimas cinco partidas. A escalação real pode mudar.')+
-  ' <button class="btn ghost" data-open-tab="stats">Ver estatísticas →</button></p></section>';
+  content+=overviewHtml(current,statsReady);
  }else if(tab==='quintetos'){
   content+='<div class="grid two">'+lineupPanel(game.away)+lineupPanel(game.home)+'</div>';
  }else if(tab==='stats'){
