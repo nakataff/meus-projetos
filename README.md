@@ -101,3 +101,10 @@ Não comite tokens, credenciais privadas ou chaves administrativas no repositór
 ## Organização
 
 Cada aplicativo fica em uma pasta independente para evitar downloads e dependências desnecessários em outros projetos.
+
+
+### Nota QUADRA e classificação da NBA 2026/27
+
+- **Nota QUADRA**: nota automática de 1,0 a 10,0 com algoritmo próprio, a partir de pontos, rebotes, assistências, roubos, tocos, desperdícios, arremessos errados e saldo em quadra. Não equivale à nota oficial NBA/SofaScore. É mostrada no box score e no destaque do melhor desempenho de cada partida. A nota pessoal do usuário permanece independente.
+- **Sem placar manual**: o diário da partida continua permitindo marcar jogos assistidos, avaliar e comentar. Os placares antigos foram preservados nos backups, mas não aparecem nos cards nem sobrescrevem os importados.
+- **Classificação**: a rota nba/classificacao/ apresenta a tabela geral, conferências e divisões. O script scripts/sync_nba.py gera o arquivo compacto nba/data/standings/2026-27.json a partir dos jogos finalizados da temporada regular, excluindo pré-temporada e playoffs. A ordenação de empates usa aproveitamento e saldo; não reproduz todos os critérios oficiais da NBA.
