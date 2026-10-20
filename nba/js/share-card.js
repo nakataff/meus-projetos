@@ -52,7 +52,7 @@ export async function exportPlayerImage({player,teamName,teamCode,teamLogo,heads
   if(rating!==undefined&&rating!==null&&rating!==''){
    rounded(ctx,963,27,187,105,17,'#23364d');
    text(ctx,'NOTA DLQ',979,48,16,COLOR.muted,true);
-   text(ctx,String(rating)+'/10',979,96,40,COLOR.orange,true,153);
+   text(ctx,String(rating),979,96,46,COLOR.orange,true,153);
   }
  rounded(ctx,51,146,250,320,23,'#25384f');
  if(portrait){
