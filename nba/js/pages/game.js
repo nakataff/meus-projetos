@@ -9,7 +9,9 @@ let statsSort='rating',statsAsc=false;
 let statsTeam='both'; // No mobile, Ambos mostra ranking misto das duas franquias.
 let statsDetail=false;
 let remoteBox=null,remoteStatus=null,lastStatsCheck=0,checkingStats=false,statsMessage='',lastSuccess=null;
-const REFRESH_MS=120000;
+const REFRESH_MS=120000; // Consulta de pré-jogo / estatísticas pendentes
+const LIVE_REFRESH_MS=30000; // Somente durante partidas ao vivo
+let previousDisplayedScores=null;
 function gameStatus(){
  const event=effectiveGame(game);
  if(!remoteStatus)return event;
@@ -75,10 +77,11 @@ function sourceNotice(){
 async function refreshBox(force=false){
  if(!game||checkingStats||document.hidden)return;
  const now=Date.now();
- if(!force&&now-lastStatsCheck<REFRESH_MS-20000)return;
+ const interval=gameStatus().status==='live'?LIVE_REFRESH_MS:REFRESH_MS;
+ if(!force&&now-lastStatsCheck<interval)return;
  lastStatsCheck=now;
  checkingStats=true;statsMessage='Buscando escalações e box score na fonte pública…';
- if(tab!=='avaliar')draw();
+ if(force&&tab!=='avaliar')draw();
  try{
   const result=await fetchLiveBoxscore(game);
   if(result){
@@ -96,7 +99,12 @@ async function refreshBox(force=false){
   console.warn('QUADRA: não foi possível obter box score da ESPN',err);
   statsMessage=box?'Consulta indisponível; exibindo os dados importados.':
    'Consulta indisponível no momento; projeções anteriores continuam disponíveis.';
- }finally{checkingStats=false;if(tab!=='avaliar')draw();}
+ }finally{
+  checkingStats=false;
+  if(tab==='avaliar')updateScoreboardWithoutResettingForm();
+  else draw();
+  syncOpenPlayerPerformance();
+ }
 }
 
 const maybeMonth=hint.slice(0,7),months=MONTHS.includes(maybeMonth)?[maybeMonth]:MONTHS;
@@ -302,7 +310,7 @@ function scoreboard(){
  const phase=period>4?'Prorrogação':period>0?period+'º quarto':'Ao vivo';
  return '<section class="card"><div class="eyebrow center">'+esc(type)+' • '+esc(shortDate(game.date))+' • '+esc(game.time||'Hora a definir')+' BRT</div>'+
  '<div class="scoreboard"><div class="side"><a href="'+teamLink(game.away)+'">'+tlogo(game.away,76)+'</a><span class="names">'+esc(name(game.away))+'</span></div>'+
- '<div class="center"><span class="bigscore">'+(scores?esc(scores[0])+' <span class="subtle">–</span> '+esc(scores[1]):'VS')+'</span>'+
+ '<div class="center"><span class="bigscore">'+(scores?'<span data-score-team="away">'+esc(scores[0])+'</span> <span class="subtle">–</span> <span data-score-team="home">'+esc(scores[1])+'</span>':'VS')+'</span>'+
  '<div class="small subtle">'+(final?'Partida encerrada':live?phase+(event.liveClock?' • '+esc(event.liveClock):''):'Jogo agendado')+'</div></div>'+
  '<div class="side"><a href="'+teamLink(game.home)+'">'+tlogo(game.home,76)+'</a><span class="names">'+esc(name(game.home))+'</span></div></div>'+
  '<div class="switches game-broadcast-platforms" style="justify-content:center">'+broadcastLinks(game)+
@@ -459,6 +467,7 @@ function draw(){
   content+=gameForm()+(statsReady?'<section class="section"><div class="section-title"><h2>Avaliar jogadores e escolher MVP</h2></div>'+boxscoreArea()+'</section>':'');
  }
  root.innerHTML=content;
+ animateScoreChanges(current);
 }
 function playerPerformanceUrl(pid,code){
  return playerLink(pid,code)+'&game='+encodeURIComponent(String(game.externalId||game.id))+
@@ -475,7 +484,7 @@ function openPlayerPerformance(pid,code){
   ['stl','ROUBOS'],['blk','TOCOS'],['fg','FG'],['three','3PT'],['to','TOV'],['plusMinus','+/-']];
  const current=gameStatus(),score=current.scoreAway!=null&&current.scoreHome!=null?
    current.scoreAway+' - '+current.scoreHome:'';
- modal('<div class="performance-dialog">'+
+ modal('<div class="performance-dialog" data-player-id="'+esc(pid)+'" data-player-team="'+esc(code)+'">'+
   '<div class="performance-header"><div class="performance-player"><div class="performance-portrait">'+
     (portrait?'<img src="'+esc(portrait)+'" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display=\'none\'">':playerPortrait(p,code))+
   '</div><div><span class="caps">DESEMPENHO NA PARTIDA</span><h2>'+esc(p.name)+'</h2>'+
@@ -483,11 +492,11 @@ function openPlayerPerformance(pid,code){
   ' • '+esc(shortDate(game.date))+'</div>'+
   '<p class="small subtle">'+(p.starter?'✓ Titular':'Reserva / relacionado')+
   (myRating!==undefined?' • Minha nota: '+esc(myRating)+'/10':'')+'</p></div></div>'+
-  '<div class="performance-score-feature"><span>NOTA DLQ</span><strong>'+ratingLabel(performanceRating(p))+'</strong><small>/10</small></div></div>'+
+  '<div class="performance-score-feature"><span>NOTA DLQ</span><strong>'+ratingLabel(performanceRating(p))+'</strong></div></div>'+
   '<div class="performance-match"><img src="'+esc(logo(code))+'" alt="">'+esc(code)+
   ' <span>VS</span> '+esc(opponent)+' <img src="'+esc(logo(opponent))+'" alt="">'+
-  (score?' <b>'+esc(score)+'</b>':'')+'</div>'+
-  '<div class="performance-stats">'+data.map(([key,label])=>'<div><strong>'+
+  (score?' <b class="performance-match-score">'+esc(score)+'</b>':'')+'</div>'+
+  '<div class="performance-stats">'+data.map(([key,label])=>'<div data-stat-key="'+esc(key)+'"><strong>'+
   statText(p,key)+'</strong><span>'+label+'</span></div>').join('')+'</div>'+
   '<p class="performance-source">Estatísticas '+(current.status==='live'?'parciais, sujeitas a mudanças.':'disponíveis para esta partida.')+'</p>'+
   '<div class="performance-actions">'+
@@ -501,11 +510,12 @@ function openPlayerPerformance(pid,code){
   shareButton.disabled=true;saveButton.disabled=true;
   button.textContent='Preparando imagem…';
   try{
+   const latest=(box?.players?.[code]||[]).find(x=>String(x.id)===String(pid))||p;
    const result=await exportPlayerImage({
-    player:p,teamName:name(code),teamCode:code,teamLogo:logo(code),headshot:portrait,
+    player:latest,teamName:name(code),teamCode:code,teamLogo:logo(code),headshot:portrait,
     gameLabel:name(game.away)+' x '+name(game.home),date:shortDate(game.date),
     score,opponent:name(opponent),opponentLogo:logo(opponent),
-    rating:ratingLabel(performanceRating(p)),
+    rating:ratingLabel(performanceRating(latest)),
     filename:'DLQ-'+p.name.replace(/\s+/g,'-')+'-'+game.date,mode
    });
    if(result==='copied')toast('Imagem copiada! Cole no aplicativo onde deseja compartilhar.');
@@ -571,17 +581,23 @@ root.addEventListener('submit',e=>{
 window.addEventListener('quadra:refresh',()=>{if(game&&tab!=='avaliar')draw()});
 window.addEventListener('quadra:live-update',()=>{
  if(!game)return;
- if(tab!=='avaliar')draw();
+ if(tab==='avaliar')updateScoreboardWithoutResettingForm();
+ else draw();
  if(needsBoxRefresh())refreshBox(false);
 });
 document.addEventListener('visibilitychange',()=>{
- if(!document.hidden&&needsBoxRefresh())refreshBox(false);
+ if(!document.hidden){
+  if(tab==='avaliar')updateScoreboardWithoutResettingForm();
+  else if(game)draw();
+  if(needsBoxRefresh())refreshBox(false);
+ }
 });
 window.addEventListener('online',()=>{if(needsBoxRefresh())refreshBox(false)});
+// Checagem local leve; a rede só é consultada após 30s ao vivo ou 120s fora dele.
 setInterval(()=>{
- if(document.hidden)return;
+ if(document.hidden||!navigator.onLine)return;
  if(needsBoxRefresh())refreshBox(false);
-},REFRESH_MS);
+},5000);
 async function load(){
  try{
   const games=await loadGames(months);
