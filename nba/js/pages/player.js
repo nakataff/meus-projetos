@@ -153,7 +153,7 @@ function profileHTML(){
  '<span aria-hidden="true">›</span></a>').join('')+'</div>':
  '<div class="filler">Nenhum jogo com esses filtros.</div>')+'</section>'+
  '<section class="card section"><h3>Minha avaliação do jogador</h3>'+
- '<p>Uma nota pessoal para a temporada, sincronizada com sua conta Google.</p>'+
+ '<p>Sua nota pessoal para a temporada.</p>'+
  '<form id="playerProfile"><div class="field"><label>Minha nota: <span id="currentRating">'+esc(p.rating||0)+'</span>/10</label>'+
  '<input class="rate-input" type="range" id="rateProfile" min="0" max="10" step="0.5" value="'+esc(p.rating||0)+'"></div>'+
  '<div class="controls"><label><input type="checkbox" id="favoritePlayer"'+(p.favorite?' checked':'')+'> Seguir jogador</label>'+
