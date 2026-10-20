@@ -227,3 +227,52 @@ footer{border-top:1px solid var(--border);color:#8293ab;font-size:12px;padding:2
  .game-card-link .broadcast-badge.multi{font-size:8.5px}
  .game-card-link .fav{width:30px}
 }
+
+
+/* Avisos ao vivo e controles de conta discretos */
+.live-indicator{
+ display:inline-flex;align-items:center;justify-content:center;gap:6px;
+ width:max-content;max-width:100%;padding:4px 7px;border-radius:6px;
+ border:1px solid #b63a50;background:#622131;color:#ffedf0;
+ font-size:10px;font-weight:950;letter-spacing:.035em;line-height:1.15;
+ white-space:nowrap;
+}
+.live-indicator i,.live-banner-label i{
+ display:inline-block;height:7px;width:7px;flex:none;border-radius:50%;background:#ff5268;
+ box-shadow:0 0 0 3px #ff526830;animation:quadra-live-pulse 1.9s infinite;
+}
+.game-card-link .time .live-indicator{display:flex;margin-top:6px}
+.game-card-link .game-status .live-score{
+ color:#ffd4da;background:#522433;border-color:#94485b;
+}
+.live-banner{
+ display:flex;align-items:center;flex-wrap:wrap;gap:11px;
+ padding:13px 17px;margin:8px 0 11px;
+ border:1px solid #92394b;border-radius:12px;
+ background:linear-gradient(110deg,#3a1d2a,#171a29);
+}
+.live-banner-label{display:inline-flex;align-items:center;gap:8px;color:#ff9fb0;font-size:11px;font-weight:950;letter-spacing:.075em}
+.live-banner strong{font-size:12px;flex:1}
+.live-banner .btn{padding:8px 11px}
+@keyframes quadra-live-pulse{
+ 0%,100%{box-shadow:0 0 0 2px #ff52682b;opacity:1}
+ 50%{box-shadow:0 0 0 6px #ff526800;opacity:.8}
+}
+@media(prefers-reduced-motion:reduce){
+ .live-indicator i,.live-banner-label i{animation:none}
+}
+.profile-cloud-slot{min-width:180px;max-width:100%}
+.profile-cloud-slot .qcloud{
+ display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;
+ gap:9px;border:0;background:none;padding:0;margin:0;
+ color:#c8d7e5;font-size:11px;
+}
+.profile-cloud-slot .qcloud-icon{display:none}
+.profile-cloud-slot .qcloud-info{min-width:0}
+.profile-cloud-slot .qcloud-actions{width:auto;display:flex;gap:6px}
+.profile-cloud-slot .qcloud-button{font-size:11px;padding:8px 11px}
+@media(max-width:650px){
+ .profile-cloud-slot,.profile-cloud-slot .qcloud{width:100%}
+ .profile-cloud-slot .qcloud{justify-content:space-between}
+ .live-banner .btn{width:100%}
+}
