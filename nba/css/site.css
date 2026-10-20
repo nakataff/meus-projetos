@@ -276,3 +276,75 @@ footer{border-top:1px solid var(--border);color:#8293ab;font-size:12px;padding:2
  .profile-cloud-slot .qcloud{justify-content:space-between}
  .live-banner .btn{width:100%}
 }
+
+
+/* Placar central QUADRA — cartões: quadrados independentes e fase sob VS */
+.game-card-link .matchup{
+ display:grid;
+ grid-template-columns:minmax(0,1fr) 158px minmax(0,1fr);
+ gap:12px;
+ justify-content:stretch;
+ align-items:center;
+}
+.game-card-link .matchup .club{min-width:0;width:100%}
+.game-card-link .matchup .club>span{min-width:0;flex:1}
+.game-card-link .matchup .club.right>span{text-align:right}
+.matchup-center{
+ display:flex;align-items:center;justify-content:center;flex-direction:column;
+ gap:5px;min-width:0;min-height:42px;
+ font-variant-numeric:tabular-nums;
+}
+.matchup-score-pair{
+ display:grid;
+ grid-template-columns:52px 24px 52px;
+ gap:4px;align-items:center;justify-content:center;
+ width:max-content;
+}
+.matchup-score-box{
+ display:flex;align-items:center;justify-content:center;
+ height:40px;min-width:0;padding:0 4px;
+ background:#243449;border:1px solid #53677e;border-radius:9px;
+ color:#f4f8ff;font-size:21px;line-height:1;font-weight:950;
+ box-shadow:inset 0 1px #ffffff12;
+}
+.matchup-score-box.winner{
+ background:#28485a;border-color:#7a9daf;color:#fff;
+}
+.matchup-vs{
+ color:#8ea4bb;font-size:11px;font-weight:900;text-align:center;
+ letter-spacing:.025em;
+}
+.matchup-phase{
+ display:block;color:#9cacc0;max-width:100%;
+ text-align:center;font-size:10px;font-weight:850;line-height:1.2;
+ white-space:nowrap;text-transform:uppercase;
+}
+.matchup-phase.is-live{color:#ff9bad}
+.matchup-center.no-score .matchup-vs{font-size:12px}
+@media(max-width:1000px){
+ .game-card-link .matchup{grid-template-columns:minmax(0,1fr) 132px minmax(0,1fr);gap:8px}
+ .matchup-score-pair{grid-template-columns:43px 22px 43px;gap:3px}
+ .matchup-score-box{height:35px;font-size:18px;border-radius:8px}
+ .matchup-phase{font-size:9px}
+}
+@media(max-width:770px){
+ .game-card-link .matchup{grid-template-columns:minmax(0,1fr) 120px minmax(0,1fr);gap:6px}
+ .matchup-score-pair{grid-template-columns:39px 20px 39px;gap:3px}
+ .matchup-score-box{height:32px;font-size:16px;border-radius:7px}
+ .matchup-vs{font-size:10px}
+ .matchup-phase{font-size:9px}
+}
+@media(max-width:490px){
+ .game-card-link .matchup{grid-template-columns:minmax(0,1fr) 106px minmax(0,1fr);gap:4px}
+ .matchup-score-pair{grid-template-columns:35px 17px 35px;gap:3px}
+ .matchup-score-box{height:29px;font-size:14px;padding:0 1px;border-radius:7px}
+ .matchup-vs{font-size:9px}
+ .matchup-phase{font-size:8px;letter-spacing:-.025em}
+ .matchup-center{gap:4px}
+}
+@media(max-width:365px){
+ .game-card-link .matchup{grid-template-columns:minmax(0,1fr) 98px minmax(0,1fr);gap:3px}
+ .matchup-score-pair{grid-template-columns:32px 15px 32px;gap:2px}
+ .matchup-score-box{font-size:13px;height:27px}
+ .matchup-phase{font-size:7.5px}
+}
