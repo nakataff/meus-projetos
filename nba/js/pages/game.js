@@ -39,8 +39,10 @@ function needsBoxRefresh(){
  if(status==='scheduled')return true; // Aguardando início/resultado.
  if(status==='final'){
   const complete=!!box && Object.values(box.players||{}).some(list=>list.some(p=>p.hasStats===true||p.pts!==null&&p.pts!==undefined));
-  // Após o apito final, pedir novamente a versão consolidada.
-  return game.date>=currentDate() || (!complete && !!remoteStatus);
+  // Parar de consultar quando já temos estatísticas finais consolidadas.
+  if(complete && (!remoteStatus || remoteStatus.status==='final'))return false;
+  // Se só temos números parciais, tentar buscar o box score definitivo.
+  return game.date>=new Date(Date.parse(currentDate()+'T12:00:00Z')-2*86400000).toISOString().slice(0,10);
  }
  return false;
 }
