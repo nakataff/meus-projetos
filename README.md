@@ -37,6 +37,14 @@ O app utiliza **`nba/css/site.css` e `nba/js/app.js`** como recursos compartilha
 - **Desempenho:** a página consulta somente os últimos meses necessários para a projeção e o box score do jogo aberto, sem baixar estatísticas de todos os confrontos. Os dados esportivos não são gravados no Firebase.
 - **Fonte:** interface pública não oficial da ESPN, gratuita, sem chave e **sem SLA ou garantia de licença de redistribuição**. Em falhas de conexão ou indisponibilidade da fonte, a interface informa o problema e preserva o histórico.
 
+### Box score comparativo, elencos e compartilhamento
+
+- **Estatísticas → Ambos:** no computador exibe duas tabelas lado a lado. No celular, mistura atletas das duas equipes em **um único ranking**, ordenado pela estatística selecionada. Os times têm identificação visual por logo; nenhum ranking proprietário da SofaScore é copiado.
+- **Escalações:** fotos, posições, titulares (confirmados ou projetados) e reservas abaixo. Os dados de uma projeção são identificados como provenientes de jogos anteriores.
+- **Ficha individual:** clique na linha de um atleta no box score para abrir um card com seu desempenho, nota pessoal e voto MVP, com botão para **gerar PNG 1200×630** e compartilhar link.
+- **Perfil do atleta:** estatísticas por jogo, médias dos box scores importados, filtros por mês e partida, visualização de desempenho específico via link `nba/jogador/?id=ID&team=CODIGO&game=ID_JOGO&data=AAAA-MM-DD`.
+- A imagem é montada localmente com Canvas, sem guardar imagem no Firebase; fotos externas são opcionais e dependem de liberação CORS pela fonte. Os números vêm dos box scores disponíveis, e podem ser parciais durante jogos em andamento.
+
 Na nova página de partida, o quinteto antes do jogo é indicado **como projeção baseada em titularidades anteriores**, nunca como escalação oficial. Titulares oficiais são marcados somente quando já existem no box score. O calendário abre no dia atual, permite voltar e avançar um dia, escolher uma data no calendário ou alternar para Próximos jogos e Temporada inteira. Resultados e estatísticas aparecem normalmente, sem ocultação de placares.
 
 **Antes de começar a usar a nova versão intensivamente, faça um backup JSON** na página Meu QUADRA, teste uma avaliação no computador e verifique se ela surge no celular com a mesma conta Google.
