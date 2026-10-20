@@ -95,7 +95,7 @@ function profileHTML(){
  (p.favorite?'<span class="tag">♥ Favorito</span>':'')+'</div></div></section>'+
  (selected?matchDetail(selected):selectedGame?
   '<div class="info">Este jogo ainda não possui estatísticas individuais disponíveis. Os resultados aparecerão quando a fonte publicar o box score.</div>':'')+
- '<section class="section"><div class="section-title"><h2>Médias da temporada</h2><span class="small subtle">'+all.length+' jogos com dados importados</span></div>'+
+ '<section class="section"><div class="section-title"><h2>Médias dos jogos importados</h2><span class="small subtle">'+all.length+' jogos disponíveis (inclusive pré-temporada, quando houver)</span></div>'+
  metrics(all)+'</section>'+
  '<section class="section"><div class="section-title"><h2>Histórico por partida</h2>'+
  '<span class="small subtle">'+visible.length+' partidas no filtro</span></div>'+
@@ -193,7 +193,8 @@ async function boot(){
     if(found){player=found;team=c;break;}
    }
   }
-  if(!player){profileHTML();return;}
+  // Atletas recém-contratados podem ainda não constar do JSON de elenco.
+  // Procurar pelo ID nos box scores antes de considerar o perfil indisponível.
   const present=currentDate().slice(0,7);
   const selectedMonthHint=/^\d{4}-\d{2}-\d{2}$/.test(hintDate)?hintDate.slice(0,7):'';
   const past=MONTHS.filter(m=>m<=present||m===selectedMonthHint);
@@ -218,6 +219,13 @@ async function boot(){
       event:{...match,scoreAway:fresh.scoreAway,scoreHome:fresh.scoreHome}});
     }catch(e){console.info('QUADRA: card compartilhado ainda não disponível',e);}
    }
+  }
+  if(!player){
+   const known=gameStats.find(g=>g.row?.name)?.row;
+   player=known?{
+    id:pid,name:known.name,number:known.number||'',position:known.position||'',
+    headshot:'https://a.espncdn.com/i/headshots/nba/players/full/'+pid+'.png'
+   }:{id:pid,name:'Jogador #'+pid,number:'',position:'',headshot:''};
   }
   profileHTML();
  }catch(e){console.warn('QUADRA: falha no perfil do atleta',e);root.innerHTML='<div class="filler">'+esc(e.message)+'</div>';}
