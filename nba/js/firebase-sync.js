@@ -243,6 +243,13 @@ if(!cloudConfig || !cloudConfig.apiKey || !cloudConfig.projectId || !cloudConfig
     authModule.onAuthStateChanged(auth, async person=>{
       if(unsubscribe){unsubscribe();unsubscribe=null;}
       user=person||null;active=false;lastSynced=null;
+      // Apenas identidade da conta ativa na interface. Não grava dados novos no Firestore.
+      window.QUADRA_ACCOUNT=person?{
+        name:person.displayName||'',
+        email:person.email||'',
+        photoURL:person.photoURL||''
+      }:null;
+      window.dispatchEvent(new CustomEvent('quadra:auth',{detail:window.QUADRA_ACCOUNT}));
       ui();
       if(user)await syncFromCloud();
     },err=>setStatus('Firebase Authentication: '+(err.code||err.message)));
