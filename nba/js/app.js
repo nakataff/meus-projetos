@@ -23,7 +23,7 @@ export function niceDate(date){return new Date(date+'T12:00:00Z').toLocaleDateSt
 export const shortDate=date=>date?new Date(date+'T12:00:00Z').toLocaleDateString('pt-BR',{timeZone:'UTC'}):'—';
 export function read(key,fallback){try{return JSON.parse(localStorage.getItem(key))||fallback}catch{return fallback;}}
 const blankSaved=()=>({notes:{},custom:[]});
-const blankExtras=()=>({players:{},franchise:{},lineups:{},gameRatings:{},gameMvp:{},hideSpoilers:true});
+const blankExtras=()=>({players:{},franchise:{},lineups:{},gameRatings:{},gameMvp:{},hideSpoilers:false});
 export function getData(){const saved={...blankSaved(),...read(STORAGE,{})};const extras={...blankExtras(),...read(EXTRAS,{})};return {saved:{notes:saved.notes||{},custom:Array.isArray(saved.custom)?saved.custom:[]},settings:read(SETTINGS,{fav:''}),extras};}
 export function emit(){window.dispatchEvent(new Event('quadra:local-change'));window.dispatchEvent(new Event('quadra:data'));}
 export function modify(fn){const b=getData();fn(b);try{localStorage.setItem(STORAGE,JSON.stringify(b.saved));localStorage.setItem(SETTINGS,JSON.stringify(b.settings));localStorage.setItem(EXTRAS,JSON.stringify(b.extras));emit();return true}catch(e){toast('Não foi possível salvar neste navegador. Faça um backup.');console.warn(e);return false;}}
@@ -31,8 +31,9 @@ export const note=id=>getData().saved.notes[id]||{};
 export function setNote(id,values){modify(b=>{b.saved.notes[id]={...b.saved.notes[id],...values,updated:new Date().toISOString()};});}
 export function setSettings(values){modify(b=>{b.settings={...b.settings,...values,updatedAt:new Date().toISOString()};});}
 export function setExtraGroup(group,key,value){modify(b=>{b.extras[group]={...b.extras[group],[key]:value};b.extras.updatedAt=new Date().toISOString();});}
-export function setSpoilers(hidden){modify(b=>{b.extras.hideSpoilers=hidden;});}
-export function getSpoilers(){return getData().extras.hideSpoilers!==false;}
+// Compatibilidade com backups anteriores: a opção foi descontinuada.
+export function setSpoilers(_hidden){}
+export function getSpoilers(){return false;}
 export function toggleWish(game){const p=note(game.id);setNote(game.id,{wish:!p.wish,watched:!p.wish?false:p.watched});}
 export const qs=k=>new URLSearchParams(location.search).get(k);
 export const teamLink=code=>path('equipe/?id='+encodeURIComponent(code));
@@ -98,9 +99,9 @@ export function joinGames(remote){
 export async function loadGames(months=MONTHS){const list=(await Promise.all(months.map(fetchMonth))).flat();return joinGames(list);}
 export function platform(g){const p=g.platforms||[];return p.includes('PRIME')&&p.includes('ESPN')?'Prime Video + ESPN':p.includes('PRIME')?'Prime Video':p.includes('ESPN')?'ESPN / Disney+':p.includes('LEAGUE')?'Sem TV BR informada':'Outra transmissão';}
 export function gameRow(g){
- const p=note(g.id),hidden=getSpoilers(),tv=(g.platforms||[]).some(x=>x==='ESPN'||x==='PRIME');
- let score=g.status==='final'&&!hidden?'<span class="tag finished">'+esc(g.scoreAway)+' – '+esc(g.scoreHome)+'</span>':g.status==='final'?'<span class="tag dim">Placar oculto</span>':'';
- const scoreManual=!hidden&&p.scoreAway!==undefined&&p.scoreAway!==''&&p.scoreHome!==undefined&&p.scoreHome!==''?'<span class="tag">'+esc(p.scoreAway)+' – '+esc(p.scoreHome)+'</span>':'';
+ const p=note(g.id),tv=(g.platforms||[]).some(x=>x==='ESPN'||x==='PRIME');
+ const score=g.status==='final'&&Number.isFinite(Number(g.scoreAway))&&Number.isFinite(Number(g.scoreHome))?'<span class="tag finished">'+esc(g.scoreAway)+' – '+esc(g.scoreHome)+'</span>':'';
+ const scoreManual=g.status!=='final'&&p.scoreAway!==undefined&&p.scoreAway!==''&&p.scoreHome!==undefined&&p.scoreHome!==''?'<span class="tag">'+esc(p.scoreAway)+' – '+esc(p.scoreHome)+'</span>':'';
  return '<article class="game-card"><div class="time">'+esc(g.time||'—')+'<small>BRASÍLIA</small></div><a class="matchup" href="'+esc(gameLink(g))+'"><span class="club">'+tlogo(g.away,42)+'<span><strong>'+esc(name(g.away))+'</strong><small>'+esc(g.away)+'</small></span></span><span class="versus">VS</span><span class="club right">'+tlogo(g.home,42)+'<span><strong>'+esc(name(g.home))+'</strong><small>'+esc(g.home)+'</small></span></span></a><div class="game-meta">'+score+scoreManual+(tv?'<span class="tag tv">'+esc(platform(g))+'</span>':'')+(p.watched?'<span class="tag finished">✓ Assistido</span>':'')+(p.rating?'<span class="tag accent">★ '+esc(p.rating)+'</span>':'')+'<button class="fav" title="Quero assistir" aria-label="Quero assistir" data-wish="'+esc(g.id)+'">'+(p.wish?'♥':'♡')+'</button><a class="btn" href="'+esc(gameLink(g))+'">Detalhes ↗</a></div></article>';
 }
 export function groupGames(list){let out='',last='';for(const g of list){if(g.date!==last){last=g.date;out+='<h3 class="dayhead">'+esc(niceDate(last))+'</h3>';}out+=gameRow(g);}return out||'<div class="filler"><b>Nenhum jogo encontrado</b>Tente outro filtro ou período.</div>';}
