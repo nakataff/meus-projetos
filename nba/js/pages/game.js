@@ -31,6 +31,19 @@ function updateBox(){
   box=useFresh?fresh:cached;
  } else box=cached||null;
 }
+function needsBoxRefresh(){
+ if(!game)return false;
+ const status=gameStatus().status;
+ if(status==='live')return true;
+ if(game.date>currentDate())return false; // Antes da partida só consultar na abertura ou manualmente.
+ if(status==='scheduled')return true; // Aguardando início/resultado.
+ if(status==='final'){
+  const complete=!!box && Object.values(box.players||{}).some(list=>list.some(p=>p.hasStats===true||p.pts!==null&&p.pts!==undefined));
+  // Após o apito final, pedir novamente a versão consolidada.
+  return game.date>=currentDate() || (!complete && !!remoteStatus);
+ }
+ return false;
+}
 function sourceNotice(){
  const status=gameStatus().status;
  const label=status==='live'?'DADOS EM TEMPO REAL':status==='final'?'RESULTADO FINAL':'ANTES DA PARTIDA';
@@ -191,17 +204,15 @@ window.addEventListener('quadra:refresh',()=>{if(game&&tab!=='avaliar')draw()});
 window.addEventListener('quadra:live-update',()=>{
  if(!game)return;
  if(tab!=='avaliar')draw();
- const status=gameStatus().status;
- if(status==='live'||(status!=='final'&&game.date<=currentDate()))refreshBox(false);
+ if(needsBoxRefresh())refreshBox(false);
 });
 document.addEventListener('visibilitychange',()=>{
- if(!document.hidden && game && (gameStatus().status!=='final'||!box))refreshBox(false);
+ if(!document.hidden&&needsBoxRefresh())refreshBox(false);
 });
-window.addEventListener('online',()=>{if(game&&gameStatus().status!=='final')refreshBox(false)});
+window.addEventListener('online',()=>{if(needsBoxRefresh())refreshBox(false)});
 setInterval(()=>{
- if(!game || document.hidden)return;
- const status=gameStatus().status;
- if(status==='live'||(status!=='final'&&game.date<=currentDate()))refreshBox(false);
+ if(document.hidden)return;
+ if(needsBoxRefresh())refreshBox(false);
 },REFRESH_MS);
 async function load(){
  try{
