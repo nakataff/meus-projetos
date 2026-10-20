@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#090d14">
+<meta name="description" content="Central de trackers e ferramentas pessoais de Nakata.">
+<title>Meus Projetos • Nakata</title>
+<style>
+:root{color-scheme:dark;--bg:#090d14;--panel:#111722;--border:#273141;--text:#f3f5f9;--muted:#a1adbf;--orange:#ff9143}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse 75% 500px at 50% -220px,#d56b3840,transparent),var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:inherit;text-decoration:none}a:focus-visible{outline:2px solid var(--orange);outline-offset:5px;border-radius:8px}
+.wrap{max-width:1120px;padding:0 26px;margin:auto}
+header{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:27px 0;border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:12px;font-weight:900;letter-spacing:.12em;font-size:18px}
+.brand-icon{width:39px;height:39px;border-radius:12px;display:grid;place-items:center;background:var(--orange);color:#111;font-size:23px;letter-spacing:0}
+.brand b{color:var(--orange)}
+.github{border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-size:12px;color:#c6d0df;transition:border-color .2s}
+.github:hover{border-color:var(--orange)}
+main{padding:80px 0 90px}
+.kicker{color:var(--orange);font-size:11px;font-weight:900;letter-spacing:.22em;text-transform:uppercase}
+h1{font-size:clamp(36px,6vw,67px);line-height:1.09;letter-spacing:-.055em;margin:17px 0 19px}
+h1 span{color:var(--orange)}
+.intro{max-width:620px;color:var(--muted);line-height:1.75;font-size:16px;margin:0}
+.section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:65px 0 21px}
+h2{font-size:13px;font-weight:900;letter-spacing:.15em;text-transform:uppercase;margin:0}
+.count{font-size:12px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.card{min-height:235px;display:flex;flex-direction:column;gap:17px;border-radius:20px;background:linear-gradient(150deg,#182232,var(--panel));border:1px solid var(--border);padding:26px;transition:transform .2s,border-color .2s}
+a.card:hover{transform:translateY(-4px);border-color:#ff914380}
+.card-top{display:flex;justify-content:space-between;align-items:center;gap:15px}
+.emoji{width:55px;height:55px;background:#2b313d;border-radius:16px;display:grid;place-items:center;font-size:28px}
+.status{background:#1d3f31;color:#83e5b7;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;border-radius:30px;padding:6px 11px}
+.status.soon{background:#2a3340;color:#aeb9c7}
+.card h3{font-size:24px;letter-spacing:-.04em;margin:0 0 6px}
+.card p{font-size:14px;color:var(--muted);margin:0;line-height:1.65}
+.action{margin-top:auto;font-size:12px;font-weight:900;color:var(--orange)}
+.planned{opacity:.64}
+.planned .action{color:var(--muted)}
+footer{border-top:1px solid var(--border);font-size:12px;color:var(--muted);padding:25px 0 40px}
+@media(max-width:640px){.wrap{padding:0 17px}.brand{font-size:15px}header{padding:20px 0}.github{font-size:11px;padding:8px}main{padding:59px 0 69px}.grid{grid-template-columns:1fr}.card{min-height:215px}.section-title{margin-top:48px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><a class="brand" href="./" aria-label="Início"><span class="brand-icon">N</span><span>MEUS <b>PROJETOS</b></span></a><a class="github" href="https://github.com/nakataff/meus-projetos" rel="noopener noreferrer" target="_blank">GitHub ↗</a></header>
+<main>
+<div class="kicker">NAKATAFF • HUB PESSOAL</div>
+<h1>Ideias que viram <span>projetos.</span></h1>
+<p class="intro">Um espaço para organizar aplicativos pessoais, acompanhar esportes e testar ferramentas. Cada projeto tem sua própria página e funciona de forma independente.</p>
+<div class="section-title"><h2>Meus aplicativos</h2><span class="count">1 disponível</span></div>
+<section class="grid" aria-label="Projetos">
+<a class="card" href="./nba/"><div class="card-top"><span class="emoji" aria-hidden="true">🏀</span><span class="status">Disponível</span></div><div><h3>Quadra — NBA Tracker</h3><p>Calendário de transmissões, jogos assistidos, notas, favoritos e estatísticas pessoais da temporada 2026/27.</p></div><div class="action">ABRIR PROJETO ↗</div></a>
+<article class="card planned"><div class="card-top"><span class="emoji" aria-hidden="true">⚽</span><span class="status soon">Ideia futura</span></div><div><h3>Futebol Tracker</h3><p>Um espaço reservado para acompanhar jogos, campeonatos e guardar suas avaliações.</p></div><div class="action">EM PLANEJAMENTO</div></article>
+</section>
+</main>
+<footer>© 2026 • Projetos pessoais Nakataff. Mais aplicativos poderão ser adicionados aqui.</footer>
+</div>
+</body>
+</html>
