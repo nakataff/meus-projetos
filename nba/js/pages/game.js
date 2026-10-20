@@ -101,7 +101,7 @@ async function refreshBox(force=false){
 
 const maybeMonth=hint.slice(0,7),months=MONTHS.includes(maybeMonth)?[maybeMonth]:MONTHS;
 const statFields=[
- {key:'rating',label:'NOTA',title:'Nota automática QUADRA'},
+ {key:'rating',label:'NOTA',title:'Nota automática DLQ'},
  {key:'pts',label:'PTS',title:'Pontos'},
  {key:'reb',label:'REB',title:'Rebotes'},
  {key:'ast',label:'AST',title:'Assistências'},
@@ -203,7 +203,7 @@ function boxscorePanel(code){
 function boxscoreArea(){
  const teams=[['both','Ambos'],['away',game.away],['home',game.home]];
  const sortOptions=statFields.map(f=>'<option value="'+f.key+'"'+(statsSort===f.key?' selected':'')+'>'+f.title+'</option>').join('');
- return '<div class="boxscore-interface"><div class="boxscore-rating-help"><span><strong>NOTA QUADRA</strong> é uma avaliação automática baseada nas estatísticas, separada da sua nota pessoal.</span>'+
+ return '<div class="boxscore-interface"><div class="boxscore-rating-help"><span><strong>NOTA DLQ</strong> é uma avaliação automática baseada nas estatísticas, separada da sua nota pessoal.</span>'+
  '<button type="button" class="btn ghost" data-rating-info>Como funciona?</button></div>'+
  '<div class="boxscore-toolbar"><div class="boxscore-filter" aria-label="Visualizar estatísticas da equipe">'+
  teams.map(([key,label])=>{
@@ -341,7 +341,7 @@ function leaderCards(){
   '<div class="overview-leader-body">'+playerPortrait(best.player,best.team)+
   '<div class="overview-leader-person"><a href="'+playerLink(best.player.id,best.team)+'">'+esc(best.player.name)+'</a>'+
   '<span><img src="'+esc(logo(best.team))+'" alt="">'+esc(name(best.team))+'</span></div>'+
-  '<div class="overview-leader-value"><strong>'+ratingLabel(best.rating)+'</strong><small>QUADRA / 10</small></div></div>'+
+  '<div class="overview-leader-value"><strong>'+ratingLabel(best.rating)+'</strong><small>DLQ / 10</small></div></div>'+
   '<button type="button" data-rating-info class="rating-method-link">Como funciona a nota?</button></article>':'';
  return '<section class="section"><div class="section-title"><h2>Quem está se destacando</h2>'+
  '<button class="btn ghost" type="button" data-open-tab="stats">Box score completo →</button></div>'+
@@ -486,7 +486,7 @@ function openPlayerPerformance(pid,code){
   '<div class="performance-match"><img src="'+esc(logo(code))+'" alt="">'+esc(code)+
   ' <span>VS</span> '+esc(opponent)+' <img src="'+esc(logo(opponent))+'" alt="">'+
   (score?' <b>'+esc(score)+'</b>':'')+'</div>'+
-  '<div class="performance-rating"><span>Nota automática QUADRA</span><strong>'+
+  '<div class="performance-rating"><span>Nota automática DLQ</span><strong>'+
  ratingLabel(performanceRating(p))+'/10</strong></div>'+
  '<div class="performance-stats">'+data.map(([key,label])=>'<div><strong>'+
   statText(p,key)+'</strong><span>'+label+'</span></div>').join('')+'</div>'+
@@ -499,7 +499,7 @@ function openPlayerPerformance(pid,code){
  const imageButton=document.getElementById('playerExportImage');
  share.onclick=async()=>{
   try{
-   const outcome=await sharePlayerLink(url,'QUADRA • '+p.name+' — '+name(code)+' x '+name(opponent));
+   const outcome=await sharePlayerLink(url,'DE LA QUADRA • '+p.name+' — '+name(code)+' x '+name(opponent));
    if(outcome==='copied')toast('Link do jogador copiado!');
   }catch(err){toast('Não foi possível compartilhar: '+err.message);}
  };
@@ -510,7 +510,7 @@ function openPlayerPerformance(pid,code){
     player:p,teamName:name(code),teamCode:code,teamLogo:logo(code),headshot:portrait,
     gameLabel:name(game.away)+' x '+name(game.home),date:shortDate(game.date),
     score,opponent:name(opponent),opponentLogo:logo(opponent),
-    filename:'QUADRA-'+p.name.replace(/\s+/g,'-')+'-'+game.date
+    filename:'DLQ-'+p.name.replace(/\s+/g,'-')+'-'+game.date
    });
    toast('Card PNG gerado!');
   }catch(e){console.warn('QUADRA: PNG do atleta',e);toast('Não foi possível gerar a imagem. '+e.message);}
@@ -526,7 +526,7 @@ function ratePlayer(pid,code){
 }
 root.addEventListener('click',e=>{
  if(e.target.closest('[data-rating-info]')){
-  modal('<h2>Como funciona a Nota QUADRA?</h2><p>'+esc(RATING_EXPLANATION)+
+  modal('<h2>Como funciona a Nota DLQ?</h2><p>'+esc(RATING_EXPLANATION)+
    '</p><p class="info">A nota é calculada automaticamente (1,0–10,0) e não é a sua avaliação pessoal. É experimental e usa apenas dados disponíveis. Nos jogos ao vivo ela muda com o box score.</p>');
   return;
  }
@@ -588,7 +588,7 @@ async function load(){
   const games=await loadGames(months);
   game=games.find(g=>String(g.id)===id||String(g.externalId)===id);
   if(!game){draw();return;}
-  document.title=name(game.away)+' x '+name(game.home)+' • QUADRA';
+  document.title=name(game.away)+' x '+name(game.home)+' • DE LA QUADRA';
   const month=game.date.slice(0,7),index=MONTHS.indexOf(month);
   // Um jogo só carrega seus dados mensais e no máximo os dois meses anteriores.
   const history=index<0?[month]:MONTHS.slice(Math.max(0,index-2),index+1);
