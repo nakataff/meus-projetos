@@ -157,7 +157,10 @@ function playerStats(code){
  const rows=scorePlayers(code);
  if(!rows.length)return '<div class="filler"><b>Sem números para '+esc(name(code))+'</b>O box score desta equipe ainda não foi disponibilizado.</div>';
  const ratings=getData().extras,chosenMvp=String(ratings.gameMvp?.[game.id]||'');
- const cols=statsDetail?['min','pts','reb','ast','stl','blk','fg','three','to','plusMinus']:['min','pts','reb','ast','three'];
+ const basic=['min','pts','reb','ast','three'];
+ // Mesmo na visão compacta, sempre exibir a coluna escolhida na ordenação.
+ if(!basic.includes(statsSort))basic[basic.length-1]=statsSort;
+ const cols=statsDetail?['min','pts','reb','ast','stl','blk','fg','three','to','plusMinus']:basic;
  const tr=rows.map((p,index)=>{
   const id=String(p.id),rating=ratings.gameRatings?.[game.id+':'+id];
   const mvp=chosenMvp===id;
