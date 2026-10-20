@@ -136,7 +136,12 @@ function setSelectedGame(id){
 }
 root.addEventListener('input',e=>{if(e.target.id==='rateProfile')$('#currentRating').textContent=e.target.value;});
 root.addEventListener('change',e=>{
- if(e.target.id==='playerMonth'){selectedMonth=e.target.value;profileHTML();}
+ if(e.target.id==='playerMonth'){
+  selectedMonth=e.target.value;
+  if(selectedGame&&!gameStats.some(g=>refGameID(g.event)===selectedGame &&
+    (selectedMonth==='all'||g.date.startsWith(selectedMonth))))setSelectedGame('');
+  else profileHTML();
+ }
  if(e.target.id==='playerGame')setSelectedGame(e.target.value);
  if(e.target.id==='playerSort'){sort=e.target.value;profileHTML();}
  if(e.target.id==='playerOnlyStarters'){onlyStarters=e.target.checked;profileHTML();}
