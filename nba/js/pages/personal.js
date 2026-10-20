@@ -68,10 +68,28 @@ function prefs(s){
  '<div class="profile-backup-actions"><button class="btn accent" id="backup">↓ Baixar JSON</button><button class="btn" id="importBackup">↑ Restaurar</button><input type="file" id="backupFile" accept=".json,application/json" hidden></div></div>'+
  '</section>';
 }
+function favoriteSections(s){
+ const extra=s.bundle.extras;
+ const loved=Object.entries(extra.players||{}).filter(([,p])=>p?.favorite).slice(0,6);
+ const franchises=Object.entries(extra.franchise||{}).filter(([code,id])=>TEAMS[code]&&id).slice(0,8);
+ const full=Object.entries(extra.lineups||{}).filter(([code,ids])=>TEAMS[code]&&Array.isArray(ids)&&ids.length===5);
+ function person(id,p,team){
+  const info=p||extra.players?.[id]||{},label=info.name||'Jogador #'+id;
+  return '<div class="profile-rank-item"><div class="rank-body">'+(team?'<a href="'+playerLink(id,team)+'">'+esc(label)+'</a>':'<b>'+esc(label)+'</b>')+
+  '<span class="small subtle">'+(team&&TEAMS[team]?esc(TEAMS[team][0]):'Favorito pessoal')+'</span></div></div>';
+ }
+ return '<div class="grid two section"><section class="card"><h2>Jogadores favoritos ♡</h2><p class="small subtle">Seus atletas marcados como favoritos</p>'+
+ (loved.length?loved.map(([id,p])=>person(id,p,p.team)).join(''):'<div class="filler">Marque seus jogadores favoritos nos perfis dos atletas.</div>')+'</section>'+
+ '<section class="card"><h2>Franchise players ★</h2><p class="small subtle">Quem você escolheu para liderar cada franquia</p>'+
+ (franchises.length?franchises.map(([code,id])=>person(id,extra.players?.[id],code)).join(''):'<div class="filler">Escolha um franchise player nas páginas das equipes.</div>')+'</section></div>'+
+ (full.length?'<section class="card section"><h2>Meus quintetos completos</h2><p class="small subtle">Escalações pessoais que você montou</p>'+
+ full.map(([code,ids])=>'<div class="profile-rank-item"><div class="rank-body"><a href="'+teamLink(code)+'">'+esc(TEAMS[code][0])+'</a><span class="small subtle">'+ids.map(id=>esc(extra.players?.[id]?.name||'#'+id)).join(', ')+'</span></div><span class="tag finished">5/5</span></div>').join('')+'</section>':'');
+}
 function summary(s){
  const last=s.watched.map(([id,n])=>({id,n,g:s.lookup.get(id)})).filter(x=>x.g).sort((a,b)=>String(b.n.updated||b.g.date).localeCompare(String(a.n.updated||a.g.date))).slice(0,3);
  return '<div class="grid two"><section class="card"><div class="section-title"><h2>Meus melhores jogadores</h2><button data-tab="rankings" class="btn ghost">Ver ranking →</button></div>'+topPlayers(s,5)+'</section>'+
  '<section class="card"><div class="section-title"><h2>Partidas favoritas</h2><button data-tab="rankings" class="btn ghost">Ver notas →</button></div>'+topGames(s,5)+'</section></div>'+
+ favoriteSections(s)+
  '<section class="section"><div class="section-title"><h2>Últimas partidas assistidas</h2><button class="btn ghost" data-tab="atividade" data-filter="assistidos">Meu histórico →</button></div>'+
  (last.length?groupGames(last.map(x=>x.g).sort((a,b)=>a.date.localeCompare(b.date))):'<div class="filler">Marque uma partida como assistida para começar seu histórico.</div>')+'</section>'+
  prefs(s);
