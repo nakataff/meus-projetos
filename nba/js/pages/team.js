@@ -242,7 +242,7 @@ function draw(){
   const rated=roster.filter(p=>Number(saved.players?.[p.id]?.rating)>0)
    .sort((a,b)=>Number(saved.players[b.id].rating)-Number(saved.players[a.id].rating));
   content+='<section class="card section"><h3>Meu ranking pessoal</h3>'+
-   '<p>Notas de 0 a 10 que você atribuiu. Não são as notas automáticas do QUADRA.</p>'+
+   '<p>Notas de 0 a 10 que você atribuiu. Não são as notas automáticas do DE LA QUADRA.</p>'+
    (rated.length?rated.map(playerRow).join(''):'<div class="filler">Nenhum jogador avaliado.</div>')+'</section>';
  }
  root.innerHTML=content;
