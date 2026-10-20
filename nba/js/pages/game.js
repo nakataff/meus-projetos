@@ -244,7 +244,8 @@ function lineupPlayerCard(player,code,projected=false){
  return '<div class="lineup-player-card"'+attrs+'>'+
   image+'<div class="lineup-player-main"><a href="'+playerLink(player.id,code)+'">'+esc(player.name)+'</a>'+
   '<span>'+esc((player.number?'#'+player.number+' • ':'')+(position||'Jogador'))+'</span>'+
-  (stats?'<div class="lineup-mini-stats">'+stats+'</div>':
+  (stats?'<div class="lineup-mini-stats">'+stats+'</div>'+
+   (projected?'<small>Números de jogo anterior</small>':''):
    '<small>'+ (projected?'Baseado em escalações anteriores':'Estatísticas desta partida ainda indisponíveis')+'</small>')+'</div>'+
   (clickable?'<span class="lineup-player-open" aria-hidden="true">›</span>':'')+'</div>';
 }
@@ -268,7 +269,9 @@ function lineupPanel(code){
  (info.list.length?'<div class="lineup-player-list starters">'+
  info.list.map(p=>lineupPlayerCard(p,code,!confirmed)).join('')+'</div>':
  '<div class="filler">Não há dados suficientes para confirmar ou projetar este quinteto.</div>')+
- '<div class="lineup-roster-heading lineup-bench-title"><strong>RESERVAS / ELENCO</strong><span class="small subtle">'+bench.length+' atletas</span></div>'+
+ '<div class="lineup-roster-heading lineup-bench-title"><strong>'+
+ (current.length&&info.list.length<5?'DEMAIS RELACIONADOS':'RESERVAS / ELENCO')+
+ '</strong><span class="small subtle">'+bench.length+' atletas</span></div>'+
  (bench.length?'<div class="lineup-player-list bench">'+bench.map(p=>lineupPlayerCard(p,code,false)).join('')+'</div>':
  '<p class="small subtle">Os demais atletas ainda não foram relacionados pela fonte.</p>')+
  '<p class="lineup-disclaimer">'+(confirmed?'Titulares identificados no box score.':
