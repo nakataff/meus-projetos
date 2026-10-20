@@ -1,13 +1,15 @@
 /* QUADRA — placares em andamento. Fonte pública não oficial; falhas não travam o site.
- * Somente páginas de agenda/início/partida carregam este módulo.
- * Dados são consultados no máximo a cada 2 minutos, com a página visível.
+ * Carregamento leve: 15 segundos durante jogos ao vivo, 2 minutos fora deles.
+ * Os placares chegam por consulta HTTP, não por eventos instantâneos a cada cesta.
  */
 import {currentDate,dayShift} from './app.js?v=10';
 
 const URL_BASE='https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard';
-let lastSignature='',busy=false,completed=false;
+const LIVE_INTERVAL_MS=15000,IDLE_INTERVAL_MS=120000;
+let lastSignature='',busy=false,pollTimer=null;
 const liveMap=new Map();
 window.QUADRA_LIVE_GAMES=liveMap;
+window.QUADRA_LIVE_UPDATED_AT=null;
 
 const translate={GS:'GSW',NY:'NYK',SA:'SAS',NO:'NOP',PHO:'PHX',UTAH:'UTA',WSH:'WAS'};
 function code(x){
@@ -25,6 +27,8 @@ function normalize(event){
  const eventId=String(event.id||'');
  if(!home||!away||!eventId)return null;
  const phase=event.status?.type||{},state=phase.state;
+ const rawType=event.season?.type??competition?.type?.id??null;
+ const seasonType=rawType!==null&&rawType!==''?Number(rawType):null;
  const status=phase.completed||state==='post'?'final':state==='in'?'live':'scheduled';
  const dateTime=new Date(event.date||'');
  if(!Number.isFinite(dateTime.getTime()))return null;
@@ -35,7 +39,7 @@ function normalize(event){
   id:eventId,date,
   away:code(away.team?.abbreviation),home:code(home.team?.abbreviation),
   status,scoreAway:score(away),scoreHome:score(home),
-  period,clock
+  period,clock,seasonType
  };
 }
 async function fetchDay(date){
@@ -55,7 +59,10 @@ async function update(){
  try{
   const today=currentDate();
   // Captura jogos que no Brasil cruzam a meia-noite da data americana.
-  const days=[dayShift(today,-1),today];
+  const hour=Number(new Intl.DateTimeFormat('en-GB',{
+   timeZone:'America/Sao_Paulo',hour:'2-digit',hourCycle:'h23'
+  }).format(new Date()));
+  const days=hour<6?[dayShift(today,-1),today]:[today];
   const results=await Promise.allSettled(days.map(fetchDay));
   const fulfilled=results.filter(r=>r.status==='fulfilled').flatMap(r=>r.value);
   if(!results.some(r=>r.status==='fulfilled'))return;
@@ -63,7 +70,7 @@ async function update(){
   const signature=JSON.stringify([...all]);
   liveMap.clear();
   for(const [id,event] of all)liveMap.set(id,event);
-  completed=true;
+  window.QUADRA_LIVE_UPDATED_AT=Date.now();
   if(signature!==lastSignature){
    lastSignature=signature;
    window.dispatchEvent(new Event('quadra:live-update'));
@@ -71,7 +78,22 @@ async function update(){
  }catch(err){console.info('QUADRA: atualização de jogos em andamento temporariamente indisponível',err);}
  finally{busy=false;}
 }
-update();
-const interval=setInterval(update,120000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)update();});
-window.addEventListener('online',update);
+function nextInterval(){
+ return [...liveMap.values()].some(g=>g.status==='live')?LIVE_INTERVAL_MS:IDLE_INTERVAL_MS;
+}
+function schedule(){
+ clearTimeout(pollTimer);
+ if(document.hidden)return;
+ pollTimer=setTimeout(updateAndSchedule,nextInterval());
+}
+async function updateAndSchedule(){
+ await update();
+ schedule();
+}
+window.QUADRA_LIVE_REFRESH=updateAndSchedule;
+updateAndSchedule();
+document.addEventListener('visibilitychange',()=>{
+ if(document.hidden){clearTimeout(pollTimer);return;}
+ updateAndSchedule();
+});
+window.addEventListener('online',updateAndSchedule);
