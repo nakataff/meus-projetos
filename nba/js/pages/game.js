@@ -1,4 +1,4 @@
-import {$,setupShared,qs,esc,name,logo,tlogo,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,groupGames,note,getData,setNote,setExtraGroup,modify,platform,shortDate,currentDate,toast,modal,closeModal,eventBox,newestStarting,fetchRoster} from '../app.js?v=5';
+import {$,setupShared,qs,esc,name,logo,tlogo,effectiveGame,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,groupGames,note,getData,setNote,setExtraGroup,modify,platform,shortDate,currentDate,toast,modal,closeModal,eventBox,newestStarting,fetchRoster} from '../app.js?v=5';
 const id=qs('id')||'',hint=qs('data')||'',root=$('#pageContent');
 setupShared('games','Centro da partida','Escalações, estatísticas e seu diário pessoal de basquete.');
 let game=null,boxes={},box=null,probable={},rosters={},tab='resumo',loading=true;
@@ -31,15 +31,16 @@ function lineupPanel(code){
  (others.length?'<p class="small subtle" style="margin-top:16px">Jogadores não titulares registrados no box score: '+others.length+'</p>':'')+'</section>';
 }
 function scoreboard(){
- const p=note(game.id),final=game.status==='final';
+ const event=effectiveGame(game),p=note(game.id),final=event.status==='final',live=event.status==='live';
  const hasManual=p.scoreAway!==''&&p.scoreHome!==''&&p.scoreAway!=null&&p.scoreHome!=null;
- const scores=final?[game.scoreAway,game.scoreHome]:hasManual?[p.scoreAway,p.scoreHome]:null;
+ const scoreAvailable=(final||live)&&event.scoreAway!=null&&event.scoreHome!=null;
+ const scores=scoreAvailable?[event.scoreAway,event.scoreHome]:hasManual?[p.scoreAway,p.scoreHome]:null;
  return '<section class="card"><div class="eyebrow center">'+esc(game.stage||'NBA')+' • '+esc(shortDate(game.date))+' • '+esc(game.time||'Hora a definir')+' BRT</div>'+
  '<div class="scoreboard"><div class="side"><a href="'+teamLink(game.away)+'">'+tlogo(game.away,76)+'</a><span class="names">'+esc(name(game.away))+'</span></div>'+
- '<div class="center"><span class="bigscore">'+(scores?esc(scores[0])+' <span class="subtle">–</span> '+esc(scores[1]):'VS')+'</span><div class="small subtle">'+(final?'Partida encerrada':game.status==='live'?'Em andamento':'Jogo agendado')+'</div></div>'+
+ '<div class="center"><span class="bigscore">'+(scores?esc(scores[0])+' <span class="subtle">–</span> '+esc(scores[1]):'VS')+'</span><div class="small subtle">'+(final?'Partida encerrada':live?'Em andamento':'Jogo agendado')+'</div></div>'+
  '<div class="side"><a href="'+teamLink(game.home)+'">'+tlogo(game.home,76)+'</a><span class="names">'+esc(name(game.home))+'</span></div></div>'+
  '<div class="switches" style="justify-content:center"><span class="tag '+((game.platforms||[]).some(p=>['PRIME','ESPN'].includes(p))?'tv':'dim')+'">'+esc(platform(game))+'</span>'+
- (final?'<span class="tag finished">Resultado importado</span>':'')+'</div></section>';
+ (final?'<span class="tag finished">Resultado importado</span>':live?'<span class="live-indicator"><i aria-hidden="true"></i>AO VIVO'+(event.livePeriod?' • '+event.livePeriod+'º quarto':'')+'</span>':'')+'</div></section>';
 }
 function gameForm(){
  const p=note(game.id),rated=Number(p.rating)||0;
@@ -90,6 +91,7 @@ root.addEventListener('submit',e=>{
  toast('Partida salva!');draw();
 });
 window.addEventListener('quadra:refresh',()=>{if(game&&tab!=='avaliar')draw()});
+window.addEventListener('quadra:live-update',()=>{if(game&&tab!=='avaliar')draw()});
 async function load(){
  try{
   const games=await loadGames(months);game=games.find(g=>String(g.id)===id||String(g.externalId)===id);
