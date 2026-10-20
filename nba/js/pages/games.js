@@ -155,3 +155,4 @@ root.addEventListener('change',e=>{
  if(['teamGames','stageGames'].includes(e.target.id)){limit=60;render();}
 });
 window.addEventListener('quadra:refresh',render);
+window.addEventListener('quadra:live-update',render);
