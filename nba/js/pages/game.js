@@ -81,6 +81,7 @@ async function refreshBox(force=false){
  const interval=gameStatus().status==='live'?LIVE_REFRESH_MS:REFRESH_MS;
  if(!force&&now-lastStatsCheck<interval)return;
  lastStatsCheck=now;
+ const before=liveRenderSignature();
  checkingStats=true;statsMessage='Buscando escalações e box score na fonte pública…';
  if(force&&tab!=='avaliar')draw();
  try{
@@ -103,7 +104,8 @@ async function refreshBox(force=false){
  }finally{
   checkingStats=false;
   if(tab==='avaliar')updateScoreboardWithoutResettingForm();
-  else draw();
+  else if(force||liveRenderSignature()!==before)draw();
+  else updateSourceNoticeOnly();
   syncOpenPlayerPerformance();
  }
 }
@@ -496,14 +498,23 @@ function animateScoreChanges(current){
  previousDisplayedScores=next;
 }
 // Na aba de avaliação, o formulário nunca é recriado durante consultas automáticas.
+function liveRenderSignature(){
+ if(!game)return '';
+ const state=gameStatus();
+ return JSON.stringify([state.status,state.scoreAway,state.scoreHome,state.livePeriod,
+  state.liveClock,box?.players]);
+}
+function updateSourceNoticeOnly(){
+ const notice=root.querySelector('.game-sync-inline');
+ if(notice)notice.outerHTML=sourceNotice();
+}
 function updateScoreboardWithoutResettingForm(){
  if(!game||!root.firstElementChild)return;
  const holder=document.createElement('div');
  holder.innerHTML=scoreboard();
  const next=holder.firstElementChild;
  if(next)root.firstElementChild.replaceWith(next);
- const notice=root.querySelector('.game-sync-inline');
- if(notice)notice.outerHTML=sourceNotice();
+ updateSourceNoticeOnly();
  animateScoreChanges(gameStatus());
 }
 function syncOpenPlayerPerformance(){
