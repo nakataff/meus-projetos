@@ -21,6 +21,12 @@ function gameStatus(){
  }
  return out;
 }
+function boxHasStats(record,requireBoth=false){
+ if(!record?.players)return false;
+ const hasStats=p=>p?.hasStats===true||p?.pts!==null&&p?.pts!==undefined;
+ if(requireBoth)return [game.away,game.home].every(code=>(record.players[code]||[]).filter(hasStats).length>=5);
+ return Object.values(record.players).some(list=>list.some(hasStats));
+}
 function updateBox(){
  const cached=eventBox(boxes,game);
  const fresh=remoteBox;
@@ -38,7 +44,7 @@ function needsBoxRefresh(){
  if(game.date>currentDate())return false; // Antes da partida só consultar na abertura ou manualmente.
  if(status==='scheduled')return true; // Aguardando início/resultado.
  if(status==='final'){
-  const complete=!!box && Object.values(box.players||{}).some(list=>list.some(p=>p.hasStats===true||p.pts!==null&&p.pts!==undefined));
+  const complete=boxHasStats(box,true);
   // Parar de consultar quando já temos estatísticas finais consolidadas.
   if(complete && (!remoteStatus || remoteStatus.status==='final'))return false;
   // Se só temos números parciais, tentar buscar o box score definitivo.
@@ -155,7 +161,7 @@ function gameForm(){
 function tabs(){return '<nav class="tabs">'+[['resumo','Resumo'],['quintetos','Escalações'],['stats','Estatísticas'],['avaliar','Minha avaliação']].map(([key,label])=>'<button class="tab '+(tab===key?'active':'')+'" data-tab="'+key+'">'+label+'</button>').join('')+'</nav>';}
 function draw(){
  if(!game){root.innerHTML='<div class="filler">Partida não encontrada. <a href="'+path('jogos/')+'">Ver calendário</a></div>';return;}
- const statsReady=!!box&&Object.values(box.players||{}).some(list=>list.some(p=>p.hasStats===true||p.pts!==null&&p.pts!==undefined));
+ const statsReady=boxHasStats(box);
  const current=gameStatus();
  let content=scoreboard()+tabs()+sourceNotice();
  if(tab==='resumo'){
@@ -239,7 +245,7 @@ async function load(){
   draw();
   // Quando o jogo terminou e o box score já está completo no cache, não precisamos
   // disparar outra requisição. Jogos em andamento ou sem dados tentam busca direta.
-  const cachedHasStats=box&&Object.values(box.players||{}).some(list=>list.some(p=>p.hasStats===true||p.pts!==null&&p.pts!==undefined));
+  const cachedHasStats=boxHasStats(box,true);
   if(gameStatus().status!=='final'||!cachedHasStats)refreshBox(true);
   else {
    statsMessage='Estatísticas finais carregadas do cache atualizado pelo GitHub.';
