@@ -128,21 +128,39 @@ export function effectiveGame(g){
 export function gameRow(g){
  const event=effectiveGame(g);
  const p=note(g.id),tv=platformLines(g),href=gameLink(g);
- const hasScore=(event.status==='live'||event.status==='final')&&event.scoreAway!=null&&event.scoreHome!=null
-   &&Number.isFinite(Number(event.scoreAway))&&Number.isFinite(Number(event.scoreHome));
- const score=hasScore?'<span class="tag '+(event.status==='live'?'live-score':'finished')+'">'+esc(event.scoreAway)+' – '+esc(event.scoreHome)+'</span>':'';
- const manual=event.status!=='live'&&event.status!=='final'&&p.scoreAway!==undefined&&p.scoreAway!==''&&p.scoreHome!==undefined&&p.scoreHome!==''?
-   '<span class="tag">'+esc(p.scoreAway)+' – '+esc(p.scoreHome)+'</span>':'';
- const status=score+manual+(p.watched?'<span class="tag finished">✓ Assistido</span>':'')
-   +(p.rating?'<span class="tag accent">★ '+esc(p.rating)+'</span>':'');
+ const valid=n=>n!==null&&n!==undefined&&n!==''&&Number.isFinite(Number(n));
+ const official=(event.status==='live'||event.status==='final')&&valid(event.scoreAway)&&valid(event.scoreHome);
+ const manual=!official&&valid(p.scoreAway)&&valid(p.scoreHome);
+ const hasScore=official||manual;
+ const awayScore=official?event.scoreAway:p.scoreAway;
+ const homeScore=official?event.scoreHome:p.scoreHome;
+ const result=event.status==='final';
+ const live=event.status==='live';
+ const rawPeriod=Number(event.livePeriod);
+ const quarter=rawPeriod>=5?'PRORROGAÇÃO':rawPeriod>=1?rawPeriod+'º QUARTO':'EM ANDAMENTO';
+ const clock=live&&event.liveClock?String(event.liveClock).trim():'';
+ const phase=live?quarter+(clock?' • '+clock:''):result?'FINAL':manual?'PLACAR ANOTADO':'';
+ const leftWinner=result&&official&&Number(awayScore)>Number(homeScore);
+ const rightWinner=result&&official&&Number(homeScore)>Number(awayScore);
+ const middle=hasScore?
+   '<span class="matchup-center has-score" aria-label="Placar '+esc(awayScore)+' a '+esc(homeScore)+(phase?' • '+esc(phase):'')+'">'+
+   '<span class="matchup-score-pair">'+
+   '<span class="matchup-score-box'+(leftWinner?' winner':'')+'">'+esc(awayScore)+'</span>'+
+   '<span class="matchup-vs">VS</span>'+
+   '<span class="matchup-score-box'+(rightWinner?' winner':'')+'">'+esc(homeScore)+'</span>'+
+   '</span>'+(phase?'<span class="matchup-phase'+(live?' is-live':'')+'">'+esc(phase)+'</span>':'')+'</span>':
+   '<span class="matchup-center no-score"><span class="matchup-vs">VS</span>'+
+   (live?'<span class="matchup-phase is-live">'+esc(phase)+'</span>':'')+'</span>';
+ const status=(p.watched?'<span class="tag finished">✓ Assistido</span>':'')+
+   (p.rating?'<span class="tag accent">★ '+esc(p.rating)+'</span>':'');
  const channels=tv.lines.map(label=>'<span>'+esc(label)+'</span>').join('');
  const broadcast='<span class="broadcast-badge '+tv.variant+(tv.lines.length>1?' multi':'')+'" title="Transmissão: '+esc(tv.lines.join(' / '))+'">'+channels+'</span>';
  return '<article class="game-card game-card-link">'+
  '<div class="time">'+esc(g.time||'—')+'<small>BRASÍLIA</small>'+
- (event.status==='live'?'<span class="live-indicator"><i aria-hidden="true"></i>AO VIVO</span>':'')+'</div>'+
+ (live?'<span class="live-indicator"><i aria-hidden="true"></i>AO VIVO</span>':'')+'</div>'+
  '<a class="matchup" href="'+esc(href)+'" aria-label="Abrir partida: '+esc(name(g.away))+' x '+esc(name(g.home))+'">'+
  '<span class="club">'+tlogo(g.away,42)+'<span><strong>'+esc(name(g.away))+'</strong><small>'+esc(g.away)+'</small></span></span>'+
- '<span class="versus">VS</span>'+
+ middle+
  '<span class="club right">'+tlogo(g.home,42)+'<span><strong>'+esc(name(g.home))+'</strong><small>'+esc(g.home)+'</small></span></span></a>'+
  '<div class="game-meta"><div class="game-status">'+status+'</div>'+broadcast+
  '<button type="button" class="fav" title="'+(p.wish?'Remover da minha lista':'Quero assistir')+'" aria-label="'+(p.wish?'Remover da lista':'Quero assistir')+'" aria-pressed="'+!!p.wish+'" data-wish="'+esc(g.id)+'">'+(p.wish?'♥':'♡')+'</button></div></article>';
