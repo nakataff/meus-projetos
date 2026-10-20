@@ -346,10 +346,10 @@ function leaderCards(){
  return '<section class="section"><div class="section-title"><h2>Quem está se destacando</h2>'+
  '<button class="btn ghost" type="button" data-open-tab="stats">Box score completo →</button></div>'+
  '<div class="overview-leader-grid">'+topCard+leaders.map(item=>{
-  if(!item.leader)return '<article class="overview-leader" role="button" tabindex="0" data-player-detail="'+esc(player.id)+'" data-player-team="'+esc(code)+'" aria-label="Ver detalhes de '+esc(player.name)+'"><span class="caps">'+esc(item.title)+'</span>'+
+   if(!item.leader)return '<article class="overview-leader"><span class="caps">'+esc(item.title)+'</span>'+
    '<div class="overview-leader-empty">Aguardando dados</div></article>';
   const {code,player}=item.leader,num=statValue(player,item.key);
-  return '<article class="overview-leader"><span class="caps">'+esc(item.title)+'</span>'+
+   return '<article class="overview-leader" role="button" tabindex="0" data-player-detail="'+esc(player.id)+'" data-player-team="'+esc(code)+'" aria-label="Ver detalhes de '+esc(player.name)+'"><span class="caps">'+esc(item.title)+'</span>'+
    '<div class="overview-leader-body">'+playerPortrait(player,code)+
    '<div class="overview-leader-person"><strong class="overview-name">'+esc(player.name)+'</strong>'+
    '<span><img src="'+esc(logo(code))+'" loading="lazy" alt="">'+esc(name(code))+'</span></div>'+
