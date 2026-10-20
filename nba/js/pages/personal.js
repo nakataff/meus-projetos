@@ -142,7 +142,7 @@ function render(){
 }
 function editNickname(){
  const v=getData().settings.nickname||'';
- modal('<h2>Personalizar perfil</h2><p class="subtle small">O apelido aparece somente no seu perfil do QUADRA e será sincronizado com suas preferências.</p><form id="nicknameForm"><div class="field"><label>Meu apelido</label><input id="nickname" class="control" maxlength="28" autocomplete="nickname" placeholder="Seu nome de torcedor" value="'+esc(v)+'"></div><div class="modal-footer"><button class="btn accent" type="submit">Salvar apelido</button></div></form>');
+ modal('<h2>Personalizar perfil</h2><p class="subtle small">O apelido aparece somente no seu perfil do DE LA QUADRA e será sincronizado com suas preferências.</p><form id="nicknameForm"><div class="field"><label>Meu apelido</label><input id="nickname" class="control" maxlength="28" autocomplete="nickname" placeholder="Seu nome de torcedor" value="'+esc(v)+'"></div><div class="modal-footer"><button class="btn accent" type="submit">Salvar apelido</button></div></form>');
  $('#nicknameForm').onsubmit=e=>{e.preventDefault();setSettings({nickname:$('#nickname').value.trim().slice(0,28)});closeModal();render();toast('Perfil atualizado!');};
 }
 root.addEventListener('click',e=>{
