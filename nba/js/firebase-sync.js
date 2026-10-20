@@ -90,22 +90,26 @@ function merge(localBundle,remoteBundle){
       ? {...(remoteExtra[field]||{}),...(localExtra[field]||{})}
       : {...(localExtra[field]||{}),...(remoteExtra[field]||{})};
   }
-  output.extras.updatedAt=priority?localExtra.updatedAt:remoteExtra.updatedAt;
+  const chosenTimestamp=priority?localExtra.updatedAt:remoteExtra.updatedAt;
+  if(chosenTimestamp)output.extras.updatedAt=chosenTimestamp;
+  else delete output.extras.updatedAt;
   // Evita spoilers entre dispositivos: cada aparelho mantém sua preferência.
   output.extras.hideSpoilers=localExtra.hideSpoilers ?? true;
   return output;
 }
+// Firestore rejeita valores undefined; normalizar sem modificar o estado local.
+function firestoreSafe(value){return JSON.parse(JSON.stringify(value));}
 function cloudCollection(){return sdk.collection(db,'users',user.uid,'quadra');}
 function cloudDocument(name){return sdk.doc(db,'users',user.uid,'quadra',name);}
 async function writeAll(bundle){
   const notes=notesByMonth(bundle);
   const jobs=[];
   for(const [name,group] of Object.entries(notes)){
-    jobs.push(sdk.setDoc(cloudDocument(name),{notes:group,version:1,updatedAt:new Date().toISOString()},{merge:true}));
+    jobs.push(sdk.setDoc(cloudDocument(name),firestoreSafe({notes:group,version:1,updatedAt:new Date().toISOString()}),{merge:true}));
   }
-  jobs.push(sdk.setDoc(cloudDocument('preferences'),{settings:bundle.settings||{},version:1,updatedAt:new Date().toISOString()},{merge:true}));
-  jobs.push(sdk.setDoc(cloudDocument('extras'),{extras:bundle.extras||{},version:1,updatedAt:new Date().toISOString()},{merge:true}));
-  jobs.push(sdk.setDoc(cloudDocument('custom'),{custom:bundle.saved?.custom||[],version:1,updatedAt:new Date().toISOString()},{merge:true}));
+  jobs.push(sdk.setDoc(cloudDocument('preferences'),firestoreSafe({settings:bundle.settings||{},version:1,updatedAt:new Date().toISOString()}),{merge:true}));
+  jobs.push(sdk.setDoc(cloudDocument('extras'),firestoreSafe({extras:bundle.extras||{},version:1,updatedAt:new Date().toISOString()}),{merge:true}));
+  jobs.push(sdk.setDoc(cloudDocument('custom'),firestoreSafe({custom:bundle.saved?.custom||[],version:1,updatedAt:new Date().toISOString()}),{merge:true}));
   await Promise.all(jobs);
 }
 function pendingSummary(bundle){
@@ -177,16 +181,16 @@ async function flush(){
   try{
     const jobs=[];
     for(const [name,notes] of Object.entries(noteDelta)){
-      jobs.push(sdk.setDoc(cloudDocument(name),{notes,updatedAt:new Date().toISOString(),version:1},{merge:true}));
+      jobs.push(sdk.setDoc(cloudDocument(name),firestoreSafe({notes,updatedAt:new Date().toISOString(),version:1}),{merge:true}));
     }
     if(safeJson(current.saved?.custom)!==safeJson(previous.saved?.custom)){
-      jobs.push(sdk.setDoc(cloudDocument('custom'),{custom:current.saved?.custom||[],updatedAt:new Date().toISOString(),version:1},{merge:true}));
+      jobs.push(sdk.setDoc(cloudDocument('custom'),firestoreSafe({custom:current.saved?.custom||[],updatedAt:new Date().toISOString(),version:1}),{merge:true}));
     }
     if(safeJson(current.settings)!==safeJson(previous.settings)){
-      jobs.push(sdk.setDoc(cloudDocument('preferences'),{settings:current.settings,updatedAt:new Date().toISOString(),version:1},{merge:true}));
+      jobs.push(sdk.setDoc(cloudDocument('preferences'),firestoreSafe({settings:current.settings,updatedAt:new Date().toISOString(),version:1}),{merge:true}));
     }
     if(safeJson(current.extras)!==safeJson(previous.extras)){
-      jobs.push(sdk.setDoc(cloudDocument('extras'),{extras:current.extras,updatedAt:new Date().toISOString(),version:1},{merge:true}));
+      jobs.push(sdk.setDoc(cloudDocument('extras'),firestoreSafe({extras:current.extras,updatedAt:new Date().toISOString(),version:1}),{merge:true}));
     }
     await Promise.all(jobs);
     lastSynced=clone(current);
