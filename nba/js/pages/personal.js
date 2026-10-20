@@ -1,4 +1,4 @@
-import {$,setupShared,loadGames,MONTHS,getData,groupGames,esc,path,backup,restore,handleWishes,note,setSpoilers,getSpoilers,TEAMS,teamLink,playerLink,gameLink,logo,modal,closeModal,setSettings,toast} from '../app.js';
+import {$,setupShared,loadGames,MONTHS,getData,groupGames,esc,path,backup,restore,handleWishes,note,TEAMS,teamLink,playerLink,gameLink,logo,modal,closeModal,setSettings,toast} from '../app.js';
 setupShared('personal','Meu perfil','Sua jornada na NBA: avaliações, jogos assistidos, jogadores favoritos e conquistas.');
 const root=$('#pageContent');
 let games=[],loaded=false,tab=new URLSearchParams(location.search).get('tab')||'resumo';
@@ -62,7 +62,7 @@ function topGames(s,n=5){
 }
 function prefs(s){
  return '<section class="card profile-settings"><div class="section-title"><h2>Conta e preferências</h2></div>'+
- '<div class="profile-setting-row"><div><b>Modo sem spoilers</b><span class="small subtle">Oculta resultados e estatísticas automaticamente.</span></div><button type="button" class="btn" id="toggleSpoilers">'+(getSpoilers()?'Ativado':'Desativado')+'</button></div>'+
+ 
  '<div class="profile-setting-row"><div><b>Sincronização Google</b><span class="small subtle">'+(account?'Conta conectada. O status da nuvem aparece logo acima.':'Entre pelo botão Google para sincronizar entre aparelhos.')+'</span></div></div>'+
  '<div class="profile-setting-row"><div><b>Seus dados</b><span class="small subtle">Exportar um backup antes de trocar ou limpar o navegador.</span></div>'+
  '<div class="profile-backup-actions"><button class="btn accent" id="backup">↓ Baixar JSON</button><button class="btn" id="importBackup">↑ Restaurar</button><input type="file" id="backupFile" accept=".json,application/json" hidden></div></div>'+
@@ -152,7 +152,6 @@ root.addEventListener('click',e=>{
  if(e.target.closest('#editNickname')){editNickname();return;}
  if(e.target.closest('#backup')){backup();toast('Backup completo baixado!');return;}
  if(e.target.closest('#importBackup')){$('#backupFile')?.click();return;}
- if(e.target.closest('#toggleSpoilers')){setSpoilers(!getSpoilers());render();return;}
 });
 root.addEventListener('change',e=>{if(e.target.id==='backupFile')restore(e.target.files?.[0],render);});
 window.addEventListener('quadra:auth',e=>{account=e.detail||null;render();});
