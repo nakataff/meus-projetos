@@ -106,19 +106,40 @@ export function platformLines(g){
  if(prime)return {lines:['PRIME VIDEO'],variant:'tv'};
  return {lines:['NBA LEAGUE PASS'],variant:'league'};
 }
+export function effectiveGame(g){
+ const today=currentDate();
+ const id=String(g.externalId||String(g.id||'').replace(/^espn_/,''));
+ const live=window.QUADRA_LIVE_GAMES?.get(id);
+ if(live && live.away===g.away && live.home===g.home &&
+    (live.status==='live'||live.status==='final'||g.status==='live')){
+  const changed={...g,status:live.status};
+  if(live.scoreAway!==null && live.scoreHome!==null){
+   changed.scoreAway=live.scoreAway;changed.scoreHome=live.scoreHome;
+  }
+  if(live.status==='live'){
+   changed.livePeriod=live.period;changed.liveClock=live.clock;
+  }
+  return changed;
+ }
+ // Uma atualização antiga do JSON nunca deve sinalizar AO VIVO dias depois.
+ if(g.status==='live'&&g.date<dayShift(today,-1))return {...g,status:'scheduled'};
+ return g;
+}
 export function gameRow(g){
+ const event=effectiveGame(g);
  const p=note(g.id),tv=platformLines(g),href=gameLink(g);
- const hasFinalScore=g.status==='final'&&g.scoreAway!=null&&g.scoreHome!=null
-   &&Number.isFinite(Number(g.scoreAway))&&Number.isFinite(Number(g.scoreHome));
- const score=hasFinalScore?'<span class="tag finished">'+esc(g.scoreAway)+' – '+esc(g.scoreHome)+'</span>':'';
- const manual=g.status!=='final'&&p.scoreAway!==undefined&&p.scoreAway!==''&&p.scoreHome!==undefined&&p.scoreHome!==''?
+ const hasScore=(event.status==='live'||event.status==='final')&&event.scoreAway!=null&&event.scoreHome!=null
+   &&Number.isFinite(Number(event.scoreAway))&&Number.isFinite(Number(event.scoreHome));
+ const score=hasScore?'<span class="tag '+(event.status==='live'?'live-score':'finished')+'">'+esc(event.scoreAway)+' – '+esc(event.scoreHome)+'</span>':'';
+ const manual=event.status!=='live'&&event.status!=='final'&&p.scoreAway!==undefined&&p.scoreAway!==''&&p.scoreHome!==undefined&&p.scoreHome!==''?
    '<span class="tag">'+esc(p.scoreAway)+' – '+esc(p.scoreHome)+'</span>':'';
  const status=score+manual+(p.watched?'<span class="tag finished">✓ Assistido</span>':'')
    +(p.rating?'<span class="tag accent">★ '+esc(p.rating)+'</span>':'');
  const channels=tv.lines.map(label=>'<span>'+esc(label)+'</span>').join('');
  const broadcast='<span class="broadcast-badge '+tv.variant+(tv.lines.length>1?' multi':'')+'" title="Transmissão: '+esc(tv.lines.join(' / '))+'">'+channels+'</span>';
  return '<article class="game-card game-card-link">'+
- '<div class="time">'+esc(g.time||'—')+'<small>BRASÍLIA</small></div>'+
+ '<div class="time">'+esc(g.time||'—')+'<small>BRASÍLIA</small>'+
+ (event.status==='live'?'<span class="live-indicator"><i aria-hidden="true"></i>AO VIVO</span>':'')+'</div>'+
  '<a class="matchup" href="'+esc(href)+'" aria-label="Abrir partida: '+esc(name(g.away))+' x '+esc(name(g.home))+'">'+
  '<span class="club">'+tlogo(g.away,42)+'<span><strong>'+esc(name(g.away))+'</strong><small>'+esc(g.away)+'</small></span></span>'+
  '<span class="versus">VS</span>'+
