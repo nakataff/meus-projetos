@@ -3,6 +3,9 @@ import {fetchLiveBoxscore,projectStartingFive} from '../boxscore.js?v=1';
 const id=qs('id')||'',hint=qs('data')||'',root=$('#pageContent');
 setupShared('games','Centro da partida','Escalações, estatísticas e seu diário pessoal de basquete.');
 let game=null,boxes={},box=null,probable={},rosters={},tab='resumo';
+let statsSort='pts',statsAsc=false;
+let statsTeam=typeof window.matchMedia==='function'&&window.matchMedia('(max-width:980px)').matches?'away':'both';
+let statsDetail=false;
 let remoteBox=null,remoteStatus=null,lastStatsCheck=0,checkingStats=false,statsMessage='',lastSuccess=null;
 const REFRESH_MS=120000;
 function gameStatus(){
@@ -93,18 +96,104 @@ async function refreshBox(force=false){
 }
 
 const maybeMonth=hint.slice(0,7),months=MONTHS.includes(maybeMonth)?[maybeMonth]:MONTHS;
+const statFields=[
+ {key:'pts',label:'PTS',title:'Pontos'},
+ {key:'reb',label:'REB',title:'Rebotes'},
+ {key:'ast',label:'AST',title:'Assistências'},
+ {key:'min',label:'MIN',title:'Minutos'},
+ {key:'three',label:'3PT',title:'Bolas de 3 convertidas'},
+ {key:'stl',label:'STL',title:'Roubos de bola'},
+ {key:'blk',label:'BLK',title:'Tocos'},
+ {key:'fg',label:'FG',title:'Arremessos convertidos'},
+ {key:'to',label:'TOV',title:'Turnovers'},
+ {key:'plusMinus',label:'+/-',title:'Saldo de pontos'}
+];
+function statValue(player,key){
+ const value=player?.[key];
+ if(value===undefined||value===null||value===''||value==='—')return null;
+ if(key==='min')return Number(String(value).replace(/[^0-9.]/g,''))||0;
+ if(key==='three'||key==='fg'){
+  const n=Number(String(value).split('-')[0]);
+  return Number.isFinite(n)?n:null;
+ }
+ const n=Number(value);
+ return Number.isFinite(n)?n:null;
+}
+function scorePlayers(code){
+ const rows=(box?.players?.[code]||[]).filter(p=>p.id&&p.name);
+ return rows.slice().sort((a,b)=>{
+  const av=statValue(a,statsSort),bv=statValue(b,statsSort);
+  if(av===null && bv!==null)return 1;
+  if(bv===null && av!==null)return -1;
+  const delta=(av??0)-(bv??0);
+  if(delta!==0)return statsAsc?delta:-delta;
+  const tie=(statValue(b,'pts')??0)-(statValue(a,'pts')??0);
+  return tie || String(a.name).localeCompare(String(b.name),'pt-BR');
+ });
+}
+function statHeader(field){
+ const active=statsSort===field.key;
+ return '<th scope="col" class="'+(active?'stat-selected':'')+'"><button type="button" class="stat-heading" data-stats-sort="'+esc(field.key)+
+ '" aria-label="Ordenar por '+esc(field.title)+(active?(statsAsc?', crescente':', decrescente'):'')+
+ '" title="'+esc(field.title)+'">'+field.label+(active?'<span aria-hidden="true">'+(statsAsc?' ↑':' ↓')+'</span>':'')+'</button></th>';
+}
+function playerPortrait(p,code){
+ const head=rosters[code]?.find(x=>String(x.id)===String(p.id))?.headshot;
+ return head&&/^https:\/\//.test(head)?'<img src="'+esc(head)+'" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" class="boxscore-headshot" onerror="this.style.display=\'none\'">':
+ '<span class="boxscore-placeholder" aria-hidden="true">'+esc(String(p.name||'?').charAt(0))+'</span>';
+}
+function statText(player,key){
+ const value=player?.[key];
+ if(value===undefined||value===null||value===''||value==='—')return '—';
+ return esc(value);
+}
 function playerStats(code){
- const players=box?.players?.[code]||[];
- if(!players.length)return '<div class="filler">As estatísticas individuais ainda não foram importadas para esta partida.</div>';
- const b=getData(),mvp=b.extras.gameMvp?.[game.id];
- return '<div class="scroll-x"><table class="stat-table"><thead><tr><th>Jogador</th><th>MIN</th><th>PTS</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th><th>FG</th><th>3PT</th><th>TO</th><th>+/-</th><th>Nota</th><th>MVP</th></tr></thead><tbody>'+
- players.map(p=>{
-  const rate=b.extras.gameRatings?.[game.id+':'+p.id],isMvp=mvp===String(p.id);
-  return '<tr><td><a href="'+playerLink(p.id,code)+'">'+esc(p.name)+'</a>'+(p.starter?' <span class="tag finished">T</span>':'')+'</td>'+
-  [p.min,p.pts,p.reb,p.ast,p.stl,p.blk,p.fg,p.three,p.to,p.plusMinus].map(v=>'<td>'+esc(v??'—')+'</td>').join('')+
-  '<td><button class="btn" data-player-rating="'+esc(p.id)+'" data-player-team="'+code+'">'+(rate!==undefined?'★ '+esc(rate):'Avaliar')+'</button></td>'+
-  '<td><button class="btn" data-mvp="'+esc(p.id)+'">'+(isMvp?'★ MVP':'☆ Votar')+'</button></td></tr>';
- }).join('')+'</tbody></table></div>';
+ const rows=scorePlayers(code);
+ if(!rows.length)return '<div class="filler"><b>Sem números para '+esc(name(code))+'</b>O box score desta equipe ainda não foi disponibilizado.</div>';
+ const ratings=getData().extras,chosenMvp=String(ratings.gameMvp?.[game.id]||'');
+ const cols=statsDetail?['min','pts','reb','ast','stl','blk','fg','three','to','plusMinus']:['min','pts','reb','ast','three'];
+ const tr=rows.map((p,index)=>{
+  const id=String(p.id),rating=ratings.gameRatings?.[game.id+':'+id];
+  const mvp=chosenMvp===id;
+  return '<tr class="'+(p.starter?'boxscore-starter':'')+'">'+
+  '<th scope="row"><div class="boxscore-player">'+playerPortrait(p,code)+
+  '<div class="boxscore-player-info"><a href="'+playerLink(id,code)+'" title="'+esc(p.name)+'">'+esc(p.name)+'</a>'+
+  '<small>'+esc(p.number?'#'+p.number+' • ':'')+(p.starter?'TITULAR':'RESERVA')+'</small></div></div></th>'+
+  cols.map(key=>'<td class="'+(statsSort===key?'stat-selected':'')+'">'+statText(p,key)+'</td>').join('')+
+  '<td class="boxscore-actions"><button type="button" data-player-rating="'+esc(id)+'" data-player-team="'+esc(code)+
+  '" class="boxscore-rating" title="Avaliar '+esc(p.name)+'" aria-label="Dar nota para '+esc(p.name)+'">'+
+  (rating!==undefined?'★ '+esc(rating):'☆')+'</button>'+
+  '<button type="button" class="boxscore-mvp'+(mvp?' chosen':'')+'" data-mvp="'+esc(id)+'" title="'+(mvp?'Meu MVP':'Escolher MVP')+
+  '" aria-label="'+(mvp?'MVP selecionado':'Escolher '+esc(p.name)+' como MVP')+'">'+(mvp?'★':'MVP')+'</button></td></tr>';
+ }).join('');
+ return '<div class="boxscore-scroll"><table class="boxscore-table '+(statsDetail?'expanded':'')+'"><thead><tr><th scope="col">Jogador</th>'+
+ cols.map(key=>statHeader(statFields.find(f=>f.key===key))).join('')+
+ '<th scope="col" class="boxscore-actions-title">Minha nota / MVP</th></tr></thead><tbody>'+tr+'</tbody></table></div>';
+}
+function boxscorePanel(code){
+ const stats=(box?.players?.[code]||[]).filter(p=>p.hasStats===true||p.pts!==null&&p.pts!==undefined);
+ const players=(box?.players?.[code]||[]).length;
+ const selected=statsTeam==='both'||(statsTeam==='away'?code===game.away:code===game.home);
+ return '<section class="boxscore-team'+(selected?' is-selected':'')+'" data-score-team="'+esc(code)+'">'+
+ '<div class="boxscore-team-head"><img src="'+esc(logo(code))+'" alt="" loading="lazy">'+
+ '<div><strong>'+esc(name(code))+'</strong><span>'+stats.length+' atletas com dados'+(players>stats.length?' • '+players+' relacionados':'')+'</span></div>'+
+ '</div>'+playerStats(code)+'</section>';
+}
+function boxscoreArea(){
+ const teams=[['both','Ambos'],['away',game.away],['home',game.home]];
+ const sortOptions=statFields.map(f=>'<option value="'+f.key+'"'+(statsSort===f.key?' selected':'')+'>'+f.title+'</option>').join('');
+ return '<div class="boxscore-interface">'+
+ '<div class="boxscore-toolbar"><div class="boxscore-filter" aria-label="Visualizar estatísticas da equipe">'+
+ teams.map(([key,label])=>'<button type="button" class="boxscore-team-choice'+(statsTeam===key?' active':'')+
+ '" data-stats-team="'+key+'" aria-pressed="'+(statsTeam===key)+'">'+esc(label)+'</button>').join('')+'</div>'+
+ '<div class="boxscore-sort-controls"><label for="boxscoreSort">Ordenar por</label>'+
+ '<select id="boxscoreSort" class="control" aria-label="Ordenar jogadores por estatística">'+sortOptions+'</select>'+
+ '<button type="button" class="btn ghost boxscore-order" data-toggle-stats-direction title="Inverter ordem">'+(statsAsc?'↑ Crescente':'↓ Decrescente')+'</button>'+
+ '<button type="button" class="btn ghost boxscore-detail" data-toggle-stats-detail aria-pressed="'+statsDetail+'">'+
+ (statsDetail?'Menos dados':'Mais dados')+'</button></div></div>'+
+ '<p class="boxscore-hint">Clique no nome da estatística para ordenar. As duas equipes seguem a mesma classificação. '+(statsDetail?'Arraste a tabela para ver todas as colunas no celular.':'')+'</p>'+
+ '<div class="boxscore-panels '+(statsTeam==='both'?'view-both':'view-single')+'">'+
+ boxscorePanel(game.away)+boxscorePanel(game.home)+'</div></div>';
 }
 function starterList(code){
  // A marcação explícita de starter vem do box score, nunca do elenco.
@@ -177,13 +266,12 @@ function draw(){
  }else if(tab==='stats'){
   content+=statsReady?'<div class="section"><div class="section-title"><h2>'+(current.status==='live'?'Estatísticas parciais':'Estatísticas individuais')+'</h2>'+
   '<span class="subtle small">'+(current.status==='live'?'Parciais, sujeitas a correções':current.status==='final'?'Box score final':'Dados preliminares')+'</span></div>'+
-  '<div class="card"><h3>'+esc(name(game.away))+'</h3>'+playerStats(game.away)+'</div>'+
-  '<div class="card section"><h3>'+esc(name(game.home))+'</h3>'+playerStats(game.home)+'</div></div>':
+  boxscoreArea()+'</div>':
   '<div class="filler"><b>Estatísticas individuais ainda indisponíveis</b>'+
   (current.status==='scheduled'?'Antes do início, confira a aba Escalações para ver o quinteto provável.':
   'A fonte ainda não publicou os dados desta partida. Você pode atualizar manualmente ou aguardar a próxima consulta.')+'</div>';
  }else if(tab==='avaliar'){
-  content+=gameForm()+(statsReady?'<section class="section"><div class="section-title"><h2>Avaliar jogadores e escolher MVP</h2></div><div class="card"><h3>'+esc(name(game.away))+'</h3>'+playerStats(game.away)+'</div><div class="card section"><h3>'+esc(name(game.home))+'</h3>'+playerStats(game.home)+'</div></section>':'');
+  content+=gameForm()+(statsReady?'<section class="section"><div class="section-title"><h2>Avaliar jogadores e escolher MVP</h2></div>'+boxscoreArea()+'</section>':'');
  }
  root.innerHTML=content;
 }
@@ -196,11 +284,28 @@ function ratePlayer(pid,code){
 }
 root.addEventListener('click',e=>{
  if(e.target.closest('#refreshBox')){refreshBox(true);return;}
+ const setTeam=e.target.closest('[data-stats-team]');
+ if(setTeam){statsTeam=setTeam.dataset.statsTeam;draw();return;}
+ const sorted=e.target.closest('[data-stats-sort]');
+ if(sorted){
+  const key=sorted.dataset.statsSort;
+  if(!statFields.some(f=>f.key===key))return;
+  if(statsSort===key)statsAsc=!statsAsc;
+  else{statsSort=key;statsAsc=false;}
+  draw();return;
+ }
+ if(e.target.closest('[data-toggle-stats-direction]')){statsAsc=!statsAsc;draw();return;}
+ if(e.target.closest('[data-toggle-stats-detail]')){statsDetail=!statsDetail;draw();return;}
  const t=e.target.closest('[data-tab],[data-open-tab]');if(t){tab=t.dataset.tab||t.dataset.openTab;draw();return;}
  const r=e.target.closest('[data-player-rating]');if(r){ratePlayer(r.dataset.playerRating,r.dataset.playerTeam);return;}
  const m=e.target.closest('[data-mvp]');if(m){setExtraGroup('gameMvp',game.id,String(m.dataset.mvp));draw();toast('MVP da partida escolhido!');return;}
 });
 root.addEventListener('input',e=>{if(e.target.id==='gameRating')$('#gameRatingValue').textContent=e.target.value;});
+root.addEventListener('change',e=>{
+ if(e.target.id==='boxscoreSort'&&statFields.some(f=>f.key===e.target.value)){
+  statsSort=e.target.value;statsAsc=false;draw();
+ }
+});
 root.addEventListener('submit',e=>{
  if(e.target.id!=='saveGame')return;e.preventDefault();
  const away=$('#awayScore').value,home=$('#homeScore').value;
