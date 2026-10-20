@@ -777,3 +777,71 @@ footer{border-top:1px solid var(--border);color:#8293ab;font-size:12px;padding:2
  .boxscore-choice-logos img{width:25px;height:25px}
  .boxscore-team-choice .boxscore-choice-label{font-size:9px}
 }
+
+
+/* Notas QUADRA e classificação 2026/27 */
+.overview-leader-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.overview-best-player{border-color:#93613c;background:linear-gradient(135deg,#392b27,#1c2938)}
+.overview-best-player .caps{color:#ffc590}
+.overview-best-player .overview-leader-value strong{color:#ffc17e}
+.rating-method-link{padding:6px 0 0;border:0;background:none;color:#f1b57d;font-size:10px;font-weight:750;text-align:left;cursor:pointer}
+.rating-method-link:hover{text-decoration:underline}
+.boxscore-rating-help{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border:1px solid #49526d;background:#1b2738;border-radius:10px;padding:10px 12px;margin:0 0 12px;font-size:11px;color:#b9cbe0}
+.boxscore-rating-help strong{color:#ffca90}
+.boxscore-rating-help .btn{padding:6px 9px;font-size:10px}
+.boxscore-table .stat-selected{background:#b67c2320}
+.boxscore-table tbody td.stat-selected{font-weight:900;color:#ffcc86}
+.performance-rating{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 11px;background:#3b2b25;border:1px solid #9e6340;border-radius:11px;padding:10px 14px;font-size:12px;color:#ffcc96;font-weight:850}
+.performance-rating strong{font-size:24px;color:#fff3d9}
+.standings-summary{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;border:1px solid #344359;background:linear-gradient(125deg,#1b2b3c,#121b28);border-radius:15px;padding:18px 19px;margin:6px 0 19px}
+.standings-summary h2{font-size:25px;margin:5px 0}
+.standings-help{display:flex;gap:10px;align-items:center;font-size:11px;color:#9bb0c6}
+.standings-switches{display:flex;flex-wrap:wrap;gap:8px;margin:13px 0 18px}
+.standings-switches .pill{min-width:95px;padding:11px 17px}
+.standings-section{margin-top:25px}
+.standings-scroll{border:1px solid #34455d;border-radius:13px;overflow-x:auto;scrollbar-width:thin;background:#141e2b}
+.standings-table{width:100%;border-collapse:collapse;min-width:740px;font-size:12px;font-variant-numeric:tabular-nums}
+.standings-table th,.standings-table td{border-bottom:1px solid #2c3b4f;padding:12px 9px;text-align:center;white-space:nowrap}
+.standings-table thead th{font-size:10px;letter-spacing:.025em;color:#aabbd0;background:#192637}
+.standings-table tbody tr:last-child td,.standings-table tbody tr:last-child th{border-bottom:0}
+.standings-table tbody tr:nth-child(even){background:#182333}
+.standings-table tbody tr.highlight{background:#48352a}
+.standings-table tbody tr:hover{background:#283b51}
+.standings-team-col{position:sticky;left:0;z-index:1;min-width:250px;max-width:280px!important;text-align:left!important;background:#141e2b;box-shadow:1px 0 #344459}
+.standings-table thead .standings-team-col{background:#192637;z-index:2}
+.standings-table tbody tr:nth-child(even) .standings-team-col{background:#182333}
+.standings-table tbody tr.highlight .standings-team-col{background:#48352a}
+.standings-team-col>a{display:inline-flex;align-items:center;gap:9px;vertical-align:middle;max-width:210px;min-width:0}
+.standings-team-col>a img{width:35px;height:35px;object-fit:contain;flex:none}
+.standings-team-col>a span{display:flex;min-width:0;flex-direction:column;gap:2px}
+.standings-team-col>a b{font-size:12px;overflow:hidden;text-overflow:ellipsis}
+.standings-team-col>a small{font-size:10px;color:#97aec7}
+.standings-rank{display:inline-flex;align-items:center;justify-content:center;width:28px;color:#a7b9ce;font-size:11px;font-weight:900}
+.standings-table .standings-pct{font-weight:900;color:#f4f8ff}
+.standings-pos{color:#a5dfb7}.standings-neg{color:#e8a1a1}
+.standings-last{display:flex;align-items:center;justify-content:center;gap:3px}
+.standings-form{width:17px;height:19px;display:grid;place-items:center;border-radius:4px;font-size:10px;font-weight:900}
+.standings-form.win{color:#b5f2c9;background:#22533a}.standings-form.loss{color:#ffd4d4;background:#552c32}
+.standings-note{font-size:11px;color:#8fa4bd;line-height:1.8;margin:23px 2px 40px}
+.team-standings-mini{font-size:11px;color:#bac8dc;margin:8px 0 0!important}
+@media(max-width:1060px){
+ .overview-leader-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .overview-best-player{grid-column:1/-1}
+}
+@media(max-width:740px){
+ .overview-leader-grid{grid-template-columns:1fr}
+ .overview-best-player{grid-column:auto}
+ .standings-summary{padding:14px}
+ .standings-summary h2{font-size:21px}
+ .standings-help{width:100%;justify-content:space-between}
+ .standings-switches{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+ .standings-switches .pill{min-width:0;padding:9px 4px;font-size:10px}
+ .standings-table{min-width:695px;font-size:11px}
+ .standings-table th,.standings-table td{padding:10px 6px}
+ .standings-team-col{min-width:185px;max-width:195px!important}
+ .standings-team-col>a{max-width:147px;gap:5px}
+ .standings-team-col>a img{width:28px;height:28px}
+ .standings-team-col>a b{font-size:10px}
+ .standings-team-col>a small{font-size:9px}
+ .standings-rank{width:20px;font-size:10px}
+}
