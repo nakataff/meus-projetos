@@ -31,7 +31,7 @@ function tabs(){return '<nav class="tabs">'+[['elenco','Elenco'],['titulares','T
 function draw(){
  if(!valid){root.innerHTML='<div class="filler">Equipe não encontrada. <a href="'+path('equipes/')+'">Ver equipes</a></div>';return;}
  const b=getData(),fav=b.settings.fav===code,x=b.extras,line=x.lineups?.[code]||[];
- let content='<section class="team-hero"><img src="'+logo(code)+'" alt=""><div><div class="eyebrow">CONFERÊNCIA '+conf.toUpperCase()+' • DIVISÃO '+esc(division).toUpperCase()+'</div><h2>'+esc(name(code))+'</h2><p>'+roster.length+' jogadores no elenco</p><div class="controls"><button class="btn '+(fav?'accent':'')+'" id="favoriteTeam">'+(fav?'★ Meu time favorito':'☆ Marcar como favorito')+'</button><a class="btn" href="'+path('equipes/')+'">Outras equipes</a></div></div></section>'+tabs();
+ let content='<section class="team-hero"><img src="'+logo(code)+'" alt=""><div><div class="eyebrow">CONFERÊNCIA '+conf.toUpperCase()+' • DIVISÃO '+esc(division).toUpperCase()+'</div><h2>'+esc(name(code))+'</h2><p>'+roster.length+' jogadores no elenco</p><div class="controls"><button class="btn '+(fav?'accent':'')+'" id="favoriteTeam">'+(fav?'★ Meu time favorito':'☆ Marcar como favorito')+'</button><a class="btn" href="'+path('classificacao/?time='+code)+'">Ver classificação ↗</a><a class="btn" href="'+path('equipes/')+'">Outras equipes</a></div></div></section>'+tabs();
  if(active==='elenco'){
   content+='<div class="section-title"><h2>Elenco 2026/27</h2><span class="small subtle">Selecione o jogador para avaliar</span></div>';
   content+=roster.length?'<div class="card" style="padding:8px 13px">'+roster.map(playerHTML).join('')+'</div>':'<div class="filler">Elenco indisponível na fonte no momento.</div>';
