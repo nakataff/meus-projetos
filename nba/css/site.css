@@ -348,3 +348,28 @@ footer{border-top:1px solid var(--border);color:#8293ab;font-size:12px;padding:2
  .matchup-score-box{font-size:13px;height:27px}
  .matchup-phase{font-size:7.5px}
 }
+
+
+/* Centro da Partida: projeções, titulares oficiais e box score sob demanda */
+.game-data-status{
+ display:flex;align-items:center;justify-content:space-between;
+ gap:13px;flex-wrap:wrap;background:#152235;
+ border:1px solid #354861;border-radius:12px;padding:13px 15px;margin:5px 0 19px;
+}
+.game-data-status>div{display:flex;align-items:flex-start;flex-direction:column;gap:3px;min-width:0;flex:1}
+.game-data-status strong{
+ color:#ffc18c;font-size:11px;font-weight:950;letter-spacing:.065em;
+}
+.game-data-status strong.data-live{color:#ff929e}
+.game-data-status span{
+ color:#afc0d3;font-size:11px;line-height:1.5;
+}
+.game-data-status button{flex:none;white-space:nowrap}
+.lineup-caption{font-size:12px;line-height:1.65;margin:9px 0 14px;color:#adbed0}
+.lineup-caption .tag{display:inline-flex;align-items:center;font-size:10px;padding:5px 8px;margin-right:3px;vertical-align:middle}
+.lineup-caption.confirmed{color:#aeeac7}
+.lineup-caption.estimated{color:#bec8d5}
+@media(max-width:650px){
+ .game-data-status{align-items:stretch}
+ .game-data-status button{width:100%}
+}
