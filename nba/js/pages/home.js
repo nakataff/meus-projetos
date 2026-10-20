@@ -1,4 +1,4 @@
-import {$,setupShared,loadGames,currentDate,dayShift,groupGames,path,getData,note,handleWishes,esc,broadcastInfo,name,logo,MONTHS,shortDate} from '../app.js?v=5';
+import {$,setupShared,loadGames,currentDate,dayShift,groupGames,effectiveGame,path,getData,note,handleWishes,esc,broadcastInfo,name,logo,MONTHS,shortDate} from '../app.js?v=5';
 setupShared('home','A NBA acontece aqui.','Jogos do dia, transmissões brasileiras e tudo que você quer acompanhar — sem estatísticas pessoais ocupando a tela.');
 const root=$('#pageContent');
 let games=[],loaded=false;
@@ -16,10 +16,16 @@ function render(){
  const teamGames=fav?future.filter(g=>g.away===fav||g.home===fav).slice(0,3):[];
  const watchlist=future.filter(g=>g.date<week&&note(g.id).wish&&!note(g.id).watched).slice(0,6);
  const nextTomorrow=future.filter(g=>g.date===tomorrow);
+ const liveNow=future.filter(g=>effectiveGame(g).status==='live');
+ const liveNotice=liveNow.length?
+  '<div class="live-banner"><span class="live-banner-label"><i aria-hidden="true"></i> AO VIVO AGORA</span>'+
+  '<strong>'+liveNow.length+' '+(liveNow.length===1?'partida em andamento':'partidas em andamento')+'</strong>'+
+  '<a class="btn" href="'+path('jogos/?data='+today)+'">Ver jogos →</a></div>'+
+  groupGames(liveNow.slice(0,4)) : '';
  const favHeader=fav?'<div class="favorite-hero"><img src="'+esc(logo(fav))+'" alt="" width="64" height="64"><div><span class="caps">Meu time favorito</span><strong>'+esc(name(fav))+'</strong><span class="small subtle">'+(teamGames.length?'Próximos confrontos na agenda':'Aguardando próximos jogos')+'</span></div><a class="btn" href="'+path('equipe/?id='+encodeURIComponent(fav))+'">Ver equipe ↗</a></div>':
  '<div class="favorite-hero empty"><div><span class="caps">Personalize sua NBA</span><strong>Qual é a sua franquia?</strong><span class="small subtle">Escolha um time para acompanhar seus próximos jogos aqui.</span></div><a class="btn accent" href="'+path('equipes/')+'">Escolher time →</a></div>';
  root.innerHTML=
- favHeader+
+ liveNotice+favHeader+
  section('Jogos de hoje','Agenda completa','jogos/',todayGames.slice(0,14),'Nenhuma partida prevista para hoje no calendário consultado.')+
  (todayGames.length===0&&nextTomorrow.length?'<div class="small subtle">Próximos jogos amanhã: <a href="'+path('jogos/')+'">'+nextTomorrow.length+' confrontos →</a></div>':'')+
  (fav?section('Próximos jogos do '+name(fav),'Página do time','equipe/?id='+encodeURIComponent(fav),teamGames,'Ainda não há jogos futuros desta equipe no período carregado.'):'')+
@@ -35,3 +41,4 @@ loadGames(MONTHS.slice(idx,Math.min(idx+2,MONTHS.length))).then(rows=>{games=row
  .catch(e=>{console.error(e);root.innerHTML='<div class="filler">Agenda indisponível no momento. Atualize a página para tentar novamente.</div>'});
 root.addEventListener('click',e=>{if(handleWishes(e.target,render))e.preventDefault()});
 window.addEventListener('quadra:refresh',render);
+window.addEventListener('quadra:live-update',render);
