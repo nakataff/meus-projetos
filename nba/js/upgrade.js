@@ -102,6 +102,7 @@
   netHtml = g => (g.platforms||[]).includes('LEAGUE')?'<span class="network">Sem TV BR confirmada</span>':baseNet(g);
   gameHtml = g => {
     let html=baseGameHtml(g);
+    if(state.hideSpoilers)html=html.replace('<span class="scorepill">','<span class="qhidden-score" style="display:none">');
     if(g.status==='final'){
       const score = state.hideSpoilers ? '<span class="qhidden-score">Placar oculto</span>' :
         '<span class="qscore-badge">'+esc(g.scoreAway)+' – '+esc(g.scoreHome)+'</span>';
@@ -218,8 +219,13 @@
     if(!rosterData.has(team))loadRoster(team);
   }
   function playerModal(playerId,gameId=null){
-    const p = roster(selectedTeam).find(x=>x.id===playerId)
-      || [...rosterData.values()].flatMap(x=>x.players||[]).find(x=>x.id===playerId);
+    const currentGame=gameId?getGame(gameId):null;
+    const currentBox=currentGame?getFinalBox(currentGame):null;
+    const currentTeam=currentBox?Object.keys(currentBox.players||{}).find(code=>currentBox.players[code].some(p=>String(p.id)===playerId)):null;
+    if(currentTeam)selectedTeam=currentTeam;
+    const p=roster(selectedTeam).find(x=>x.id===playerId)
+      || [...rosterData.values()].flatMap(x=>x.players||[]).find(x=>x.id===playerId)
+      || Object.values(currentBox?.players||{}).flat().find(x=>String(x.id)===playerId);
     if(!p){toast('Este jogador ainda não está no elenco importado.');return;}
     const personal=state.players[p.id]||{},gameRating=state.gameRatings[gameId+':'+p.id]||0;
     const value=gameId?gameRating:(personal.rating||0);
