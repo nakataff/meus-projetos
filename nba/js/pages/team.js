@@ -59,7 +59,7 @@ window.addEventListener('quadra:refresh',draw);
 if(valid){
  root.innerHTML='<div class="filler">Carregando elenco e últimos quintetos…</div>';
  const today=currentDate(),months=[...new Set([today.slice(0,7),'2026-10'])].filter(m=>MONTHS.includes(m));
- Promise.allSettled([fetchRoster(code),...months.map(fetchBox),loadGames([today.slice(0,7)].filter(m=>MONTHS.includes(m)))]).then(r=>{
+ Promise.allSettled([fetchRoster(code),...months.map(fetchBox),loadGames(MONTHS.slice(Math.max(0,MONTHS.indexOf(today.slice(0,7))),Math.max(0,MONTHS.indexOf(today.slice(0,7)))+2))]).then(r=>{
   roster=r[0].status==='fulfilled'?r[0].value:[];
   const merged={};for(let i=1;i<=months.length;i++)if(r[i].status==='fulfilled')Object.assign(merged,r[i].value);
   best=newestStarting(code,merged);
