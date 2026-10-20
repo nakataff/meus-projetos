@@ -1,5 +1,5 @@
 /* Classificação QUADRA 2026/27 — só jogos oficiais da fase regular finalizados. */
-import {$,setupShared,EAST,WEST,TEAMS,name,logo,esc,path,teamLink,jsonFile,shortDate} from '../app.js?v=8';
+import {$,setupShared,EAST,WEST,TEAMS,name,logo,esc,path,teamLink,jsonFile,shortDate} from '../app.js?v=9';
 
 setupShared('standings','Classificação da NBA','Tabela geral, conferências Leste e Oeste e divisões da temporada regular 2026/27.');
 const root=$('#pageContent');
@@ -74,7 +74,7 @@ function render(){
  '<option value="all">Todas as divisões</option>'+
  divisionChoices().map(x=>'<option value="'+esc(x.value)+'"'+(division===x.value?' selected':'')+'>'+
  esc(x.label)+'</option>').join('')+'</select></div>':'')+
- grouped+'<p class="standings-note">Classificação calculada pelo DE LA QUADRA com base nos resultados finais importados. A pré-temporada e os playoffs não entram na tabela. Desempates usam aproveitamento e saldo de pontos: esta é uma ordenação informativa, não a classificação oficial da NBA, que aplica critérios adicionais.</p>';
+ grouped+'<p class="standings-note">Classificação calculada pelo site DE LA QUADRA com base nos resultados finais importados. A pré-temporada e os playoffs não entram na tabela. Desempates usam aproveitamento e saldo de pontos: esta é uma ordenação informativa, não a classificação oficial da NBA, que aplica critérios adicionais.</p>';
 }
 async function load(force=false){
  root.innerHTML='<div class="filler">Carregando a classificação da temporada…</div>';
