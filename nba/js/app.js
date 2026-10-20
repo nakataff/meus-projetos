@@ -98,6 +98,18 @@ export function joinGames(remote){
 }
 export async function loadGames(months=MONTHS){const list=(await Promise.all(months.map(fetchMonth))).flat();return joinGames(list);}
 export function platform(g){const p=g.platforms||[];return p.includes('PRIME')&&p.includes('ESPN')?'Prime Video + ESPN':p.includes('PRIME')?'Prime Video':p.includes('ESPN')?'ESPN / Disney+':p.includes('LEAGUE')?'Sem TV BR informada':'Outra transmissão';}
+
+/* Links oficiais dos provedores (não são links diretos de uma partida). */
+export const TRANSMISSION_URLS=Object.freeze({ESPN:'https://www.disneyplus.com/pt-br',PRIME:'https://www.primevideo.com/',LEAGUE:'https://www.nba.com/watch/league-pass'});
+export function broadcastLinks(g){
+ const channels=g.platforms||[],items=[];
+ if(channels.includes('ESPN'))items.push(['ESPN / Disney+',TRANSMISSION_URLS.ESPN]);
+ if(channels.includes('PRIME'))items.push(['Prime Video',TRANSMISSION_URLS.PRIME]);
+ if(!items.length&&channels.includes('LEAGUE'))items.push(['NBA League Pass',TRANSMISSION_URLS.LEAGUE]);
+ if(!items.length)return '<span class="broadcast-unavailable">'+esc(platform(g))+'</span>';
+ return '<span class="broadcast-links">'+items.map(([label,url])=>'<a href="'+url+'" target="_blank" rel="noopener noreferrer" title="Abrir '+esc(label)+' (site oficial)">'+esc(label)+' ↗</a>').join('')+'</span>';
+}
+
 export function platformLines(g){
  const channels=g.platforms||[];
  const espn=channels.includes('ESPN'),prime=channels.includes('PRIME');
@@ -152,7 +164,7 @@ export function gameRow(g){
    (live?'<span class="matchup-phase is-live">'+esc(phase)+'</span>':'')+'</span>';
  const status=(p.watched?'<span class="tag finished">✓ Assistido</span>':'')+
    (p.rating?'<span class="tag accent">★ '+esc(p.rating)+'</span>':'');
- const channels=tv.lines.map(label=>'<span>'+esc(label)+'</span>').join('');
+ const channels=broadcastLinks(g);
  const broadcast='<span class="broadcast-badge '+tv.variant+(tv.lines.length>1?' multi':'')+'" title="Transmissão: '+esc(tv.lines.join(' / '))+'">'+channels+'</span>';
  return '<article class="game-card game-card-link">'+
  '<div class="time">'+esc(g.time||'—')+'<small>BRASÍLIA</small>'+
