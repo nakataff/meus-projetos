@@ -179,7 +179,7 @@ function ratingForm(player){
  '</span>/10</label><input type="range" id="playerRating" min="0" max="10" step="0.5" value="'+(Number(info.rating)||0)+'" class="rate-input"></div>'+
  '<div class="field"><label><input id="isFranchise" type="checkbox" '+(star?'checked':'')+'> Meu franchise player</label></div>'+
  '<div class="field"><label><input id="isStarter" type="checkbox" '+(own?'checked':'')+'> Meu quinteto titular (5 jogadores)</label></div>'+
- '<div class="field"><label><input id="isFavorite" type="checkbox" '+(info.favorite?'checked':'')+'> Jogador favorito</label></div>'+
+ '<div class="field"><label><input id="isFavorite" type="checkbox" '+(info.favorite?'checked':'')+' > Seguir jogador</label></div>'+
  '<div class="modal-footer"><button type="submit" class="btn accent">Salvar avaliação</button></div></form>');
  $('#playerRating').oninput=()=>$('#playerScore').textContent=$('#playerRating').value;
  $('#playerForm').onsubmit=e=>{
