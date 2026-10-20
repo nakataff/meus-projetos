@@ -992,8 +992,8 @@ footer{border-top:1px solid var(--border);color:#8293ab;font-size:12px;padding:2
 
 
 /* DLQ ao vivo — espaço para o botão Fechar e animação discreta de pontuação. */
-.performance-dialog{padding-top:24px}
-.performance-dialog .performance-header{clear:both;margin-top:20px;margin-bottom:18px}
+.performance-dialog{clear:both;padding-top:17px}
+.performance-dialog .performance-header{margin-top:6px;margin-bottom:18px}
 .performance-score-feature{min-height:112px}
 .bigscore [data-score-team]{position:relative;display:inline-block;border-radius:10px;min-width:1ch;transform-origin:center}
 .bigscore [data-score-team].dlq-score-changed{
@@ -1027,8 +1027,8 @@ footer{border-top:1px solid var(--border);color:#8293ab;font-size:12px;padding:2
  100%{transform:scale(1);filter:brightness(1)}
 }
 @media(max-width:550px){
- .performance-dialog{padding-top:21px}
- .performance-dialog .performance-header{margin-top:19px;margin-bottom:17px;gap:9px}
+ .performance-dialog{padding-top:15px}
+ .performance-dialog .performance-header{margin-top:6px;margin-bottom:17px;gap:9px}
  .performance-header .performance-score-feature{min-height:95px}
 }
 @media(prefers-reduced-motion:reduce){
