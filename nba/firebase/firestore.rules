@@ -1,15 +1,15 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Todos os registros do QUADRA pertencem ao usuário autenticado.
+    // Somente o próprio usuário do Google pode ler/gravar seu QUADRA.
     match /users/{userId}/quadra/{docId} {
-      allow read, write: if request.auth != null
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null
         && request.auth.uid == userId
         && docId.matches('^(games-[0-9]{4}-[0-9]{2}|games-outros|preferences|extras|custom)$')
-        && (!('size' in request.resource.data) || request.resource.data.size() < 10000);
+        && request.resource.data.keys().hasOnly(['notes', 'settings', 'extras', 'custom', 'version', 'updatedAt']);
+      allow delete: if false;
     }
-
-    // Não autorizar acesso a outras coleções por padrão.
     match /{document=**} {
       allow read, write: if false;
     }
