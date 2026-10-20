@@ -57,16 +57,18 @@ function needsBoxRefresh(){
 }
 function sourceNotice(){
  const status=gameStatus().status;
- const label=status==='live'?'DADOS EM TEMPO REAL':status==='final'?'RESULTADO FINAL':'ANTES DA PARTIDA';
- const message=statsMessage||(
-  status==='live'?'Estatísticas parciais atualizadas periodicamente, conforme a fonte disponibiliza.':
-  status==='final'?'Box score final, quando disponibilizado pela fonte.':
-  'Projeção de titulares baseada nos jogos anteriores; não é escalação oficial.'
- );
- const last=lastSuccess?' • Consultado às '+lastSuccess.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'';
- return '<div class="game-data-status"><div><strong class="'+(status==='live'?'data-live':'')+'">'+label+'</strong>'+
- '<span>'+esc(message+last)+'</span></div>'+
- '<button class="btn ghost" type="button" id="refreshBox" '+(checkingStats?'disabled':'')+'>'+(checkingStats?'Consultando…':'↻ Atualizar estatísticas')+'</button></div>';
+ const ready=boxHasStats(box);
+ const label=status==='live'?(ready?'Ao vivo • Parciais disponíveis':'Ao vivo • Aguardando estatísticas'):
+  status==='final'?(ready?'Box score disponível':'Final • Aguardando box score'):
+  'Pré-jogo • Escalações e informações';
+ const last=lastSuccess?'Atualizado às '+lastSuccess.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'Fonte: ESPN';
+ const unavailable=/indisponível|não foi possível|falha|sem atualização/i.test(statsMessage);
+ return '<div class="game-sync-inline" role="status" title="'+esc(statsMessage||'Dados da partida consultados de fonte pública não oficial')+'">'+
+ '<span class="game-sync-dot '+(status==='live'?'is-live':unavailable?'is-warning':'')+'"></span>'+
+ '<span class="game-sync-label">'+esc(label)+'</span>'+
+ '<span class="game-sync-time">'+esc(unavailable?statsMessage:last)+'</span>'+
+ '<button class="game-sync-refresh" type="button" id="refreshBox" aria-label="Atualizar escalações e estatísticas" title="Atualizar escalações e estatísticas" '+(checkingStats?'disabled':'')+'>'+
+ (checkingStats?'Consultando…':'↻ Atualizar')+'</button></div>';
 }
 async function refreshBox(force=false){
  if(!game||checkingStats||document.hidden)return;
