@@ -1,7 +1,76 @@
-import {$,setupShared,qs,esc,name,logo,tlogo,effectiveGame,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,groupGames,note,getData,setNote,setExtraGroup,modify,platform,shortDate,currentDate,toast,modal,closeModal,eventBox,newestStarting,fetchRoster} from '../app.js?v=7';
+import {$,setupShared,qs,esc,name,logo,tlogo,effectiveGame,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,note,getData,setNote,setExtraGroup,platform,shortDate,currentDate,toast,modal,closeModal,eventBox,fetchRoster} from '../app.js?v=7';
+import {fetchLiveBoxscore,projectStartingFive} from '../boxscore.js?v=1';
 const id=qs('id')||'',hint=qs('data')||'',root=$('#pageContent');
 setupShared('games','Centro da partida','Escalações, estatísticas e seu diário pessoal de basquete.');
-let game=null,boxes={},box=null,probable={},rosters={},tab='resumo',loading=true;
+let game=null,boxes={},box=null,probable={},rosters={},tab='resumo';
+let remoteBox=null,remoteStatus=null,lastStatsCheck=0,checkingStats=false,statsMessage='',lastSuccess=null;
+const REFRESH_MS=120000;
+function gameStatus(){
+ const event=effectiveGame(game);
+ if(!remoteStatus)return event;
+ const out={...event};
+ if(remoteStatus.status==='live'||remoteStatus.status==='final'){
+  out.status=remoteStatus.status;
+  if(remoteStatus.scoreAway!==null && remoteStatus.scoreHome!==null){
+   out.scoreAway=remoteStatus.scoreAway;out.scoreHome=remoteStatus.scoreHome;
+  }
+  if(remoteStatus.status==='live'){
+   out.livePeriod=remoteStatus.quarter||event.livePeriod||0;
+   out.liveClock=remoteStatus.clock||event.liveClock||'';
+  }
+ }
+ return out;
+}
+function updateBox(){
+ const cached=eventBox(boxes,game);
+ const fresh=remoteBox;
+ if(fresh){
+  // Um box score final já consolidado não deve ser substituído por dados incompletos.
+  const count=x=>Object.values(x?.players||{}).reduce((a,players)=>a+players.filter(p=>p.hasStats||p.pts!==null&&p.pts!==undefined).length,0);
+  const useFresh=!cached||gameStatus().status==='live'||count(fresh)>=count(cached);
+  box=useFresh?fresh:cached;
+ } else box=cached||null;
+}
+function sourceNotice(){
+ const status=gameStatus().status;
+ const label=status==='live'?'DADOS EM TEMPO REAL':status==='final'?'RESULTADO FINAL':'ANTES DA PARTIDA';
+ const message=statsMessage||(
+  status==='live'?'Estatísticas parciais atualizadas periodicamente, conforme a fonte disponibiliza.':
+  status==='final'?'Box score final, quando disponibilizado pela fonte.':
+  'Projeção de titulares baseada nos jogos anteriores; não é escalação oficial.'
+ );
+ const last=lastSuccess?' • Consultado às '+lastSuccess.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'';
+ return '<div class="game-data-status"><div><strong class="'+(status==='live'?'data-live':'')+'">'+label+'</strong>'+
+ '<span>'+esc(message+last)+'</span></div>'+
+ '<button class="btn ghost" type="button" id="refreshBox" '+(checkingStats?'disabled':'')+'>'+(checkingStats?'Consultando…':'↻ Atualizar estatísticas')+'</button></div>';
+}
+async function refreshBox(force=false){
+ if(!game||checkingStats||document.hidden)return;
+ const now=Date.now();
+ if(!force&&now-lastStatsCheck<REFRESH_MS-20000)return;
+ lastStatsCheck=now;
+ checkingStats=true;statsMessage='Buscando escalações e box score na fonte pública…';
+ if(tab!=='avaliar')draw();
+ try{
+  const result=await fetchLiveBoxscore(game);
+  if(result){
+   remoteStatus=result;remoteBox=result.box||remoteBox;
+   lastSuccess=new Date();
+   updateBox();
+   const current=gameStatus().status;
+   const confirmed=Object.values(result.starters||{}).some(n=>n>0);
+   statsMessage=result.hasStats?
+    (current==='live'?'Estatísticas parciais disponíveis.':'Estatísticas recebidas da partida.'):
+    confirmed?'Titulares identificados; aguardando estatísticas individuais.':
+    current==='scheduled'?'Quinteto oficial ainda não divulgado.':'Aguardando box score da fonte.';
+  }else statsMessage=box?'Exibindo dados já importados; sem atualização nova.':'A fonte ainda não disponibilizou escalações ou box score.';
+ }catch(err){
+  console.warn('QUADRA: não foi possível obter box score da ESPN',err);
+  statsMessage=box?'Consulta indisponível; exibindo os dados importados.':
+   'Consulta indisponível no momento; projeções anteriores continuam disponíveis.';
+ }finally{checkingStats=false;if(tab!=='avaliar')draw();}
+}
+
 const maybeMonth=hint.slice(0,7),months=MONTHS.includes(maybeMonth)?[maybeMonth]:MONTHS;
 function playerStats(code){
  const players=box?.players?.[code]||[];
