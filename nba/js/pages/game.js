@@ -476,46 +476,45 @@ function openPlayerPerformance(pid,code){
  const current=gameStatus(),score=current.scoreAway!=null&&current.scoreHome!=null?
    current.scoreAway+' - '+current.scoreHome:'';
  modal('<div class="performance-dialog">'+
-  '<div class="performance-player"><div class="performance-portrait">'+
+  '<div class="performance-header"><div class="performance-player"><div class="performance-portrait">'+
     (portrait?'<img src="'+esc(portrait)+'" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display=\'none\'">':playerPortrait(p,code))+
   '</div><div><span class="caps">DESEMPENHO NA PARTIDA</span><h2>'+esc(p.name)+'</h2>'+
   '<div class="performance-team"><img src="'+esc(logo(code))+'" alt="">'+esc(name(code))+
   ' • '+esc(shortDate(game.date))+'</div>'+
   '<p class="small subtle">'+(p.starter?'✓ Titular':'Reserva / relacionado')+
   (myRating!==undefined?' • Minha nota: '+esc(myRating)+'/10':'')+'</p></div></div>'+
+  '<div class="performance-score-feature"><span>NOTA DLQ</span><strong>'+ratingLabel(performanceRating(p))+'</strong><small>/10</small></div></div>'+
   '<div class="performance-match"><img src="'+esc(logo(code))+'" alt="">'+esc(code)+
   ' <span>VS</span> '+esc(opponent)+' <img src="'+esc(logo(opponent))+'" alt="">'+
   (score?' <b>'+esc(score)+'</b>':'')+'</div>'+
-  '<div class="performance-rating"><span>Nota automática DLQ</span><strong>'+
- ratingLabel(performanceRating(p))+'/10</strong></div>'+
- '<div class="performance-stats">'+data.map(([key,label])=>'<div><strong>'+
+  '<div class="performance-stats">'+data.map(([key,label])=>'<div><strong>'+
   statText(p,key)+'</strong><span>'+label+'</span></div>').join('')+'</div>'+
   '<p class="performance-source">Estatísticas '+(current.status==='live'?'parciais, sujeitas a mudanças.':'disponíveis para esta partida.')+'</p>'+
   '<div class="performance-actions">'+
-  '<button type="button" class="btn accent" id="playerExportImage">⇩ Gerar imagem</button>'+
-  '<button type="button" class="btn" id="playerShareLink">↗ Compartilhar link</button>'+
+  '<button type="button" class="btn accent" id="playerShareImage">↗ Compartilhar imagem</button>'+
+  '<button type="button" class="btn" id="playerExportImage">⇩ Salvar PNG</button>'+
   '<a class="btn ghost" href="'+esc(url)+'">Perfil completo →</a></div></div>');
- const share=document.getElementById('playerShareLink');
- const imageButton=document.getElementById('playerExportImage');
- share.onclick=async()=>{
+ const shareButton=document.getElementById('playerShareImage');
+ const saveButton=document.getElementById('playerExportImage');
+ async function handleImage(mode,button){
+  const label=button.textContent;
+  shareButton.disabled=true;saveButton.disabled=true;
+  button.textContent='Preparando imagem…';
   try{
-   const outcome=await sharePlayerLink(url,'DE LA QUADRA • '+p.name+' — '+name(code)+' x '+name(opponent));
-   if(outcome==='copied')toast('Link do jogador copiado!');
-  }catch(err){toast('Não foi possível compartilhar: '+err.message);}
- };
- imageButton.onclick=async()=>{
-  imageButton.disabled=true;imageButton.textContent='Preparando imagem…';
-  try{
-   await exportPlayerImage({
+   const result=await exportPlayerImage({
     player:p,teamName:name(code),teamCode:code,teamLogo:logo(code),headshot:portrait,
     gameLabel:name(game.away)+' x '+name(game.home),date:shortDate(game.date),
     score,opponent:name(opponent),opponentLogo:logo(opponent),
-    filename:'DLQ-'+p.name.replace(/\s+/g,'-')+'-'+game.date
+    rating:ratingLabel(performanceRating(p)),
+    filename:'DLQ-'+p.name.replace(/\s+/g,'-')+'-'+game.date,mode
    });
-   toast('Card PNG gerado!');
-  }catch(e){console.warn('QUADRA: PNG do atleta',e);toast('Não foi possível gerar a imagem. '+e.message);}
-  finally{imageButton.disabled=false;imageButton.textContent='⇩ Gerar imagem';}
- };
+   if(result==='copied')toast('Imagem copiada! Cole no aplicativo onde deseja compartilhar.');
+   if(result==='downloaded')toast(mode==='share'?'Compartilhamento indisponível aqui: PNG salvo para enviar.':'Imagem PNG salva!');
+  }catch(e){console.warn('DLQ: imagem do atleta',e);toast('Não foi possível gerar a imagem. '+e.message);}
+  finally{shareButton.disabled=false;saveButton.disabled=false;button.textContent=label;}
+ }
+ shareButton.onclick=()=>handleImage('share',shareButton);
+ saveButton.onclick=()=>handleImage('download',saveButton);
 }
 function ratePlayer(pid,code){
  const info=(box?.players?.[code]||[]).find(p=>String(p.id)===String(pid));if(!info)return toast('Jogador indisponível.');
