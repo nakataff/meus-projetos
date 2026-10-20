@@ -1,5 +1,5 @@
 /* QUADRA 3 — layout compartilhado */
-:root{color-scheme:dark;--bg:#090d15;--panel:#111925;--panel2:#182332;--border:#29374b;--txt:#edf3f9;--muted:#a4b3c7;--accent:#ff9549;--good:#8de6b4}
+:root{color-scheme:dark;--bg:#090d15;--panel:#111925;--panel2:#182332;--border:#29374b;--txt:#edf3f9;--muted:#a4b3c7;--accent:#ff8126;--good:#8de6b4}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;background:radial-gradient(ellipse 70% 480px at 50% -240px,#ff914327,transparent),var(--bg);font:14px/1.55 system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:var(--txt)}
@@ -944,3 +944,11 @@ footer{border-top:1px solid var(--border);color:#8293ab;font-size:12px;padding:2
 
 /* Campanha resumida na seleção das 30 franquias */
 .team-tile-campaign{display:block;color:#95b2cc;font-size:10px;font-weight:750;margin-top:5px}
+
+
+/* DE LA QUADRA — assinatura horizontal no menu, emblema DLQ nas páginas. */
+.top>.brand{display:inline-flex;align-items:center;flex:0 0 auto;min-width:0;line-height:0}
+.top>.brand img{display:block;width:clamp(148px,14vw,183px);height:auto;max-height:63px;object-fit:contain}
+.hero-logo{width:100px;height:100px;object-fit:contain;flex:none;filter:drop-shadow(0 5px 14px #0005)}
+@media(max-width:770px){.top>.brand img{width:162px;max-height:58px}.hero-logo{width:76px;height:76px}}
+@media(max-width:490px){.top>.brand img{width:148px;max-height:54px}.hero-logo{width:64px;height:64px}}
