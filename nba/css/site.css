@@ -989,3 +989,50 @@ footer{border-top:1px solid var(--border);color:#8293ab;font-size:12px;padding:2
  .overview-leader-person>.overview-name{font-size:11px}
 }
 @media(max-width:390px){.performance-header{flex-wrap:wrap}.performance-score-feature{margin-left:auto}}
+
+
+/* DLQ ao vivo — espaço para o botão Fechar e animação discreta de pontuação. */
+.performance-dialog{padding-top:24px}
+.performance-dialog .performance-header{clear:both;margin-top:20px;margin-bottom:18px}
+.performance-score-feature{min-height:112px}
+.bigscore [data-score-team]{position:relative;display:inline-block;border-radius:10px;min-width:1ch;transform-origin:center}
+.bigscore [data-score-team].dlq-score-changed{
+ animation:dlq-score-pulse 1.1s ease-out both;
+}
+.bigscore [data-score-team].dlq-score-changed[data-delta]::after{
+ content:attr(data-delta);position:absolute;left:50%;top:-21px;transform:translateX(-50%);
+ font-size:13px;font-weight:900;letter-spacing:0;color:#ffb975;background:#1b2839;
+ border:1px solid #ff954980;padding:1px 7px;border-radius:8px;
+ white-space:nowrap;animation:dlq-delta-float 1.1s ease-out both;
+}
+.performance-score-feature strong.dlq-stat-changed,
+.performance-stats strong.dlq-stat-changed,
+.performance-match-score.dlq-stat-changed{
+ display:inline-block;animation:dlq-stat-pulse .9s ease-out both;
+}
+@keyframes dlq-score-pulse{
+ 0%{transform:scale(1);color:inherit;text-shadow:none}
+ 23%{transform:scale(1.22);color:#ffbf85;text-shadow:0 0 18px #ff954980}
+ 100%{transform:scale(1);color:inherit;text-shadow:none}
+}
+@keyframes dlq-delta-float{
+ 0%{opacity:0;transform:translate(-50%,8px)}
+ 20%{opacity:1}
+ 80%{opacity:1}
+ 100%{opacity:0;transform:translate(-50%,-12px)}
+}
+@keyframes dlq-stat-pulse{
+ 0%{transform:scale(1);filter:brightness(1)}
+ 32%{transform:scale(1.15);filter:brightness(1.45)}
+ 100%{transform:scale(1);filter:brightness(1)}
+}
+@media(max-width:550px){
+ .performance-dialog{padding-top:21px}
+ .performance-dialog .performance-header{margin-top:19px;margin-bottom:17px;gap:9px}
+ .performance-header .performance-score-feature{min-height:95px}
+}
+@media(prefers-reduced-motion:reduce){
+ .dlq-score-changed,.dlq-stat-changed,
+ .dlq-score-changed[data-delta]::after{animation:none!important}
+ .bigscore [data-score-team].dlq-score-changed[data-delta]::after{display:none}
+}
