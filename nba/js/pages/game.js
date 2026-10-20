@@ -66,11 +66,12 @@ function sourceNotice(){
   status==='final'?(ready?'Box score disponível':'Final • Aguardando box score'):
   'Pré-jogo • Escalações e informações';
  const last=lastSuccess?'Atualizado às '+lastSuccess.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'Fonte: ESPN';
+ const auto=status==='live'?' • atualização automática a cada 30s':'';
  const unavailable=/indisponível|não foi possível|falha|sem atualização/i.test(statsMessage);
  return '<div class="game-sync-inline" role="status" title="'+esc(statsMessage||'Dados da partida consultados de fonte pública não oficial')+'">'+
  '<span class="game-sync-dot '+(status==='live'?'is-live':unavailable?'is-warning':'')+'"></span>'+
  '<span class="game-sync-label">'+esc(label)+'</span>'+
- '<span class="game-sync-time">'+esc(unavailable?statsMessage:last)+'</span>'+
+ '<span class="game-sync-time">'+esc(unavailable?statsMessage:last)+esc(auto)+'</span>'+
  '<button class="game-sync-refresh" type="button" id="refreshBox" aria-label="Atualizar escalações e estatísticas" title="Atualizar escalações e estatísticas" '+(checkingStats?'disabled':'')+'>'+
  (checkingStats?'Consultando…':'↻ Atualizar')+'</button></div>';
 }
@@ -469,6 +470,81 @@ function draw(){
  root.innerHTML=content;
  animateScoreChanges(current);
 }
+// Realça apenas o time cujo placar mudou, sem animar os números na primeira carga.
+function pulseValue(element,className){
+ if(!element)return;
+ element.classList.remove(className);
+ void element.offsetWidth;
+ element.classList.add(className);
+ element.addEventListener('animationend',()=>element.classList.remove(className),{once:true});
+}
+function animateScoreChanges(current){
+ const valid=n=>n!==null&&n!==undefined&&n!==''&&Number.isFinite(Number(n));
+ const next=valid(current.scoreAway)&&valid(current.scoreHome)?
+  {away:Number(current.scoreAway),home:Number(current.scoreHome)}:null;
+ if(next&&previousDisplayedScores&&current.status==='live'){
+  for(const side of ['away','home']){
+   const delta=next[side]-previousDisplayedScores[side];
+   if(!delta)continue;
+   const value=root.querySelector('[data-score-team="'+side+'"]');
+   if(!value)continue;
+   if(delta>0)value.dataset.delta='+'+delta;
+   else delete value.dataset.delta;
+   pulseValue(value,'dlq-score-changed');
+  }
+ }
+ previousDisplayedScores=next;
+}
+// Na aba de avaliação, o formulário nunca é recriado durante consultas automáticas.
+function updateScoreboardWithoutResettingForm(){
+ if(!game||!root.firstElementChild)return;
+ const holder=document.createElement('div');
+ holder.innerHTML=scoreboard();
+ const next=holder.firstElementChild;
+ if(next)root.firstElementChild.replaceWith(next);
+ const notice=root.querySelector('.game-sync-inline');
+ if(notice)notice.outerHTML=sourceNotice();
+ animateScoreChanges(gameStatus());
+}
+function syncOpenPlayerPerformance(){
+ const dialog=document.querySelector('#modalRoot .performance-dialog[data-player-id]');
+ if(!dialog||!game)return;
+ const pid=dialog.dataset.playerId,team=dialog.dataset.playerTeam;
+ const player=(box?.players?.[team]||[]).find(p=>String(p.id)===String(pid));
+ if(!player)return;
+ const rating=dialog.querySelector('.performance-score-feature strong');
+ const newRating=ratingLabel(performanceRating(player));
+ if(rating&&rating.textContent!==newRating){
+  rating.textContent=newRating;
+  pulseValue(rating,'dlq-stat-changed');
+ }
+ for(const item of dialog.querySelectorAll('[data-stat-key]')){
+  const strong=item.querySelector('strong');
+  const content=statText(player,item.dataset.statKey);
+  if(strong&&strong.innerHTML!==content){
+   strong.innerHTML=content;
+   pulseValue(strong,'dlq-stat-changed');
+  }
+ }
+ const state=gameStatus();
+ const score=state.scoreAway!=null&&state.scoreHome!=null?
+  state.scoreAway+' - '+state.scoreHome:'';
+ let shown=dialog.querySelector('.performance-match-score');
+ if(score&&!shown){
+  shown=document.createElement('b');
+  shown.className='performance-match-score';
+  dialog.querySelector('.performance-match')?.append(shown);
+ }
+ if(shown&&shown.textContent!==score){
+  shown.textContent=score;
+  pulseValue(shown,'dlq-stat-changed');
+ }
+ const source=dialog.querySelector('.performance-source');
+ if(source)source.textContent=state.status==='live'?
+  'Estatísticas parciais atualizadas automaticamente a cada 30 segundos.':
+  'Estatísticas disponíveis para esta partida.';
+}
+
 function playerPerformanceUrl(pid,code){
  return playerLink(pid,code)+'&game='+encodeURIComponent(String(game.externalId||game.id))+
   '&data='+encodeURIComponent(game.date);
@@ -514,7 +590,11 @@ function openPlayerPerformance(pid,code){
    const result=await exportPlayerImage({
     player:latest,teamName:name(code),teamCode:code,teamLogo:logo(code),headshot:portrait,
     gameLabel:name(game.away)+' x '+name(game.home),date:shortDate(game.date),
-    score,opponent:name(opponent),opponentLogo:logo(opponent),
+    score:(()=>{
+      const now=gameStatus();
+      return now.scoreAway!=null&&now.scoreHome!=null?
+       now.scoreAway+' - '+now.scoreHome:'';
+     })(),opponent:name(opponent),opponentLogo:logo(opponent),
     rating:ratingLabel(performanceRating(latest)),
     filename:'DLQ-'+p.name.replace(/\s+/g,'-')+'-'+game.date,mode
    });
