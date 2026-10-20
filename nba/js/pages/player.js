@@ -76,7 +76,7 @@ function matchDetail(g){
 }
 function profileHTML(){
  if(!player){root.innerHTML='<div class="filler"><b>Jogador não encontrado</b>Acesse o elenco da equipe para abrir o perfil.</div>';return;}
- document.title=player.name+' • QUADRA NBA';
+ document.title=player.name+' • DE LA QUADRA';
  const x=getData().extras,p=getPlayer(),franchise=x.franchise?.[team]===pid;
  const all=gameStats.slice().sort((a,b)=>b.date.localeCompare(a.date));
  const months=[...new Set(all.map(g=>g.date.slice(0,7)))];
@@ -165,7 +165,7 @@ root.addEventListener('click',async e=>{
  if(!chosen)return toast('Dados desta partida indisponíveis.');
  const link=shareURL(chosen.event);
  if(shareButton){
-  try{const result=await sharePlayerLink(link,'QUADRA • '+player.name+' — '+shortDate(chosen.date));
+  try{const result=await sharePlayerLink(link,'DE LA QUADRA • '+player.name+' — '+shortDate(chosen.date));
    if(result==='copied')toast('Link copiado!');}
   catch(e){toast('Não foi possível compartilhar: '+e.message);}
   return;
@@ -178,7 +178,7 @@ root.addEventListener('click',async e=>{
    opponent:name(chosen.opponent),opponentLogo:logo(chosen.opponent),
    gameLabel:name(team)+' x '+name(chosen.opponent),date:shortDate(chosen.date),
    score:formatScore(chosen.event),
-   filename:'QUADRA-'+player.name.replace(/\s+/g,'-')+'-'+chosen.date
+   filename:'DLQ-'+player.name.replace(/\s+/g,'-')+'-'+chosen.date
   });
   toast('Imagem PNG gerada!');
  }catch(err){toast('Erro ao gerar imagem: '+err.message);}
