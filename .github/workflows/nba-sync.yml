@@ -1,6 +1,10 @@
 name: Atualizar dados NBA
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/sync_nba.py'
+      - '.github/workflows/nba-sync.yml'
   schedule:
     - cron: '17 5,11,17,23 * * *'
 permissions:
@@ -25,6 +29,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p nba/data
           git add nba/data/
           if ! git diff --cached --quiet; then
             git commit -m "data(nba): atualizar calendário, elencos e estatísticas"
