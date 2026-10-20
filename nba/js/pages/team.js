@@ -19,7 +19,7 @@ function ratingForm(player){
   if($('#isStarter').checked&&line.length>=5){toast('Seu quinteto já tem 5 jogadores. Retire um antes.');return;}
   if($('#isStarter').checked)line.push(String(player.id));
   modify(bundle=>{
-   bundle.extras.players[player.id]={...info,rating:Number($('#playerRating').value),favorite:$('#isFavorite').checked};
+   bundle.extras.players[player.id]={...info,name:player.name,team:code,rating:Number($('#playerRating').value),favorite:$('#isFavorite').checked};
    bundle.extras.lineups[code]=line;
    if($('#isFranchise').checked)bundle.extras.franchise[code]=String(player.id);
    else if(bundle.extras.franchise[code]===String(player.id))delete bundle.extras.franchise[code];
