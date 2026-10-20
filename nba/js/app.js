@@ -130,16 +130,15 @@ export function gameRow(g){
  const p=note(g.id),tv=platformLines(g),href=gameLink(g);
  const valid=n=>n!==null&&n!==undefined&&n!==''&&Number.isFinite(Number(n));
  const official=(event.status==='live'||event.status==='final')&&valid(event.scoreAway)&&valid(event.scoreHome);
- const manual=!official&&valid(p.scoreAway)&&valid(p.scoreHome);
- const hasScore=official||manual;
- const awayScore=official?event.scoreAway:p.scoreAway;
- const homeScore=official?event.scoreHome:p.scoreHome;
+ const hasScore=official;
+ const awayScore=event.scoreAway;
+ const homeScore=event.scoreHome;
  const result=event.status==='final';
  const live=event.status==='live';
  const rawPeriod=Number(event.livePeriod);
  const quarter=rawPeriod>=5?'PRORROGAÇÃO':rawPeriod>=1?rawPeriod+'º QUARTO':'EM ANDAMENTO';
  const clock=live&&event.liveClock?String(event.liveClock).trim():'';
- const phase=live?quarter+(clock?' • '+clock:''):result?'FINAL':manual?'PLACAR ANOTADO':'';
+ const phase=live?quarter+(clock?' • '+clock:''):result?'FINAL':'';
  const leftWinner=result&&official&&Number(awayScore)>Number(homeScore);
  const rightWinner=result&&official&&Number(homeScore)>Number(awayScore);
  const middle=hasScore?
