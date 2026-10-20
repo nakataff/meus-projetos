@@ -86,30 +86,47 @@ function playerStats(code){
  }).join('')+'</tbody></table></div>';
 }
 function starterList(code){
- const confirmed=box?.players?.[code]?.filter(p=>p.starter)||[];
- if(confirmed.length)return {list:confirmed,label:'Titulares confirmados nesta partida',date:game.date,confirmed:true};
+ // A marcação explícita de starter vem do box score, nunca do elenco.
+ const confirmed=(box?.players?.[code]||[]).filter(p=>p.starter);
+ if(confirmed.length)return {
+  list:confirmed,
+  label:confirmed.length>=5?'Quinteto titular confirmado':'Titulares identificados até agora ('+confirmed.length+'/5)',
+  date:game.date,confirmed:true
+ };
  const previous=probable[code];
- if(previous?.players.length)return {list:previous.players,label:'Provável quinteto: projeção baseada no último jogo disponível',date:previous.date,confirmed:false};
- return {list:[],label:'Titulares ainda não disponíveis',confirmed:false};
+ if(previous?.players?.length)return {
+  list:previous.players,label:'PROJEÇÃO • últimos '+previous.sample+' jogos com quinteto conhecido',
+  date:previous.lastDate,confirmed:false
+ };
+ return {list:[],label:'Quinteto ainda não disponível',confirmed:false};
 }
 function lineupPanel(code){
- const info=starterList(code),others=box?.players?.[code]?.filter(p=>!p.starter)||[];
- return '<section class="card"><div class="section-title"><h2>'+esc(name(code))+'</h2><a href="'+teamLink(code)+'" class="btn ghost">Ver elenco →</a></div><p class="small subtle">'+esc(info.label)+(info.date?' • '+shortDate(info.date):'')+'</p>'+
- (info.list.length?'<div>'+info.list.map(p=>'<div class="player-row"><div class="pname"><b><a href="'+playerLink(p.id,code)+'">'+esc(p.name)+'</a></b><small>'+esc(p.number?'#'+p.number+' • ':'')+(info.confirmed?'Titular oficial':'Projeção, não confirmada')+'</small></div><a class="btn" href="'+playerLink(p.id,code)+'">Perfil</a></div>').join('')+'</div>':
- '<div class="filler">Não há dados confiáveis suficientes para projetar este quinteto.</div>')+
- (others.length?'<p class="small subtle" style="margin-top:16px">Jogadores não titulares registrados no box score: '+others.length+'</p>':'')+'</section>';
+ const info=starterList(code);
+ const others=(box?.players?.[code]||[]).filter(p=>!p.starter);
+ return '<section class="card"><div class="section-title"><h2>'+esc(name(code))+'</h2><a href="'+teamLink(code)+'" class="btn ghost">Ver elenco →</a></div>'+
+ '<p class="lineup-caption '+(info.confirmed?'confirmed':'estimated')+'">'+
+ (info.confirmed?'<span class="tag finished">✓ CONFIRMADO</span>':'<span class="tag dim">◇ NÃO OFICIAL</span>')+' '+esc(info.label)+
+ (info.date?' • Base: '+shortDate(info.date):'')+'</p>'+
+ (info.list.length?'<div>'+info.list.map(p=>'<div class="player-row"><div class="pname"><b><a href="'+playerLink(p.id,code)+'">'+esc(p.name)+'</a></b>'+
+ '<small>'+esc(p.number?'#'+p.number+' • ':'')+(info.confirmed?'Titular informado pela fonte':'Previsão estatística, não confirmada')+'</small></div>'+
+ '<a class="btn" href="'+playerLink(p.id,code)+'">Perfil</a></div>').join('')+'</div>':
+ '<div class="filler">Ainda não há cinco titulares anteriores suficientes para uma projeção confiável.</div>')+
+ (others.length?'<p class="small subtle" style="margin-top:16px">Outros atletas registrados no box score: '+others.length+'</p>':'')+'</section>';
 }
 function scoreboard(){
- const event=effectiveGame(game),p=note(game.id),final=event.status==='final',live=event.status==='live';
+ const event=gameStatus(),p=note(game.id),final=event.status==='final',live=event.status==='live';
  const hasManual=p.scoreAway!==''&&p.scoreHome!==''&&p.scoreAway!=null&&p.scoreHome!=null;
  const scoreAvailable=(final||live)&&event.scoreAway!=null&&event.scoreHome!=null;
  const scores=scoreAvailable?[event.scoreAway,event.scoreHome]:hasManual?[p.scoreAway,p.scoreHome]:null;
+ const period=Number(event.livePeriod||0);
+ const phase=period>4?'Prorrogação':period>0?period+'º quarto':'Ao vivo';
  return '<section class="card"><div class="eyebrow center">'+esc(game.stage||'NBA')+' • '+esc(shortDate(game.date))+' • '+esc(game.time||'Hora a definir')+' BRT</div>'+
  '<div class="scoreboard"><div class="side"><a href="'+teamLink(game.away)+'">'+tlogo(game.away,76)+'</a><span class="names">'+esc(name(game.away))+'</span></div>'+
- '<div class="center"><span class="bigscore">'+(scores?esc(scores[0])+' <span class="subtle">–</span> '+esc(scores[1]):'VS')+'</span><div class="small subtle">'+(final?'Partida encerrada':live?'Em andamento':'Jogo agendado')+'</div></div>'+
+ '<div class="center"><span class="bigscore">'+(scores?esc(scores[0])+' <span class="subtle">–</span> '+esc(scores[1]):'VS')+'</span>'+
+ '<div class="small subtle">'+(final?'Partida encerrada':live?phase+(event.liveClock?' • '+esc(event.liveClock):''):'Jogo agendado')+'</div></div>'+
  '<div class="side"><a href="'+teamLink(game.home)+'">'+tlogo(game.home,76)+'</a><span class="names">'+esc(name(game.home))+'</span></div></div>'+
  '<div class="switches" style="justify-content:center"><span class="tag '+((game.platforms||[]).some(p=>['PRIME','ESPN'].includes(p))?'tv':'dim')+'">'+esc(platform(game))+'</span>'+
- (final?'<span class="tag finished">Resultado importado</span>':live?'<span class="live-indicator"><i aria-hidden="true"></i>AO VIVO'+(event.livePeriod?' • '+event.livePeriod+'º quarto':'')+'</span>':'')+'</div></section>';
+ (final?'<span class="tag finished">Resultado confirmado pela fonte</span>':live?'<span class="live-indicator"><i aria-hidden="true"></i>AO VIVO</span>':'')+'</div></section>';
 }
 function gameForm(){
  const p=note(game.id),rated=Number(p.rating)||0;
