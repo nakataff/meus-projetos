@@ -101,7 +101,7 @@ def sync_calendar():
         target = ROOT / "months" / f"{month}.json"
         result = get_json("scoreboard", {"dates": month.replace("-", ""), "limit": 500})
         events = [normalize_event(ev) for ev in (result or {}).get("events", [])]
-        events = [e for e in events if e and e["date"][:7] in {month, "2026-10", "2027-05"}]
+        events = [e for e in events if e]
         # Eventos de madrugada podem cair no mês civil seguinte: sem truncar para não perder jogos.
         if result is None or not events:
             LOGS.append(f"Calendário {month}: sem novos dados, mantendo arquivo existente")
@@ -149,8 +149,13 @@ def sync_rosters():
         old = read(path, {})
         if old.get("checkedOn") == NOW.astimezone(BR).strftime("%Y-%m-%d") and os.getenv("FORCE_ROSTERS")!="1":
             continue
-        info = get_json("teams/" + abbreviation.lower() + "/roster")
-        players = normalize_roster(abbreviation, info or {})
+        slugs = {"NOP": ["no", "nop", "new-orleans"], "UTA": ["utah", "uta", "ut"]}.get(abbreviation, [abbreviation.lower()])
+        players = []
+        for slug in slugs:
+            info = get_json("teams/" + slug + "/roster")
+            players = normalize_roster(abbreviation, info or {})
+            if players:
+                break
         if players:
             save(path, {"team": abbreviation, "checkedOn": NOW.astimezone(BR).strftime("%Y-%m-%d"), "source":"ESPN (não oficial)", "players":players})
         else:
