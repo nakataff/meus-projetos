@@ -1,7 +1,7 @@
 /* QUADRA — perfil leve de franquia com médias coletivas e por atleta. */
 import {$,setupShared,TEAMS,EAST,WEST,name,logo,esc,qs,fetchRoster,loadGames,MONTHS,
  currentDate,shortDate,teamLink,playerLink,path,jsonFile,getData,setSettings,
- modify,modal,closeModal,toast,groupGames,handleWishes} from '../app.js?v=8';
+ modify,modal,closeModal,toast,groupGames,handleWishes} from '../app.js?v=9';
 
 const code=(qs('id')||'BOS').toUpperCase(),root=$('#pageContent'),valid=!!TEAMS[code];
 setupShared('teams',valid?name(code):'Equipe não encontrada',
@@ -242,7 +242,7 @@ function draw(){
   const rated=roster.filter(p=>Number(saved.players?.[p.id]?.rating)>0)
    .sort((a,b)=>Number(saved.players[b.id].rating)-Number(saved.players[a.id].rating));
   content+='<section class="card section"><h3>Meu ranking pessoal</h3>'+
-   '<p>Notas de 0 a 10 que você atribuiu. Não são as notas automáticas do DE LA QUADRA.</p>'+
+   '<p>Notas de 0 a 10 que você atribuiu. Não são as notas automáticas do site DE LA QUADRA.</p>'+
    (rated.length?rated.map(playerRow).join(''):'<div class="filler">Nenhum jogador avaliado.</div>')+'</section>';
  }
  root.innerHTML=content;
