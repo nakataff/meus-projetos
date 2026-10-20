@@ -205,15 +205,37 @@ setInterval(()=>{
 },REFRESH_MS);
 async function load(){
  try{
-  const games=await loadGames(months);game=games.find(g=>String(g.id)===id||String(g.externalId)===id);
+  const games=await loadGames(months);
+  game=games.find(g=>String(g.id)===id||String(g.externalId)===id);
   if(!game){draw();return;}
-  const month=game.date.slice(0,7);
-  boxes=await fetchBox(month);box=eventBox(boxes,game);
-  const early=MONTHS.includes('2026-10')&&month!=='2026-10'?await fetchBox('2026-10'):{};
-  const combined={...early,...boxes};
-  for(const code of [game.away,game.home])probable[code]=newestStarting(code,Object.fromEntries(Object.entries(combined).filter(([,v])=>v.date<game.date)));
   document.title=name(game.away)+' x '+name(game.home)+' • QUADRA';
+  const month=game.date.slice(0,7),index=MONTHS.indexOf(month);
+  // Um jogo só carrega seus dados mensais e no máximo os dois meses anteriores.
+  const history=index<0?[month]:MONTHS.slice(Math.max(0,index-2),index+1);
+  const [statResults,rosterResults]=await Promise.all([
+   Promise.all(history.map(fetchBox)),
+   Promise.allSettled([fetchRoster(game.away),fetchRoster(game.home)])
+  ]);
+  boxes=Object.assign({},...statResults);
+  rosters[game.away]=rosterResults[0].status==='fulfilled'?rosterResults[0].value:[];
+  rosters[game.home]=rosterResults[1].status==='fulfilled'?rosterResults[1].value:[];
+  for(const code of [game.away,game.home]){
+   probable[code]=projectStartingFive(code,game,boxes,rosters[code]);
+  }
+  updateBox();
   draw();
- }catch(e){console.error(e);root.innerHTML='<div class="filler">Erro ao abrir partida. Tente atualizar esta página.</div>';}
+  // Quando o jogo terminou e o box score já está completo no cache, não precisamos
+  // disparar outra requisição. Jogos em andamento ou sem dados tentam busca direta.
+  const cachedHasStats=box&&Object.values(box.players||{}).some(list=>list.some(p=>p.hasStats===true||p.pts!==null&&p.pts!==undefined));
+  if(gameStatus().status!=='final'||!cachedHasStats)refreshBox(true);
+  else {
+   statsMessage='Estatísticas finais carregadas do cache atualizado pelo GitHub.';
+   draw();
+  }
+ }catch(e){
+  console.error('QUADRA: falha ao abrir jogo',e);
+  root.innerHTML='<div class="filler"><b>Não foi possível carregar a partida</b>'+
+   'Atualize a página para tentar novamente. Suas avaliações continuam salvas.</div>';
+ }
 }
 root.innerHTML='<div class="filler">Carregando confronto e estatísticas…</div>';load();
