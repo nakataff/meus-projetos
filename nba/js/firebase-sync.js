@@ -125,8 +125,12 @@ function startListener(){
   if(unsubscribe)unsubscribe();
   unsubscribe=sdk.onSnapshot(cloudCollection(),q=>{
     if(!active || !user || q.metadata.hasPendingWrites)return;
-    const merged=merge(local(),fromDocuments(q));
-    if(safeJson(local())!==safeJson(merged)){apply(merged);}
+    const previousLocal=local();
+    const wasDirty=lastSynced && safeJson(previousLocal)!==safeJson(lastSynced);
+    const merged=merge(previousLocal,fromDocuments(q));
+    if(safeJson(previousLocal)!==safeJson(merged)){apply(merged);}
+    if(!wasDirty)lastSynced=clone(merged);
+    else schedule();
   },err=>{console.warn('QUADRA: escuta Firestore',err);setStatus('Nuvem indisponível: seus dados continuam neste aparelho');});
 }
 async function syncFromCloud(manual=false){
@@ -190,7 +194,10 @@ async function flush(){
   }catch(e){
     console.warn('QUADRA Firebase: dados mantidos localmente, aguardando reconexão',e);
     setStatus('Sem conexão: alterações preservadas neste aparelho');
-  }finally{flushing=false;}
+  }finally{
+    flushing=false;
+    if(active && lastSynced && safeJson(local())!==safeJson(lastSynced))schedule();
+  }
 }
 function schedule(){
   if(!active)return;
