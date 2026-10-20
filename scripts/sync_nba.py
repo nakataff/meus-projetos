@@ -241,9 +241,64 @@ def sync_final_stats():
         if data.get("games"):
             save(ROOT / "stats" / f"{month}.json", data)
 
+def sync_standings():
+    """Tabela compacta derivada dos jogos da fase regular já FINALIZADOS.
+    Empates de campanha usam saldo apenas para exibição; não implementa todos
+    os critérios oficiais de desempate NBA.
+    """
+    games = {}
+    for month in MONTHS:
+        for event in read(ROOT / "months" / (month + ".json"), {}).get("events", []):
+            ident = str(event.get("id") or "")
+            if not ident:
+                continue
+            if event.get("status") != "final" or str(event.get("stage")) != "2":
+                continue
+            away, home = code(event.get("away")), code(event.get("home"))
+            if away not in CODES or home not in CODES or away == home:
+                continue
+            try:
+                score_a, score_h = int(event["scoreAway"]), int(event["scoreHome"])
+            except (KeyError, ValueError, TypeError):
+                continue
+            if score_a == score_h:
+                continue
+            games[ident] = (event.get("date", ""), away, home, score_a, score_h)
+
+    standings = {code_: {"team": code_, "w": 0, "l": 0, "pf": 0, "pa": 0, "lastFive": []}
+                 for code_ in CODES}
+    for game_date, away, home, score_a, score_h in sorted(games.values(), key=lambda x: x[0]):
+        a, h = standings[away], standings[home]
+        a["w"] += int(score_a > score_h)
+        a["l"] += int(score_a < score_h)
+        h["w"] += int(score_h > score_a)
+        h["l"] += int(score_h < score_a)
+        a["pf"] += score_a
+        a["pa"] += score_h
+        h["pf"] += score_h
+        h["pa"] += score_a
+        a["lastFive"].append("W" if score_a > score_h else "L")
+        h["lastFive"].append("W" if score_h > score_a else "L")
+    for entry in standings.values():
+        entry["lastFive"] = entry["lastFive"][-5:]
+    ordered = sorted(standings.values(),
+        key=lambda r: (-(r["w"] / (r["w"] + r["l"]) if r["w"] + r["l"] else -1),
+                       -(r["pf"] - r["pa"]), r["team"]))
+    save(ROOT / "standings" / "2026-27.json", {
+        "season": "2026-27",
+        "source": "Resultados finais ESPN (não oficial)",
+        "format": "temporada regular; pré-temporada e playoffs excluídos",
+        "tieBreaker": "Apenas ordenação simplificada por aproveitamento e saldo, não classificação oficial da NBA",
+        "lastGameDate": max((row[0] for row in games.values()), default=None),
+        "gamesCount": len(games),
+        "teams": ordered,
+    })
+    LOGS.append(f"Classificação derivada: {len(games)} jogos da temporada regular")
+
 def main():
     ROOT.mkdir(parents=True, exist_ok=True)
     sync_calendar()
+    sync_standings()
     sync_rosters()
     sync_final_stats()
     print("\n".join(LOGS))
