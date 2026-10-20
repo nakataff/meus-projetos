@@ -108,3 +108,12 @@ Cada aplicativo fica em uma pasta independente para evitar downloads e dependên
 - **Nota QUADRA**: nota automática de 1,0 a 10,0 com algoritmo próprio, a partir de pontos, rebotes, assistências, roubos, tocos, desperdícios, arremessos errados e saldo em quadra. Não equivale à nota oficial NBA/SofaScore. É mostrada no box score e no destaque do melhor desempenho de cada partida. A nota pessoal do usuário permanece independente.
 - **Sem placar manual**: o diário da partida continua permitindo marcar jogos assistidos, avaliar e comentar. Os placares antigos foram preservados nos backups, mas não aparecem nos cards nem sobrescrevem os importados.
 - **Classificação**: a rota nba/classificacao/ apresenta a tabela geral, conferências e divisões. O script scripts/sync_nba.py gera o arquivo compacto nba/data/standings/2026-27.json a partir dos jogos finalizados da temporada regular, excluindo pré-temporada e playoffs. A ordenação de empates usa aproveitamento e saldo; não reproduz todos os critérios oficiais da NBA.
+
+
+### Estatísticas nos perfis das 30 franquias
+
+- Cada equipe em nba/equipe/?id=CODIGO possui **Resumo** (campanha, aproveitamento, pontos feitos e sofridos por jogo, médias coletivas de rebotes/assistências, FG%, 3PT% e saldo), líderes individuais em pontos/rebotes/assistências e último quinteto disponível.
+- A aba **Estatísticas** tem ranking individual por médias, jogos, titularidades, minutos e percentuais de arremessos, com ordenação por coluna e links para os perfis dos atletas.
+- Um filtro explícito separa **Temporada regular** de **Pré-temporada**. Nunca somar fases diferentes na mesma média. Os dados coletivos derivados de box scores só usam jogos para os quais há estatísticas individuais disponíveis, sempre exibindo o número da amostra.
+- A rotina scripts/sync_nba.py gera arquivos por equipe em nba/data/team-stats/CODIGO.json com valores acumulados e quinteto recente, atualizados pelo GitHub Actions. Isso evita baixar os arquivos mensais de box score (grandes) ao abrir uma franquia.
+- Os cards da página Equipes também mostram a campanha atual (V/D). Se ainda não há partidas regulares da franquia, a interface avisa e permite consultar os números de pré-temporada.
