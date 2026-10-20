@@ -1101,3 +1101,38 @@ a.fav-info:hover,a.fav-info:focus-visible{border-color:var(--accent);background:
  .followed-profile-item .btn{margin-left:auto}
 }
 @media(max-width:360px){.followed-home-grid{grid-template-columns:1fr}}
+
+/* Classificação projetada enquanto o resultado da NBA ainda está ao vivo. */
+.standings-live-box{border:1px solid #67482e;background:linear-gradient(110deg,#2a211e,#162231);
+ border-radius:14px;padding:15px 17px;margin:0 0 14px}
+.standings-live-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:11px}
+.standings-live-head strong{font-size:13px;color:#f7dfc6}
+.standings-live-head>span:last-child{font-size:11px;color:#b6a593}
+.standings-live-dot{height:8px;width:8px;flex:none;background:#ff745b;border-radius:100%;
+ box-shadow:0 0 0 3px #ff745b20;animation:quadra-live-pulse 2s infinite}
+.standings-live-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,295px),1fr));gap:8px}
+.standings-live-game{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:9px;
+ border:1px solid #66472f;background:#302822;padding:10px;border-radius:11px}
+.standings-live-game:hover,.standings-live-game:focus-visible{border-color:#ffab71;background:#3a3027}
+.standings-live-team{display:inline-flex;align-items:center;gap:6px;color:#f7e9db;font-size:12px;font-weight:900}
+.standings-live-team img{height:27px;width:27px;object-fit:contain}
+.standings-live-game>strong{font-size:20px;color:#ffca99;font-variant-numeric:tabular-nums}
+.standings-live-game>strong span{color:#a58c7b;font-size:13px}
+.standings-live-game>small{flex:1 0 100%;text-align:center;font-size:10px;color:#bca68f}
+.standings-live-options{display:flex;align-items:center;justify-content:space-between;gap:8px;
+ flex-wrap:wrap;margin:12px 0 15px;color:#b9c9dd;font-size:11px}
+.standings-live-options label{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:12px;font-weight:850}
+.standings-live-options input{accent-color:#ff9549;height:16px;width:16px;cursor:pointer}
+.standings-live-options span{color:#f0b98f;font-size:10px}
+.standings-table tbody tr.standings-projecting{background:#342c29}
+.standings-table tbody tr.standings-projecting .standings-team-col{background:#342c29}
+.standings-table tbody tr.standings-projecting.highlight,
+.standings-table tbody tr.standings-projecting.highlight .standings-team-col{background:#45352d}
+.standings-table tbody tr.standings-projecting:hover,
+.standings-table tbody tr.standings-projecting:hover .standings-team-col{background:#43382f}
+.standings-projection-label{display:inline-flex;color:#ffbf89!important;font-size:9px!important;
+ letter-spacing:.025em;font-weight:900}
+@media(max-width:740px){.standings-live-box{padding:11px}.standings-live-grid{grid-template-columns:1fr}
+ .standings-live-options{align-items:flex-start;flex-direction:column}
+ .standings-live-game>strong{font-size:18px}}
+@media(prefers-reduced-motion:reduce){.standings-live-dot{animation:none}}
