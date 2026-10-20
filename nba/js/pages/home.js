@@ -1,4 +1,4 @@
-import {$,setupShared,loadGames,currentDate,dayShift,groupGames,path,getData,note,handleWishes,esc,broadcastInfo,name,logo,MONTHS,shortDate} from '../app.js';
+import {$,setupShared,loadGames,currentDate,dayShift,groupGames,path,getData,note,handleWishes,esc,broadcastInfo,name,logo,MONTHS,shortDate} from '../app.js?v=4';
 setupShared('home','A NBA acontece aqui.','Jogos do dia, transmissões brasileiras e tudo que você quer acompanhar — sem estatísticas pessoais ocupando a tela.');
 const root=$('#pageContent');
 let games=[],loaded=false;
