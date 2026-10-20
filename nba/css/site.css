@@ -952,3 +952,40 @@ footer{border-top:1px solid var(--border);color:#8293ab;font-size:12px;padding:2
 .hero-logo{width:100px;height:100px;object-fit:contain;flex:none;filter:drop-shadow(0 5px 14px #0005)}
 @media(max-width:770px){.top>.brand img{width:162px;max-height:58px}.hero-logo{width:76px;height:76px}}
 @media(max-width:490px){.top>.brand img{width:148px;max-height:54px}.hero-logo{width:64px;height:64px}}
+
+
+/* DE LA QUADRA — destaque interativo, links oficiais e nota em destaque no modal */
+.overview-leader[role="button"]{cursor:pointer;transition:border-color .15s,transform .15s,background .15s}
+.overview-leader[role="button"]:hover,.overview-leader[role="button"]:focus-visible{border-color:#ffac68;background:#213248;transform:translateY(-2px)}
+.overview-leader[role="button"]:focus-visible{outline:2px solid #ffac68;outline-offset:2px}
+.overview-leader-person>.overview-name{color:#edf4fd;font-size:12px;font-weight:900;line-height:1.3;display:block}
+.overview-leader[role="button"]:hover .overview-name{text-decoration:underline}
+.broadcast-links{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;font-size:inherit}
+.broadcast-links>a{display:inline-flex;align-items:center;gap:4px;border:1px solid #ff954944;border-radius:7px;padding:4px 8px;color:#ffc28c;background:#ff954917;font-size:11px;font-weight:850;text-decoration:none;line-height:1.4}
+.broadcast-links>a:hover{background:#ff95492c;border-color:#ff9549;color:white}
+.broadcast-links>a:focus-visible{outline:2px solid #ff9549;outline-offset:2px}
+.broadcast-badge .broadcast-links{flex-direction:column;gap:2px;width:100%}
+.broadcast-badge .broadcast-links>a{display:block;background:transparent;border:0;color:inherit;padding:2px 1px;font:inherit;white-space:normal}
+.broadcast-badge .broadcast-links>a:hover{color:#ffcb9b;text-decoration:underline}
+.overview-quickfacts .broadcast-links{justify-content:flex-start}
+.game-broadcast-platforms .broadcast-links>a{font-size:12px}
+.performance-header{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;clear:both;margin-bottom:12px}
+.performance-header .performance-player{min-width:0;flex:1;margin-bottom:0}
+.performance-header .performance-player>div:last-child{min-width:0}
+.performance-score-feature{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none;min-width:118px;min-height:122px;border:1px solid #ff954977;border-radius:13px;background:linear-gradient(150deg,#382c22,#1d2635);padding:10px 12px;color:#ffbe83}
+.performance-score-feature>span{font-size:11px;font-weight:950;letter-spacing:.07em;white-space:nowrap}
+.performance-score-feature>strong{font-size:clamp(43px,5vw,59px);font-weight:950;line-height:1.08;letter-spacing:-.07em;font-variant-numeric:tabular-nums}
+.performance-score-feature>small{font-size:11px;font-weight:850;color:#efb78d}
+@media(max-width:550px){
+ .performance-header{gap:8px}
+ .performance-header .performance-player{gap:9px}
+ .performance-header .performance-portrait{width:55px;height:75px;flex:0 0 55px}
+ .performance-header .performance-score-feature{min-width:78px;min-height:100px;padding:7px}
+ .performance-header .performance-score-feature>span{font-size:9px}
+ .performance-header .performance-score-feature>strong{font-size:41px}
+ .performance-header .performance-team{font-size:10px;flex-wrap:wrap}
+ .performance-header .performance-player h2{font-size:16px}
+ .performance-header .performance-player .caps{font-size:9px}
+ .overview-leader-person>.overview-name{font-size:11px}
+}
+@media(max-width:390px){.performance-header{flex-wrap:wrap}.performance-score-feature{margin-left:auto}}
