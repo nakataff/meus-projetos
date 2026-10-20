@@ -2,7 +2,7 @@
  * Somente páginas de agenda/início/partida carregam este módulo.
  * Dados são consultados no máximo a cada 2 minutos, com a página visível.
  */
-import {currentDate,dayShift} from './app.js?v=6';
+import {currentDate,dayShift} from './app.js?v=8';
 
 const URL_BASE='https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard';
 let lastSignature='',busy=false,completed=false;
