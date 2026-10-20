@@ -14,14 +14,14 @@ function section(){
  '<div class="controls"><label><input type="checkbox" id="favoritePlayer" '+(p.favorite?'checked':'')+'> Jogador favorito</label><label><input type="checkbox" id="franchisePlayer" '+(franchise?'checked':'')+'> Meu franchise player de '+esc(name(team))+'</label></div><button type="submit" class="btn accent">Salvar avaliação ✓</button></form></section>'+
  '<section class="section"><div class="section-title"><h2>Últimas estatísticas disponíveis</h2><span class="subtle small">Somente partidas com box score importado</span></div>'+
  (games.length?'<div class="card scroll-x"><table class="stat-table"><thead><tr><th>Data / jogo</th><th>MIN</th><th>PTS</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th><th>3PT</th></tr></thead><tbody>'+
- games.slice(0,30).map(g=>'<tr><td><a href="'+esc(gameLink({id:'espn_'+g.event.id,date:g.date}))+'">'+shortDate(g.date)+' • '+esc(name(g.opponent))+'</a></td><td>'+esc(g.row.min||'—')+'</td><td>'+esc(g.row.pts)+'</td><td>'+esc(g.row.reb)+'</td><td>'+esc(g.row.ast)+'</td><td>'+esc(g.row.stl)+'</td><td>'+esc(g.row.blk)+'</td><td>'+esc(g.row.three||'—')+'</td></tr>').join('')+'</tbody></table></div>':
+ games.slice(0,30).map(g=>'<tr><td><a href="'+esc(gameLink({id:g.event.id,date:g.date}))+'">'+shortDate(g.date)+' • '+esc(name(g.opponent))+'</a></td><td>'+esc(g.row.min||'—')+'</td><td>'+esc(g.row.pts)+'</td><td>'+esc(g.row.reb)+'</td><td>'+esc(g.row.ast)+'</td><td>'+esc(g.row.stl)+'</td><td>'+esc(g.row.blk)+'</td><td>'+esc(g.row.three||'—')+'</td></tr>').join('')+'</tbody></table></div>':
  '<div class="filler"><b>Sem estatísticas importadas deste atleta</b>Os números aparecerão após as próximas partidas com box score disponível.</div>')+'</section>';
 }
 root.addEventListener('input',e=>{if(e.target.id==='rateProfile')$('#currentRating').textContent=e.target.value;});
 root.addEventListener('submit',e=>{
  if(e.target.id!=='playerProfile')return;e.preventDefault();
  const rated=+$('#rateProfile').value,fav=$('#favoritePlayer').checked,star=$('#franchisePlayer').checked;
- modify(b=>{const old=b.extras.players[pid]||{};b.extras.players[pid]={...old,rating:rated,favorite:fav};if(star)b.extras.franchise[team]=pid;else if(b.extras.franchise[team]===pid)delete b.extras.franchise[team];b.extras.updatedAt=new Date().toISOString()});
+ modify(b=>{const old=b.extras.players[pid]||{};b.extras.players[pid]={...old,name:player.name,team,rating:rated,favorite:fav};if(star)b.extras.franchise[team]=pid;else if(b.extras.franchise[team]===pid)delete b.extras.franchise[team];b.extras.updatedAt=new Date().toISOString()});
  toast('Avaliação salva');section();
 });
 window.addEventListener('quadra:refresh',section);
