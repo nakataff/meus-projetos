@@ -172,8 +172,8 @@ export function showError(e){console.error(e);return '<div class="filler"><b>Nã
 export function pageHeader(title,description,icon=''){const h=$('.hero');if(!h)return;h.innerHTML='<div><span class="eyebrow">NBA • TEMPORADA 2026/27</span><h1>'+esc(title)+'</h1><p>'+esc(description)+'</p></div>'+(icon?'<img class="hero-logo" src="'+esc(icon)+'" alt="">':'');}
 export function setActive(page){document.querySelectorAll('[data-nav]').forEach(a=>a.classList.toggle('active',a.dataset.nav===page));}
 export function setupShared(page,title,description){
- setActive(page);pageHeader(title,description,asset('assets/nba.png'));
- document.title=title+' • QUADRA NBA';
+ setActive(page);pageHeader(title,description,asset('assets/dlq.webp'));
+ document.title=title+' • DE LA QUADRA';
  window.addEventListener('quadra:data',()=>window.dispatchEvent(new Event('quadra:refresh')));
 }
 export function eventBox(box,g){
