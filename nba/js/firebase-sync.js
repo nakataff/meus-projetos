@@ -4,7 +4,12 @@ const cloudBar = document.createElement('div');
 cloudBar.id = 'quadra-cloud';
 cloudBar.className = 'qcloud';
 cloudBar.innerHTML = '<div class="qcloud-info"><span class="qcloud-icon">☁</span><span id="qcloud-state">Verificando nuvem…</span></div><div id="qcloud-actions" class="qcloud-actions"></div>';
-(document.querySelector('.hero') || document.querySelector('.top')).after(cloudBar);
+// O painel de conta aparece apenas dentro das configurações do Perfil.
+function mountCloudControl(){
+  const slot=document.getElementById('firebaseAccountControl');
+  if(slot && cloudBar.parentElement!==slot)slot.appendChild(cloudBar);
+}
+window.addEventListener('quadra:profile-render',()=>ui());
 const message = document.getElementById('qcloud-state');
 const actions = document.getElementById('qcloud-actions');
 const helpUrl = 'https://github.com/nakataff/meus-projetos/blob/main/nba/firebase/SETUP.md';
@@ -24,12 +29,19 @@ const hasKeys = obj => obj && typeof obj==='object' && Object.keys(obj).length>0
 function setStatus(s){message.textContent=s;}
 function addButton(name,fn){const b=document.createElement('button');b.type='button';b.textContent=name;b.className='qcloud-button';b.addEventListener('click',fn);actions.appendChild(b);return b;}
 function ui(){
+  mountCloudControl();
   actions.replaceChildren();
-  if(!sdk){setStatus('Nuvem opcional: falta conectar o Firebase');addButton('Como configurar',()=>location.href=helpUrl);return;}
-  if(!user){setStatus('Histórico salvo neste aparelho');addButton('Entrar com Google',login);return;}
-  setStatus((loading?'Sincronizando… ':active?'Sincronizado com Google • ':'Conectado • ')+(user.displayName||user.email||'Conta Google'));
-  addButton('Sincronizar',()=>syncFromCloud(true));
-  addButton('Sair',logout);
+  if(!sdk){setStatus('Conta Google ainda não disponível');addButton('Ajuda',()=>location.href=helpUrl);return;}
+  if(!user){setStatus('Entre com Google para sincronizar seus registros');addButton('Entrar com Google',login);return;}
+  if(loading){setStatus('Conectando sua conta Google…');return;}
+  if(active){
+    setStatus('Conta Google conectada • salvamento automático');
+    addButton('Sair da conta',logout);
+  }else{
+    setStatus('Conta conectada • aguardando sincronização');
+    addButton('Tentar novamente',()=>syncFromCloud(true));
+    addButton('Sair da conta',logout);
+  }
 }
 function local(){
   return window.QuadraBridge?.snapshot() || null;
