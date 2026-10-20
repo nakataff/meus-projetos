@@ -1,9 +1,8 @@
-import {$,setupShared,qs,esc,name,logo,tlogo,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,groupGames,note,getData,setNote,setExtraGroup,modify,getSpoilers,setSpoilers,platform,shortDate,currentDate,toast,modal,closeModal,eventBox,newestStarting,fetchRoster} from '../app.js';
+import {$,setupShared,qs,esc,name,logo,tlogo,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,groupGames,note,getData,setNote,setExtraGroup,modify,platform,shortDate,currentDate,toast,modal,closeModal,eventBox,newestStarting,fetchRoster} from '../app.js';
 const id=qs('id')||'',hint=qs('data')||'',root=$('#pageContent');
 setupShared('games','Centro da partida','Escalações, estatísticas e seu diário pessoal de basquete.');
 let game=null,boxes={},box=null,probable={},rosters={},tab='resumo',loading=true;
 const maybeMonth=hint.slice(0,7),months=MONTHS.includes(maybeMonth)?[maybeMonth]:MONTHS;
-const HIDDEN=()=>getSpoilers();
 function playerStats(code){
  const players=box?.players?.[code]||[];
  if(!players.length)return '<div class="filler">As estatísticas individuais ainda não foram importadas para esta partida.</div>';
@@ -32,15 +31,15 @@ function lineupPanel(code){
  (others.length?'<p class="small subtle" style="margin-top:16px">Jogadores não titulares registrados no box score: '+others.length+'</p>':'')+'</section>';
 }
 function scoreboard(){
- const p=note(game.id),hidden=HIDDEN(),final=game.status==='final';
+ const p=note(game.id),final=game.status==='final';
  const hasManual=p.scoreAway!==''&&p.scoreHome!==''&&p.scoreAway!=null&&p.scoreHome!=null;
  const scores=final?[game.scoreAway,game.scoreHome]:hasManual?[p.scoreAway,p.scoreHome]:null;
  return '<section class="card"><div class="eyebrow center">'+esc(game.stage||'NBA')+' • '+esc(shortDate(game.date))+' • '+esc(game.time||'Hora a definir')+' BRT</div>'+
  '<div class="scoreboard"><div class="side"><a href="'+teamLink(game.away)+'">'+tlogo(game.away,76)+'</a><span class="names">'+esc(name(game.away))+'</span></div>'+
- '<div class="center"><span class="bigscore">'+(scores&&!hidden?esc(scores[0])+' <span class="subtle">–</span> '+esc(scores[1]):'VS')+'</span><div class="small subtle">'+(final?'Partida encerrada':game.status==='live'?'Em andamento':'Jogo agendado')+'</div></div>'+
+ '<div class="center"><span class="bigscore">'+(scores?esc(scores[0])+' <span class="subtle">–</span> '+esc(scores[1]):'VS')+'</span><div class="small subtle">'+(final?'Partida encerrada':game.status==='live'?'Em andamento':'Jogo agendado')+'</div></div>'+
  '<div class="side"><a href="'+teamLink(game.home)+'">'+tlogo(game.home,76)+'</a><span class="names">'+esc(name(game.home))+'</span></div></div>'+
  '<div class="switches" style="justify-content:center"><span class="tag '+((game.platforms||[]).some(p=>['PRIME','ESPN'].includes(p))?'tv':'dim')+'">'+esc(platform(game))+'</span>'+
- (final?'<span class="tag finished">Resultado importado</span>':'')+'<button class="btn ghost" id="showScores">'+(hidden?'◉ Sem spoilers':'◎ Mostrar resultados')+'</button></div></section>';
+ (final?'<span class="tag finished">Resultado importado</span>':'')+'</div></section>';
 }
 function gameForm(){
  const p=note(game.id),rated=Number(p.rating)||0;
@@ -63,11 +62,10 @@ function draw(){
  }else if(tab==='quintetos'){
   content+='<div class="grid two">'+lineupPanel(game.away)+lineupPanel(game.home)+'</div>';
  }else if(tab==='stats'){
-  content+=HIDDEN()?'<div class="filler"><b>Modo sem spoilers ativado</b>Ative a visualização dos resultados para consultar o box score.</div>':
-  box?'<div class="section"><div class="section-title"><h2>Estatísticas individuais</h2><span class="subtle small">Dados importados após a partida</span></div><div class="card"><h3>'+esc(name(game.away))+'</h3>'+playerStats(game.away)+'</div><div class="card section"><h3>'+esc(name(game.home))+'</h3>'+playerStats(game.home)+'</div></div>':
+  content+=box?'<div class="section"><div class="section-title"><h2>Estatísticas individuais</h2><span class="subtle small">Dados importados após a partida</span></div><div class="card"><h3>'+esc(name(game.away))+'</h3>'+playerStats(game.away)+'</div><div class="card section"><h3>'+esc(name(game.home))+'</h3>'+playerStats(game.home)+'</div></div>':
   '<div class="filler"><b>Box score ainda não disponível</b>As estatísticas serão exibidas após a importação dos resultados finais.</div>';
  }else if(tab==='avaliar'){
-  content+=gameForm()+(box&&!HIDDEN()?'<section class="section"><div class="section-title"><h2>Avaliar jogadores e escolher MVP</h2></div><div class="card"><h3>'+esc(name(game.away))+'</h3>'+playerStats(game.away)+'</div><div class="card section"><h3>'+esc(name(game.home))+'</h3>'+playerStats(game.home)+'</div></section>':'');
+  content+=gameForm()+(box?'<section class="section"><div class="section-title"><h2>Avaliar jogadores e escolher MVP</h2></div><div class="card"><h3>'+esc(name(game.away))+'</h3>'+playerStats(game.away)+'</div><div class="card section"><h3>'+esc(name(game.home))+'</h3>'+playerStats(game.home)+'</div></section>':'');
  }
  root.innerHTML=content;
 }
@@ -80,7 +78,6 @@ function ratePlayer(pid,code){
 }
 root.addEventListener('click',e=>{
  const t=e.target.closest('[data-tab],[data-open-tab]');if(t){tab=t.dataset.tab||t.dataset.openTab;draw();return;}
- if(e.target.closest('#showScores')){setSpoilers(!HIDDEN());draw();return;}
  const r=e.target.closest('[data-player-rating]');if(r){ratePlayer(r.dataset.playerRating,r.dataset.playerTeam);return;}
  const m=e.target.closest('[data-mvp]');if(m){setExtraGroup('gameMvp',game.id,String(m.dataset.mvp));draw();toast('MVP da partida escolhido!');return;}
 });
