@@ -4,7 +4,7 @@ const id=qs('id')||'',hint=qs('data')||'',root=$('#pageContent');
 setupShared('games','Centro da partida','Escalações, estatísticas e seu diário pessoal de basquete.');
 let game=null,boxes={},box=null,probable={},rosters={},tab='resumo';
 let statsSort='pts',statsAsc=false;
-let statsTeam=typeof window.matchMedia==='function'&&window.matchMedia('(max-width:980px)').matches?'away':'both';
+let statsTeam='both'; // No mobile, Ambos mostra ranking misto das duas franquias.
 let statsDetail=false;
 let remoteBox=null,remoteStatus=null,lastStatsCheck=0,checkingStats=false,statsMessage='',lastSuccess=null;
 const REFRESH_MS=120000;
@@ -127,17 +127,21 @@ function statValue(player,key){
  const n=Number(value);
  return Number.isFinite(n)?n:null;
 }
-function scorePlayers(code){
- const rows=(box?.players?.[code]||[]).filter(p=>p.id&&p.name);
+function sortedStatsRows(rows){
  return rows.slice().sort((a,b)=>{
   const av=statValue(a,statsSort),bv=statValue(b,statsSort);
-  if(av===null && bv!==null)return 1;
-  if(bv===null && av!==null)return -1;
+  if(av===null&&bv!==null)return 1;
+  if(bv===null&&av!==null)return -1;
   const delta=(av??0)-(bv??0);
   if(delta!==0)return statsAsc?delta:-delta;
-  const tie=(statValue(b,'pts')??0)-(statValue(a,'pts')??0);
-  return tie || String(a.name).localeCompare(String(b.name),'pt-BR');
+  return (statValue(b,'pts')??0)-(statValue(a,'pts')??0)||
+   String(a.name).localeCompare(String(b.name),'pt-BR');
  });
+}
+function scorePlayers(code){return sortedStatsRows((box?.players?.[code]||[]).filter(p=>p.id&&p.name));}
+function mixedPlayers(){
+ return sortedStatsRows([game.away,game.home].flatMap(code=>
+  (box?.players?.[code]||[]).filter(p=>p.id&&p.name).map(p=>({...p,teamCode:code}))));
 }
 function statHeader(field){
  const active=statsSort===field.key;
@@ -155,23 +159,24 @@ function statText(player,key){
  if(value===undefined||value===null||value===''||value==='—')return '—';
  return esc(value);
 }
-function playerStats(code){
- const rows=scorePlayers(code);
- if(!rows.length)return '<div class="filler"><b>Sem números para '+esc(name(code))+'</b>O box score desta equipe ainda não foi disponibilizado.</div>';
+function playerStats(code,mixed=false){
+ const rows=mixed?mixedPlayers():scorePlayers(code);
+ if(!rows.length)return '<div class="filler">O box score ainda não foi disponibilizado.</div>';
  const ratings=getData().extras,chosenMvp=String(ratings.gameMvp?.[game.id]||'');
  const basic=['min','pts','reb','ast','three'];
- // Mesmo na visão compacta, sempre exibir a coluna escolhida na ordenação.
  if(!basic.includes(statsSort))basic[basic.length-1]=statsSort;
  const cols=statsDetail?['min','pts','reb','ast','stl','blk','fg','three','to','plusMinus']:basic;
- const tr=rows.map((p,index)=>{
-  const id=String(p.id),rating=ratings.gameRatings?.[game.id+':'+id];
-  const mvp=chosenMvp===id;
-  return '<tr class="'+(p.starter?'boxscore-starter':'')+'">'+
-  '<th scope="row"><div class="boxscore-player">'+playerPortrait(p,code)+
-  '<div class="boxscore-player-info"><a href="'+playerLink(id,code)+'" title="'+esc(p.name)+'">'+esc(p.name)+'</a>'+
-  '<small>'+esc(p.number?'#'+p.number+' • ':'')+(p.starter?'TITULAR':'RESERVA')+'</small></div></div></th>'+
+ const tr=rows.map(p=>{
+  const playerTeam=mixed?p.teamCode:code;
+  const id=String(p.id),rating=ratings.gameRatings?.[game.id+':'+id],mvp=chosenMvp===id;
+  return '<tr class="'+(p.starter?'boxscore-starter':'')+'" data-player-detail="'+esc(id)+
+  '" data-player-team="'+esc(playerTeam)+'" tabindex="0" aria-label="Detalhes de '+esc(p.name)+'">'+
+  '<th scope="row"><div class="boxscore-player">'+playerPortrait(p,playerTeam)+
+  '<div class="boxscore-player-info"><a href="'+playerLink(id,playerTeam)+'" title="'+esc(p.name)+'">'+esc(p.name)+'</a>'+
+  '<small>'+(mixed?'<img class="boxscore-row-team" src="'+esc(logo(playerTeam))+'" loading="lazy" alt="'+esc(name(playerTeam))+'">':'')+
+  esc(p.number?'#'+p.number+' • ':'')+(p.starter?'TITULAR':'RESERVA')+'</small></div></div></th>'+
   cols.map(key=>'<td class="'+(statsSort===key?'stat-selected':'')+'">'+statText(p,key)+'</td>').join('')+
-  '<td class="boxscore-actions"><button type="button" data-player-rating="'+esc(id)+'" data-player-team="'+esc(code)+
+  '<td class="boxscore-actions"><button type="button" data-player-rating="'+esc(id)+'" data-player-team="'+esc(playerTeam)+
   '" class="boxscore-rating" title="Avaliar '+esc(p.name)+'" aria-label="Dar nota para '+esc(p.name)+'">'+
   (rating!==undefined?'★ '+esc(rating):'☆')+'</button>'+
   '<button type="button" class="boxscore-mvp'+(mvp?' chosen':'')+'" data-mvp="'+esc(id)+'" title="'+(mvp?'Meu MVP':'Escolher MVP')+
@@ -179,7 +184,7 @@ function playerStats(code){
  }).join('');
  return '<div class="boxscore-scroll"><table class="boxscore-table '+(statsDetail?'expanded':'')+'"><thead><tr><th scope="col">Jogador</th>'+
  cols.map(key=>statHeader(statFields.find(f=>f.key===key))).join('')+
- '<th scope="col" class="boxscore-actions-title">Minha nota / MVP</th></tr></thead><tbody>'+tr+'</tbody></table></div>';
+ '<th scope="col" class="boxscore-actions-title">Nota / MVP</th></tr></thead><tbody>'+tr+'</tbody></table></div>';
 }
 function boxscorePanel(code){
  const stats=(box?.players?.[code]||[]).filter(p=>p.hasStats===true||p.pts!==null&&p.pts!==undefined);
@@ -204,7 +209,12 @@ function boxscoreArea(){
  (statsDetail?'Menos dados':'Mais dados')+'</button></div></div>'+
  '<p class="boxscore-hint">Clique no nome da estatística para ordenar. As duas equipes seguem a mesma classificação. '+(statsDetail?'Arraste a tabela para ver todas as colunas no celular.':'')+'</p>'+
  '<div class="boxscore-panels '+(statsTeam==='both'?'view-both':'view-single')+'">'+
- boxscorePanel(game.away)+boxscorePanel(game.home)+'</div></div>';
+ boxscorePanel(game.away)+boxscorePanel(game.home)+
+ '<section class="boxscore-mixed"><div class="boxscore-team-head">'+
+ '<img src="'+esc(logo(game.away))+'" alt="">'+
+ '<div><strong>Ambas as equipes</strong><span>Jogadores misturados por '+esc(statFields.find(f=>f.key===statsSort)?.title||'estatística')+'</span></div>'+
+ '<img src="'+esc(logo(game.home))+'" alt=""></div>'+playerStats(null,true)+'</section>'+
+ '</div></div>';
 }
 function starterList(code){
  // A marcação explícita de starter vem do box score, nunca do elenco.
