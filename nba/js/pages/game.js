@@ -239,9 +239,11 @@ function scoreboard(){
  const hasManual=p.scoreAway!==''&&p.scoreHome!==''&&p.scoreAway!=null&&p.scoreHome!=null;
  const scoreAvailable=(final||live)&&event.scoreAway!=null&&event.scoreHome!=null;
  const scores=scoreAvailable?[event.scoreAway,event.scoreHome]:hasManual?[p.scoreAway,p.scoreHome]:null;
+ const type=typeof game.stage==='string' && isNaN(Number(game.stage))?game.stage:
+  Number(game.stage)===1?'Pré-temporada':Number(game.stage)===3?'Playoffs':'Temporada regular';
  const period=Number(event.livePeriod||0);
  const phase=period>4?'Prorrogação':period>0?period+'º quarto':'Ao vivo';
- return '<section class="card"><div class="eyebrow center">'+esc(game.stage||'NBA')+' • '+esc(shortDate(game.date))+' • '+esc(game.time||'Hora a definir')+' BRT</div>'+
+ return '<section class="card"><div class="eyebrow center">'+esc(type)+' • '+esc(shortDate(game.date))+' • '+esc(game.time||'Hora a definir')+' BRT</div>'+
  '<div class="scoreboard"><div class="side"><a href="'+teamLink(game.away)+'">'+tlogo(game.away,76)+'</a><span class="names">'+esc(name(game.away))+'</span></div>'+
  '<div class="center"><span class="bigscore">'+(scores?esc(scores[0])+' <span class="subtle">–</span> '+esc(scores[1]):'VS')+'</span>'+
  '<div class="small subtle">'+(final?'Partida encerrada':live?phase+(event.liveClock?' • '+esc(event.liveClock):''):'Jogo agendado')+'</div></div>'+
@@ -317,6 +319,29 @@ function teamComparison(){
   'Soma das estatísticas individuais disponíveis para cada equipe; pode diferir dos totais oficiais.')+
  '</p></section>';
 }
+function recentTeamHighlight(code){
+ const matches=Object.values(boxes||{})
+  .filter(g=>g?.date<game.date&&(g.away===code||g.home===code)&&Array.isArray(g.players?.[code]))
+  .sort((a,b)=>b.date.localeCompare(a.date));
+ const match=matches.find(g=>g.players[code].filter(p=>p.pts!==undefined&&p.pts!==null).length>=5);
+ if(!match)return '';
+ const player=match.players[code].filter(p=>p.pts!==undefined&&p.pts!==null)
+  .slice().sort((a,b)=>(Number(b.pts)||0)-(Number(a.pts)||0))[0];
+ const opponent=match.away===code?match.home:match.away;
+ return '<div class="overview-recent-team"><div class="overview-lineup-head"><img src="'+esc(logo(code))+'" alt="">'+
+ '<div><strong>'+esc(name(code))+'</strong><span>'+esc(shortDate(match.date))+' • contra '+esc(name(opponent))+'</span></div></div>'+
+ '<div class="overview-recent-highlight"><span class="caps">Destaque em pontos no último jogo registrado</span>'+
+ '<div><a href="'+playerLink(player.id,code)+'">'+esc(player.name)+'</a><b>'+esc(player.pts)+' PTS</b></div></div>'+
+ '<a class="btn ghost" href="'+path('jogo/?id='+encodeURIComponent(match.id)+'&data='+encodeURIComponent(match.date))+
+ '">Ver partida anterior →</a></div>';
+}
+function recentForm(){
+ const cards=[game.away,game.home].map(recentTeamHighlight).filter(Boolean);
+ if(!cards.length)return '';
+ return '<section class="section"><div class="section-title"><h2>Últimas atuações disponíveis</h2></div>'+
+ '<div class="overview-lineups">'+cards.join('')+'</div>'+
+ '<p class="overview-data-note">Dados das últimas partidas com box score importado. Podem incluir jogos de pré-temporada e não indicam titulares oficiais do próximo jogo.</p></section>';
+}
 function summaryLineups(){
  const teams=[game.away,game.home],content=teams.map(code=>{
   const info=starterList(code),confirmed=info.confirmed;
@@ -343,6 +368,7 @@ function overviewHtml(current,statsReady){
  (Number(saved.rating)>0?' • ★ '+esc(saved.rating)+'/10':'')+'</strong></div></section>'+
  (statsReady?leaderCards()+(complete?teamComparison():''):'' )+
  summaryLineups()+
+ (!statsReady?recentForm():'')+
  '<div class="overview-footer"><div><strong>Seu diário da partida</strong><span>'+(
   mvp?'Você já escolheu seu MVP.':
   saved.watched?'Partida marcada como assistida.':
