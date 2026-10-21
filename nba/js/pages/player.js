@@ -68,7 +68,7 @@ function leagueComparison(){
  const own=leaguePlayers.find(x=>x.id===pid);
  if(!own)return '<section class="card section"><h3>Comparação com a liga</h3><p class="small subtle">Ainda não há jogos suficientes para comparar este jogador.</p></section>';
  const fmt=v=>v.toFixed(1).replace('.',',');
- return '<section class="section"><div class="section-title"><h2>Comparação com a liga</h2><span class="small subtle">'+leaguePlayers.length+' jogadores na amostra</span></div>'+
+ return '<section class="section"><div class="section-title"><h2>Comparação com a liga</h2><a class="btn ghost" href="'+path('melhores/')+'">Ver ranking completo ↗</a></div><p class="small subtle">'+leaguePlayers.length+' jogadores na amostra</p>'+
  '<div class="league-compare-grid">'+[['pts','Pontos'],['reb','Rebotes'],['ast','Assistências']].map(([key,label])=>{
   const sorted=leaguePlayers.slice().sort((a,b)=>b[key]/b.gp-a[key]/a.gp);
   const rank=sorted.findIndex(p=>p.id===pid)+1,average=own[key]/own.gp;
