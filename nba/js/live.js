@@ -2,7 +2,7 @@
  * Carregamento leve: 15 segundos durante jogos ao vivo, 2 minutos fora deles.
  * Os placares chegam por consulta HTTP, não por eventos instantâneos a cada cesta.
  */
-import {currentDate,dayShift} from './app.js?v=12';
+import {currentDate,dayShift} from './app.js?v=13';
 
 const URL_BASE='https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard';
 const LIVE_INTERVAL_MS=15000,IDLE_INTERVAL_MS=120000;
