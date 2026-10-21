@@ -1,5 +1,5 @@
 /* Classificação DE LA QUADRA 2026/27 — resultados finais com projeção ao vivo opcional. */
-import {$,setupShared,EAST,WEST,TEAMS,name,logo,esc,path,teamLink,jsonFile,shortDate,gameLink,livePeriodLabel} from '../app.js?v=10';
+import {$,setupShared,EAST,WEST,TEAMS,name,logo,esc,path,teamLink,jsonFile,shortDate} from '../app.js?v=10';
 
 setupShared('standings','Classificação da NBA','Tabela geral, conferências Leste e Oeste e divisões da temporada regular 2026/27.');
 const root=$('#pageContent');
@@ -50,20 +50,6 @@ function projectRows(fixtures){
  }
  return rows;
 }
-function liveScorecards(fixtures){
- if(!fixtures.length)return '';
- return '<section class="standings-live-box"><div class="standings-live-head"><span class="standings-live-dot" aria-hidden="true"></span>'+
-  '<strong>Jogos em andamento</strong><span>Placar parcial • temporada regular</span></div>'+
-  '<div class="standings-live-grid">'+fixtures.map(g=>
-   '<a class="standings-live-game" href="'+gameLink({id:g.id,date:g.date})+'">'+
-    '<span class="standings-live-team"><img src="'+esc(logo(g.away))+'" alt="" loading="lazy">'+esc(g.away)+'</span>'+
-    '<strong>'+g.scoreAway+' <span>×</span> '+g.scoreHome+'</strong>'+
-    '<span class="standings-live-team"><img src="'+esc(logo(g.home))+'" alt="" loading="lazy">'+esc(g.home)+'</span>'+
-    '<small>'+esc(g.period>4?'Prorrogação':g.period>0?g.period+'º quarto':'Ao vivo')+
-    (g.clock?' • '+esc(g.clock):'')+'</small></a>'
-  ).join('')+'</div></section>';
-}
-
 function displayTable(rows,title){
  if(!rows.length)return '<div class="filler">Nenhuma equipe encontrada.</div>';
  const games=rows.some(t=>tally(t)>0),sorted=order(rows);
