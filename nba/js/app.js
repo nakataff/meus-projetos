@@ -165,12 +165,14 @@ export function gameRow(g){
  const phase=live?livePeriodLabel(event):result?'FINAL':'';
  const leftWinner=result&&official&&Number(awayScore)>Number(homeScore);
  const rightWinner=result&&official&&Number(homeScore)>Number(awayScore);
+ const leftLoser=result&&official&&Number(awayScore)<Number(homeScore);
+ const rightLoser=result&&official&&Number(homeScore)<Number(awayScore);
  const middle=hasScore?
    '<span class="matchup-center has-score" aria-label="Placar '+esc(awayScore)+' a '+esc(homeScore)+(phase?' • '+esc(phase):'')+'">'+
    '<span class="matchup-score-pair">'+
-   '<span class="matchup-score-box'+(leftWinner?' winner':'')+'">'+esc(awayScore)+'</span>'+
+   '<span class="matchup-score-box'+(leftWinner?' winner':leftLoser?' loser':'')+'">'+esc(awayScore)+'</span>'+
    '<span class="matchup-vs">VS</span>'+
-   '<span class="matchup-score-box'+(rightWinner?' winner':'')+'">'+esc(homeScore)+'</span>'+
+   '<span class="matchup-score-box'+(rightWinner?' winner':rightLoser?' loser':'')+'">'+esc(homeScore)+'</span>'+
    '</span>'+(phase?'<span class="matchup-phase'+(live?' is-live':'')+'">'+esc(phase)+'</span>':'')+'</span>':
    '<span class="matchup-center no-score"><span class="matchup-vs">VS</span>'+
    (live?'<span class="matchup-phase is-live">'+esc(phase)+'</span>':'')+'</span>';
