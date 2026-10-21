@@ -3,6 +3,7 @@ import {$,setupShared,qs,TEAMS,name,logo,esc,fetchRoster,fetchBox,fetchMonth,MON
  currentDate,getData,modify,teamLink,gameLink,shortDate,toast,path,jsonFile} from '../app.js?v=13';
 import {fetchLiveBoxscore} from '../boxscore.js?v=2';
 import {openPlayerCardComposer} from '../share-card.js?v=6';
+import {performanceRating,ratingLabel} from '../performance-rating.js?v=2';
 
 const pid=qs('id')||'',rawTeam=(qs('team')||'').toUpperCase();
 const highlightGame=qs('game')||'',hintDate=qs('data')||'';
@@ -230,7 +231,7 @@ root.addEventListener('click',async e=>{
    teamLogo:logo(team),headshot:player.headshot,
    opponent:name(chosen.opponent),opponentLogo:logo(chosen.opponent),
    gameLabel:name(team)+' x '+name(chosen.opponent),date:shortDate(chosen.date),
-   score:formatScore(chosen.event)
+   score:formatScore(chosen.event),rating:ratingLabel(performanceRating(chosen.row))
   });
  }
 });
