@@ -1436,3 +1436,99 @@ a.fav-info:hover,a.fav-info:focus-visible{border-color:var(--accent);background:
  .leaders-feature .leaders-headshot{width:34px}
  .leaders-ident strong{font-size:10px}
 }
+
+
+/* DLQ — ranking geral em tabela, cabeçalhos clicáveis e busca destacada. */
+.leaders-search-bar{display:flex;align-items:center;gap:10px;padding:0 15px;background:#141e2e;
+ border:1px solid #3e526d;border-radius:12px;min-height:52px;width:100%;max-width:100%}
+.leaders-search-bar:focus-within{border-color:#ff994f;box-shadow:0 0 0 2px #ff994f25}
+.leaders-search-icon{font-size:25px;color:#ffb47e;line-height:1}
+.leaders-search-bar input.control{flex:1;min-width:0;width:100%;padding:11px 3px;border:0;background:transparent;outline:0;box-shadow:none;
+ font-size:15px;font-weight:600}
+.leaders-rank-table{background:#111923;border:1px solid #344458;border-radius:14px;overflow-x:auto;overscroll-behavior-x:contain;
+ scrollbar-width:thin;max-width:100%}
+.leaders-table-header,.leaders-table-row{display:grid;grid-template-columns:minmax(190px,1fr) repeat(6,minmax(58px,70px));
+ min-width:584px;align-items:stretch}
+.leaders-table-header{background:#1b2b3d;border-bottom:1px solid #3b4d64;color:#c4d3e5}
+.leaders-table-player-head{display:flex;align-items:center;padding:13px;font-size:12px;font-weight:900}
+.leaders-table-sort{display:flex;align-items:center;justify-content:center;gap:4px;border:0;border-left:1px solid #2e4258;
+ padding:12px 4px;font-size:11px;font-weight:900;background:transparent;color:#b4c4d7}
+.leaders-table-sort:hover,.leaders-table-sort:focus-visible{background:#2a3e53;color:#fff}
+.leaders-table-sort.is-active{color:#ffb981;background:#392b26}
+.leaders-table-sort span{font-size:8px}
+.leaders-table-row{min-height:73px;border-bottom:1px solid #27394c}
+.leaders-table-row:nth-child(even){background:#142132}
+.leaders-table-row:hover{background:#1e2e42}
+.leaders-table-row:last-child{border-bottom:0}
+.leaders-table-player-cell{min-width:0;display:flex;align-items:center;padding:6px 11px}
+.leaders-table-player{display:flex;align-items:center;gap:9px;width:100%;min-width:0}
+.leaders-table-rank{min-width:21px;color:#95abc1;font-size:12px;font-weight:900;font-variant-numeric:tabular-nums}
+.leaders-table-photo{height:47px;width:42px;object-fit:cover;object-position:top;background:#2a3b51;
+ border-radius:50%;flex:none}
+.leaders-table-player-info{display:flex;min-width:0;flex:1;flex-direction:column;gap:3px}
+.leaders-table-player-info>a{display:block;font-size:12px;line-height:1.2;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.leaders-table-player-info>a:hover{color:#ffba83;text-decoration:underline}
+.leaders-table-club{display:inline-flex;align-items:center;gap:4px;min-width:0;color:#a4b9d0;font-size:10px;white-space:nowrap}
+.leaders-table-club img{width:15px;height:15px;object-fit:contain}
+.leaders-row-actions{display:flex;gap:6px;align-items:center}
+.leaders-row-action{background:none;border:0;color:#afc2d6;padding:0 4px;font-size:15px;line-height:1.1}
+.leaders-row-action:hover,.leaders-row-action:focus-visible{color:#ffb58f}
+.leaders-row-action.is-following{color:#ff9388}
+.leaders-table-stat{display:flex;align-items:center;justify-content:center;font-weight:850;font-size:12px;
+ font-variant-numeric:tabular-nums;color:#e4edfa;border-left:1px solid #27394b;min-width:0}
+.leaders-table-stat.is-active{color:#ffb675}
+.leaders-rating-badge{display:inline-flex;min-width:34px;min-height:26px;align-items:center;justify-content:center;
+ border-radius:5px;padding:3px 4px;color:#fff;background:#405367;font-size:12px;font-weight:950}
+.leaders-rating-badge.great{background:#108eaa}
+.leaders-rating-badge.good{background:#218a4b}
+.leaders-rating-badge.average{background:#bb9c1c;color:#141b1f}
+.leaders-rating-badge.low{background:#a44f31}
+.leaders-rating-badge.unrated{background:#394758;color:#a5b6c7}
+.season-card-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.season-card-actions .control{font-size:11px;min-height:39px;padding:8px 10px}
+.leaders-home-shortcuts{grid-template-columns:repeat(3,minmax(0,1fr))}
+/* Compositor de imagens: a prévia mantém as proporções reais. */
+.dlq-card-maker{clear:both;padding-top:12px}
+.dlq-card-maker>h2{font-size:21px;margin:0 0 5px}
+.dlq-card-maker>.small{margin-bottom:15px;line-height:1.6}
+.dlq-card-formats{display:flex;align-items:center;justify-content:space-between;gap:11px;margin:14px 0}
+.dlq-card-formats label{font-size:12px;font-weight:900;color:#bed1e6}
+.dlq-card-formats select{flex:1;max-width:340px;min-width:0}
+.dlq-card-preview{min-height:190px;max-height:50vh;overflow:hidden;display:grid;place-items:center;
+ background:#0a111a;border:1px solid #3a4f68;border-radius:13px;padding:10px;color:#a8bdd0;font-size:12px}
+.dlq-card-preview-image{display:block;max-width:100%;max-height:calc(50vh - 24px);width:auto;height:auto;object-fit:contain;
+ box-shadow:0 5px 24px #0009;border-radius:6px}
+.dlq-card-actions{display:flex;align-items:stretch;flex-wrap:wrap;gap:8px;margin-top:14px}
+.dlq-card-actions .btn{flex:1 1 130px;min-height:43px;text-align:center}
+@media(max-width:800px){.leaders-home-shortcuts{grid-template-columns:1fr}}
+@media(max-width:650px){
+ .leaders-rank-table{margin-left:-2px;margin-right:-2px}
+ .leaders-table-header,.leaders-table-row{min-width:346px;grid-template-columns:minmax(128px,1fr) repeat(6,minmax(35px,37px))}
+ .leaders-table-player-head{padding:9px 5px;font-size:10px}
+ .leaders-table-sort{font-size:9px;padding:9px 1px;letter-spacing:-.02em}
+ .leaders-table-sort span{font-size:6px}
+ .leaders-table-row{min-height:69px}
+ .leaders-table-player-cell{padding:6px 4px}
+ .leaders-table-player{gap:4px}
+ .leaders-table-rank{min-width:13px;font-size:10px}
+ .leaders-table-photo{height:35px;width:35px}
+ .leaders-table-player-info>a{font-size:10px}
+ .leaders-table-club{font-size:8px;gap:2px}
+ .leaders-table-club img{height:12px;width:12px}
+ .leaders-row-actions{gap:3px}
+ .leaders-row-action{font-size:13px;padding:0 3px}
+ .leaders-table-stat{font-size:10px}
+ .leaders-rating-badge{min-width:30px;min-height:23px;padding:2px;font-size:10px;border-radius:4px}
+ .leaders-count h2{font-size:21px}
+ .season-card-actions{width:100%}
+ .season-card-actions .control{flex:1;min-width:110px}
+ .dlq-card-maker{padding-top:16px}
+ .dlq-card-formats{align-items:flex-start;flex-direction:column}
+ .dlq-card-formats select{width:100%;max-width:none}
+ .dlq-card-actions .btn{flex:1 1 100%}
+}
+@media(max-width:375px){
+ .leaders-table-header,.leaders-table-row{min-width:344px;grid-template-columns:128px repeat(6,36px)}
+ .leaders-table-photo{width:30px;height:33px}
+ .leaders-table-rank{min-width:11px}
+}
