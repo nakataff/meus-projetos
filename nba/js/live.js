@@ -35,11 +35,13 @@ function normalize(event){
  const date=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(dateTime);
  const clock=String(event.status?.displayClock||'').trim();
  const period=Number(event.status?.period||0);
+ const statusName=String(phase.name||'');
+ const statusDetail=String(phase.shortDetail||event.status?.type?.detail||phase.description||'');
  return {
   id:eventId,date,
   away:code(away.team?.abbreviation),home:code(home.team?.abbreviation),
   status,scoreAway:score(away),scoreHome:score(home),
-  period,clock,seasonType
+  period,clock,seasonType,statusName,statusDetail
  };
 }
 async function fetchDay(date){
