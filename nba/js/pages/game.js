@@ -1,5 +1,5 @@
 import {$,setupShared,qs,esc,name,logo,tlogo,effectiveGame,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,note,getData,setNote,setExtraGroup,platform,broadcastLinks,shortDate,currentDate,toast,modal,closeModal,eventBox,fetchRoster,livePeriodLabel} from '../app.js?v=13';
-import {fetchLiveBoxscore,projectStartingFive} from '../boxscore.js?v=2';
+import {fetchLiveBoxscore,projectStartingFive,normalizeSummary} from '../boxscore.js?v=2';
 import {openPlayerCardComposer} from '../share-card.js?v=7';
 import {performanceRating,ratingLabel,topPerformance,RATING_EXPLANATION} from '../performance-rating.js?v=2';
 const id=qs('id')||'',hint=qs('data')||'',root=$('#pageContent');
@@ -12,6 +12,7 @@ let remoteBox=null,remoteStatus=null,lastStatsCheck=0,checkingStats=false,statsM
 const REFRESH_MS=120000; // Consulta de pré-jogo / estatísticas pendentes
 const LIVE_REFRESH_MS=30000; // Somente durante partidas ao vivo
 let previousDisplayedScores=null;
+let courtController=null,courtSession=0;
 function gameStatus(){
  const event=effectiveGame(game);
  if(!remoteStatus)return event;
@@ -48,7 +49,7 @@ function updateBox(){
  } else box=cached||null;
 }
 function needsBoxRefresh(){
- if(!game)return false;
+ if(!game||tab==='quadra')return false;
  const status=gameStatus().status;
  if(status==='live')return true;
  if(game.date>currentDate())return false; // Antes da partida só consultar na abertura ou manualmente.
@@ -69,7 +70,7 @@ function sourceNotice(){
   status==='final'?(ready?'Box score disponível':'Final • Aguardando box score'):
   'Pré-jogo • Escalações e informações';
  const last=lastSuccess?'Atualizado às '+lastSuccess.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'Fonte: ESPN';
- const auto=status==='live'?' • atualização automática a cada 30s':'';
+ const auto=tab==='quadra'?' • consulta detalhada a cada 5s durante o jogo':status==='live'?' • atualização automática a cada 30s':'';
  const unavailable=/indisponível|não foi possível|falha|sem atualização/i.test(statsMessage);
  return '<div class="game-sync-inline" role="status" title="'+esc(statsMessage||'Dados da partida consultados de fonte pública não oficial')+'">'+
  '<span class="game-sync-dot '+(status==='live'?'is-live':unavailable?'is-warning':'')+'"></span>'+
@@ -79,7 +80,7 @@ function sourceNotice(){
  (checkingStats?'Consultando…':'↻ Atualizar')+'</button></div>';
 }
 async function refreshBox(force=false){
- if(!game||checkingStats||document.hidden)return;
+ if(!game||checkingStats||document.hidden||(tab==='quadra'&&courtController))return;
  const now=Date.now();
  const interval=gameStatus().status==='live'?LIVE_REFRESH_MS:REFRESH_MS;
  if(!force&&now-lastStatsCheck<interval)return;
@@ -451,8 +452,42 @@ function overviewHtml(current,statsReady){
   'Dê sua nota, escolha o MVP e guarde suas observações.')+'</span></div>'+
  '<button type="button" class="btn accent" data-open-tab="avaliar">'+(saved.watched?'Ver minha avaliação':'Avaliar partida')+' →</button></div>';
 }
-function tabs(){return '<nav class="tabs">'+[['resumo','Resumo'],['quintetos','Escalações'],['stats','Estatísticas'],['avaliar','Minha avaliação']].map(([key,label])=>'<button class="tab '+(tab===key?'active':'')+'" data-tab="'+key+'">'+label+'</button>').join('')+'</nav>';}
+function tabs(){return '<nav class="tabs">'+[['resumo','Resumo'],['quadra','🏀 Quadra 2D'],['quintetos','Escalações'],['stats','Estatísticas'],['avaliar','Minha avaliação']].map(([key,label])=>'<button class="tab '+(tab===key?'active':'')+'" data-tab="'+key+'">'+label+'</button>').join('')+'</nav>';}
+function stopCourt(){
+ ++courtSession;
+ if(courtController){courtController.destroy();courtController=null;}
+}
+async function startCourt(){
+ if(!game||tab!=='quadra'||courtController)return;
+ const element=root.querySelector('#dlqCourtRoot');
+ if(!element)return;
+ const session=++courtSession;
+ try{
+  const mod=await import('../court-live.js?v=1');
+  if(session!==courtSession||tab!=='quadra'||!element.isConnected)return;
+  courtController=mod.mountCourtTracker({element,game,getStatus:gameStatus,onSummary:payload=>{
+   if(tab!=='quadra'||!game)return;
+   const before=liveRenderSignature();
+   const result=normalizeSummary(payload,game);
+   if(!result)return;
+   remoteStatus=result;
+   if(result.box){remoteBox=result.box;updateBox();}
+   lastStatsCheck=Date.now();lastSuccess=new Date();
+   statsMessage='Quadra 2D conectada aos lances da ESPN.';
+   if(liveRenderSignature()!==before)updateScoreboardWithoutResettingForm();
+   else updateSourceNoticeOnly();
+  }});
+ }catch(error){
+  console.warn('DE LA QUADRA: quadra 2D indisponível',error);
+  if(session===courtSession&&element.isConnected)
+   element.innerHTML='<div class="filler"><b>Quadra 2D indisponível</b>Não foi possível carregar os lances. O placar e as estatísticas continuam funcionando.</div>';
+ }
+}
 function draw(){
+ if(tab==='quadra'&&courtController&&root.querySelector('#dlqCourtRoot')){
+  updateScoreboardWithoutResettingForm();return;
+ }
+ if(tab!=='quadra')stopCourt();
  if(!game){root.innerHTML='<div class="filler">Partida não encontrada. <a href="'+path('jogos/')+'">Ver calendário</a></div>';return;}
  const statsReady=boxHasStats(box);
  const current=gameStatus();
@@ -470,9 +505,12 @@ function draw(){
   'A fonte ainda não publicou os dados desta partida. Você pode atualizar manualmente ou aguardar a próxima consulta.')+'</div>';
  }else if(tab==='avaliar'){
   content+=gameForm()+(statsReady?'<section class="section"><div class="section-title"><h2>Avaliar jogadores e escolher MVP</h2></div>'+boxscoreArea()+'</section>':'');
+ }else if(tab==='quadra'){
+  content+='<div id="dlqCourtRoot" class="section"><div class="filler">Preparando quadra 2D…</div></div>';
  }
  root.innerHTML=content;
  animateScoreChanges(current);
+ if(tab==='quadra')startCourt();
 }
 // Realça apenas o time cujo placar mudou, sem animar os números na primeira carga.
 function pulseValue(element,className){
