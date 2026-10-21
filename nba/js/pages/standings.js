@@ -1,5 +1,5 @@
 /* Classificação DE LA QUADRA 2026/27 — resultados finais com projeção ao vivo opcional. */
-import {$,setupShared,EAST,WEST,TEAMS,name,logo,esc,path,teamLink,jsonFile,shortDate} from '../app.js?v=10';
+import {$,setupShared,EAST,WEST,TEAMS,name,logo,esc,path,teamLink,jsonFile,shortDate} from '../app.js?v=11';
 
 setupShared('standings','Classificação da NBA','Tabela geral, conferências Leste e Oeste e divisões da temporada regular 2026/27.');
 const root=$('#pageContent');
