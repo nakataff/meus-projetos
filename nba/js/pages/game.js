@@ -22,10 +22,11 @@ function gameStatus(){
    out.scoreAway=remoteStatus.scoreAway;out.scoreHome=remoteStatus.scoreHome;
   }
   if(remoteStatus.status==='live'){
-   out.livePeriod=remoteStatus.quarter||event.livePeriod||0;
-   out.liveClock=remoteStatus.clock??event.liveClock??'';
-   out.liveStatusName=remoteStatus.statusName||event.liveStatusName||'';
-   out.liveStatusDetail=remoteStatus.statusDetail||event.liveStatusDetail||'';
+   // O placar ao vivo é consultado com mais frequência que o box score.
+   out.livePeriod=event.livePeriod||remoteStatus.quarter||0;
+   out.liveClock=event.liveClock||remoteStatus.clock||'';
+   out.liveStatusName=event.liveStatusName||remoteStatus.statusName||'';
+   out.liveStatusDetail=event.liveStatusDetail||remoteStatus.statusDetail||'';
   }
  }
  return out;
