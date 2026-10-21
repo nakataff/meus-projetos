@@ -1,6 +1,6 @@
 /* DE LA QUADRA — ranking de atletas gerado a partir dos box scores finalizados. */
 import {$,setupShared,jsonFile,TEAMS,EAST,WEST,name,logo,esc,path,playerLink,getData,modify,toast} from '../app.js?v=13';
-import {openPlayerCardComposer} from '../share-card.js?v=6';
+import {openPlayerCardComposer} from '../share-card.js?v=7';
 setupShared('leaders','Melhores jogadores','Ranking de jogadores da NBA por médias e NOTA DLQ, com filtros de temporada e equipe.');
 const root=$('#pageContent');
 const metrics=[
