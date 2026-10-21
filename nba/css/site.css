@@ -1124,14 +1124,6 @@ a.fav-info:hover,a.fav-info:focus-visible{border-color:var(--accent);background:
 .standings-live-options label{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:12px;font-weight:850}
 .standings-live-options input{accent-color:#ff9549;height:16px;width:16px;cursor:pointer}
 .standings-live-options span{color:#f0b98f;font-size:10px}
-.standings-table tbody tr.standings-projecting{background:#342c29}
-.standings-table tbody tr.standings-projecting .standings-team-col{background:#342c29}
-.standings-table tbody tr.standings-projecting.highlight,
-.standings-table tbody tr.standings-projecting.highlight .standings-team-col{background:#45352d}
-.standings-table tbody tr.standings-projecting:hover,
-.standings-table tbody tr.standings-projecting:hover .standings-team-col{background:#43382f}
-.standings-projection-label{display:inline-flex;color:#ffbf89!important;font-size:9px!important;
- letter-spacing:.025em;font-weight:900}
 @media(max-width:740px){.standings-live-box{padding:11px}.standings-live-grid{grid-template-columns:1fr}
  .standings-live-options{align-items:flex-start;flex-direction:column}
  .standings-live-game>strong{font-size:18px}}
@@ -1265,3 +1257,38 @@ a.fav-info:hover,a.fav-info:focus-visible{border-color:var(--accent);background:
  .game-card-link .matchup .club img{width:35px;height:35px}
  .agenda-filter-panel{grid-template-columns:1fr}
 }
+
+/* A classificação continua projetada, mas o único indicador visual do jogo em
+   andamento é um ponto vermelho ao lado do nome do time. */
+.standings-name-line{display:inline-flex;align-items:center;gap:7px;min-width:0;max-width:100%;width:100%}
+.standings-name-line>b{font-size:12px;font-weight:900;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.standings-team-live-dot{display:inline-block;flex:0 0 7px;width:7px;height:7px;vertical-align:middle;
+ background:#f34957;border-radius:50%;box-shadow:0 0 0 2px #f349572e;
+ animation:dlq-standings-live-pulse 1.8s ease-in-out infinite}
+@keyframes dlq-standings-live-pulse{
+ 0%,100%{opacity:1;box-shadow:0 0 0 2px #f3495728}
+ 50%{opacity:.48;box-shadow:0 0 0 5px #f3495700}
+}
+/* Placar um pouco maior, mantendo siglas e escudos confortáveis em celulares. */
+@media(max-width:770px){
+ .game-card-link .matchup{grid-template-columns:minmax(0,1fr) 124px minmax(0,1fr);gap:5px}
+ .game-card-link .matchup-score-pair{grid-template-columns:46px 18px 46px;gap:3px}
+ .game-card-link .matchup-score-box{height:42px;font-size:21px;border-radius:9px;padding:0 2px}
+ .game-card-link .matchup-phase{font-size:10px}
+}
+@media(max-width:520px){
+ .game-card-link .matchup{grid-template-columns:minmax(0,1fr) 120px minmax(0,1fr);gap:4px}
+ .game-card-link .matchup-score-pair{grid-template-columns:45px 17px 45px;gap:3px}
+ .game-card-link .matchup-score-box{height:41px;font-size:20px}
+}
+@media(max-width:360px){
+ .game-card-link .matchup{grid-template-columns:minmax(0,1fr) 113px minmax(0,1fr);gap:3px}
+ .game-card-link .matchup-score-pair{grid-template-columns:42px 16px 42px;gap:3px}
+ .game-card-link .matchup-score-box{height:39px;font-size:19px}
+}
+@media(max-width:740px){
+ .standings-name-line>b{font-size:10px}
+ .standings-name-line{gap:5px}
+ .standings-team-live-dot{flex-basis:6px;width:6px;height:6px}
+}
+@media(prefers-reduced-motion:reduce){.standings-team-live-dot{animation:none}}
