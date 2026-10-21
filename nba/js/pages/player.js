@@ -1,8 +1,8 @@
 /* Perfil de atleta QUADRA — temporada, jogos, ficha compartilhável. */
 import {$,setupShared,qs,TEAMS,name,logo,esc,fetchRoster,fetchBox,fetchMonth,MONTHS,
- currentDate,getData,modify,teamLink,gameLink,shortDate,toast,path} from '../app.js?v=13';
+ currentDate,getData,modify,teamLink,gameLink,shortDate,toast,path,jsonFile} from '../app.js?v=13';
 import {fetchLiveBoxscore} from '../boxscore.js?v=2';
-import {exportPlayerImage,sharePlayerLink} from '../share-card.js?v=3';
+import {openPlayerCardComposer} from '../share-card.js?v=5';
 
 const pid=qs('id')||'',rawTeam=(qs('team')||'').toUpperCase();
 const highlightGame=qs('game')||'',hintDate=qs('data')||'';
@@ -106,8 +106,8 @@ function matchDetail(g){
  '<div class="player-featured-metrics">'+[
   ['pts','PTS'],['reb','REB'],['ast','AST'],['min','MIN'],['stl','STL'],['blk','BLK'],['fg','FG'],['three','3PT'],['to','TOV'],['plusMinus','+/-']
  ].map(([key,label])=>'<div><strong>'+esc(percentField(s[key]))+'</strong><span>'+label+'</span></div>').join('')+'</div>'+
- '<div class="player-featured-actions"><button class="btn accent" type="button" id="exportFeaturedCard">⇩ Gerar imagem PNG</button>'+
- '<button class="btn" type="button" id="shareFeatured">↗ Compartilhar</button>'+
+ '<div class="player-featured-actions"><button class="btn accent" type="button" id="exportFeaturedCard">▣ Gerar card da partida</button>'+
+ 
  '<a class="btn ghost" href="'+gameLink({id:e.id,date:e.date})+'">Abrir partida →</a></div>'+
  '<p class="small subtle">Dados públicos desta partida. Durante jogos ao vivo, podem ser parciais.</p></section>';
 }
@@ -132,7 +132,7 @@ function profileHTML(){
  '<button type="button" id="followPlayer" class="btn '+(p.favorite?'accent':'ghost')+'" aria-pressed="'+!!p.favorite+'">'+(p.favorite?'♥ Seguindo':'♡ Seguir jogador')+'</button></div></div></section>'+
  (selected?matchDetail(selected):selectedGame?
   '<div class="info">Este jogo ainda não possui estatísticas individuais disponíveis. Os resultados aparecerão quando a fonte publicar o box score.</div>':'')+
- '<section class="section"><div class="section-title"><h2>Médias dos jogos importados</h2><span class="small subtle">'+all.length+' jogos disponíveis (inclusive pré-temporada, quando houver)</span></div>'+
+ '<section class="section"><div class="section-title"><h2>Médias dos jogos importados</h2><div class="season-card-actions"><select class="control" id="seasonCardPhase" aria-label="Competição do card"><option value="regular">Temporada regular</option><option value="preseason">Pré-temporada</option></select><button type="button" class="btn accent" id="makeSeasonCard">▣ Card das médias</button></div></div><span class="small subtle">'+all.length+' jogos disponíveis (incluindo pré-temporada, quando houver)</span>'+
  metrics(all)+'</section>'+leagueComparison()+
  '<section class="section"><div class="section-title"><h2>Histórico por partida</h2>'+
  '<span class="small subtle">'+visible.length+' partidas no filtro</span></div>'+
@@ -205,30 +205,34 @@ root.addEventListener('click',async e=>{
   toast(followed?'Você deixou de seguir este jogador.':'Agora você segue este jogador!');
   profileHTML();return;
  }
- const exportButton=e.target.closest('#exportFeaturedCard'),shareButton=e.target.closest('#shareFeatured');
- if(!exportButton&&!shareButton)return;
- const chosen=gameStats.find(g=>refGameID(g.event)===selectedGame);
- if(!chosen)return toast('Dados desta partida indisponíveis.');
- const link=shareURL(chosen.event);
- if(shareButton){
-  try{const result=await sharePlayerLink(link,'DE LA QUADRA • '+player.name+' — '+shortDate(chosen.date));
-   if(result==='copied')toast('Link copiado!');}
-  catch(e){toast('Não foi possível compartilhar: '+e.message);}
+ if(e.target.closest('#makeSeasonCard')){
+  const phase=$('#seasonCardPhase')?.value==='preseason'?'preseason':'regular';
+  const button=e.target.closest('#makeSeasonCard');button.disabled=true;
+  try{
+   const leaders=await jsonFile('data/player-leaders/2026-27.json');
+   const season=leaders?.[phase]?.find(row=>String(row.id)===pid);
+   if(!season?.gp){toast('Ainda não há jogos finalizados nesta fase para gerar médias.');return;}
+   const code=season.team||team;
+   openPlayerCardComposer({
+    kind:'season',phase,season,
+    player:{id:pid,name:season.name||player.name},teamCode:code,teamName:name(code),
+    teamLogo:logo(code),headshot:player.headshot||'https://a.espncdn.com/i/headshots/nba/players/full/'+pid+'.png'
+   });
+  }catch(err){toast('Não foi possível carregar as médias: '+err.message);}
+  finally{button.disabled=false;}
   return;
  }
- exportButton.disabled=true;exportButton.textContent='Preparando PNG…';
- try{
-  await exportPlayerImage({
-   player:chosen.row,teamCode:team,teamName:name(team),teamLogo:logo(team),
-   headshot:player.headshot,
+ if(e.target.closest('#exportFeaturedCard')){
+  const chosen=gameStats.find(g=>refGameID(g.event)===selectedGame);
+  if(!chosen)return toast('Dados desta partida indisponíveis.');
+  openPlayerCardComposer({
+   kind:'game',player:{...chosen.row,name:player.name},teamCode:team,teamName:name(team),
+   teamLogo:logo(team),headshot:player.headshot,
    opponent:name(chosen.opponent),opponentLogo:logo(chosen.opponent),
    gameLabel:name(team)+' x '+name(chosen.opponent),date:shortDate(chosen.date),
-   score:formatScore(chosen.event),
-   filename:'DLQ-'+player.name.replace(/\s+/g,'-')+'-'+chosen.date
+   score:formatScore(chosen.event)
   });
-  toast('Imagem PNG gerada!');
- }catch(err){toast('Erro ao gerar imagem: '+err.message);}
- finally{exportButton.disabled=false;exportButton.textContent='⇩ Gerar imagem PNG';}
+ }
 });
 window.addEventListener('quadra:refresh',profileHTML);
 async function boot(){
