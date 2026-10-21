@@ -1,12 +1,12 @@
 /* QUADRA — só carrega o controlador da página que foi aberta. */
-import {toast} from './app.js?v=10';
+import {toast} from './app.js?v=11';
 const page=document.body.dataset.page;
 const allowed=new Set(['home','games','teams','team','player','game','personal','standings']);
 if(!allowed.has(page))throw Error('Página DE LA QUADRA desconhecida: '+page);
-try{await import('./pages/'+page+'.js?v=21');}
+try{await import('./pages/'+page+'.js?v=22');}
 catch(e){console.error('Falha ao carregar página QUADRA',e);document.getElementById('pageContent').innerHTML='<div class="filler"><b>Não foi possível abrir esta página.</b>Atualize o navegador. Se continuar, utilize a versão anterior do site DE LA QUADRA.</div>';toast('Não foi possível carregar a página');}
 if(['home','games','game','standings'].includes(page)){
-  try{await import('./live.js?v=4');}
+  try{await import('./live.js?v=5');}
   catch(e){console.info('QUADRA: placar ao vivo indisponível',e);}
 }
 try{await import('./firebase-sync.js?v=7');}
