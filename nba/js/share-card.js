@@ -110,7 +110,7 @@ export async function buildPlayerCard(options={}){
    txt(ctx,'vs '+(options.opponent||''),234,541,22,COLOR.white,850,510);
    txt(ctx,String(options.score||''),905,541,26,COLOR.orange,950,208);
   }
-  txt(ctx,season?'Médias de partidas finalizadas • Estatísticas não oficiais':'Dados da partida • Fonte pública não oficial',55,613,12,COLOR.muted,700,620);
+  txt(ctx,season?'Médias de partidas finalizadas':'Dados da partida',55,613,12,COLOR.muted,700,620);
   txt(ctx,'DE LA QUADRA',972,613,18,COLOR.orange,950);
  }else if(mode==='square'){
   brand(ctx,brandPic,52,30,275,97,mode);
@@ -130,7 +130,7 @@ export async function buildPlayerCard(options={}){
    imageFit(ctx,opponentPic,79,927,55,55);
    txt(ctx,options.gameLabel||('vs '+(options.opponent||'NBA')),147,955,22,COLOR.white,900,710);
   }
-  txt(ctx,'DE LA QUADRA • DADOS NÃO OFICIAIS',54,1037,17,COLOR.muted,800,820);
+  txt(ctx,'DE LA QUADRA',54,1037,17,COLOR.orange,950,820);
  }else{
   // 9:16 deixa os ~20% inferiores livres, ideal para stories.
   brand(ctx,brandPic,76,62,360,143,mode);
