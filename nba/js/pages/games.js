@@ -1,4 +1,4 @@
-import {$,setupShared,MONTHS,loadGames,TEAMS,groupGames,gameRow,handleWishes,currentDate,dayShift,niceDate,note,esc,qs,modal,closeModal} from '../app.js?v=11';
+import {$,setupShared,MONTHS,loadGames,TEAMS,groupGames,gameRow,handleWishes,currentDate,dayShift,niceDate,note,esc,qs,modal,closeModal} from '../app.js?v=12';
 
 setupShared('games','Agenda NBA','Calendário, horários e transmissões dos jogos da temporada.');
 const root=$('#pageContent'),today=currentDate();
