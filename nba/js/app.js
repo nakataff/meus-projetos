@@ -130,12 +130,27 @@ export function effectiveGame(g){
   }
   if(live.status==='live'){
    changed.livePeriod=live.period;changed.liveClock=live.clock;
+   changed.liveStatusName=live.statusName||'';changed.liveStatusDetail=live.statusDetail||'';
   }
   return changed;
  }
  // Uma atualização antiga do JSON nunca deve sinalizar AO VIVO dias depois.
  if(g.status==='live'&&g.date<dayShift(today,-1))return {...g,status:'scheduled'};
  return g;
+}
+export function livePeriodLabel(event){
+ if(event?.status!=='live')return '';
+ const period=Number(event.livePeriod??event.period??0);
+ const clock=String(event.liveClock??event.clock??'').trim();
+ const raw=(String(event.liveStatusName||event.statusName||'')+' '+String(event.liveStatusDetail||event.statusDetail||'')).toLowerCase();
+ const halftime=/half\s*time|halftime|intervalo/.test(raw);
+ const endPeriod=/end.?period|end of (?:the )?(?:quarter|period)|fim do (?:quarto|período)/.test(raw);
+ const zeroClock=/^0+(?::0+)?(?:[.,]0+)?$/.test(clock);
+ if(halftime || period===2&&(endPeriod||zeroClock))return 'INTERVALO';
+ if(period>4&&(endPeriod||zeroClock))return 'FIM DA PRORROGAÇÃO';
+ if(period>=1&&(endPeriod||zeroClock))return 'FIM DO '+period+'º QUARTO';
+ const quarter=period>4?'PRORROGAÇÃO':period>=1?period+'º QUARTO':'AO VIVO';
+ return quarter+(clock?' • '+clock:'');
 }
 export function gameRow(g){
  const event=effectiveGame(g);
@@ -147,10 +162,7 @@ export function gameRow(g){
  const homeScore=event.scoreHome;
  const result=event.status==='final';
  const live=event.status==='live';
- const rawPeriod=Number(event.livePeriod);
- const quarter=rawPeriod>=5?'PRORROGAÇÃO':rawPeriod>=1?rawPeriod+'º QUARTO':'EM ANDAMENTO';
- const clock=live&&event.liveClock?String(event.liveClock).trim():'';
- const phase=live?quarter+(clock?' • '+clock:''):result?'FINAL':'';
+ const phase=live?livePeriodLabel(event):result?'FINAL':'';
  const leftWinner=result&&official&&Number(awayScore)>Number(homeScore);
  const rightWinner=result&&official&&Number(homeScore)>Number(awayScore);
  const middle=hasScore?
