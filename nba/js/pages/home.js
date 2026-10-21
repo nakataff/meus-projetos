@@ -1,4 +1,4 @@
-import {$,setupShared,loadGames,currentDate,dayShift,groupGames,effectiveGame,path,getData,note,handleWishes,esc,broadcastInfo,name,logo,MONTHS,shortDate,fetchBox,eventBox,playerLink,jsonFile,gameLink,gameRow} from '../app.js?v=11';
+import {$,setupShared,loadGames,currentDate,dayShift,groupGames,effectiveGame,path,getData,note,handleWishes,esc,broadcastInfo,name,logo,MONTHS,shortDate,fetchBox,eventBox,playerLink,jsonFile,gameLink,gameRow} from '../app.js?v=12';
 import {topPerformance,ratingLabel} from '../performance-rating.js?v=2';
 setupShared('home','A NBA acontece aqui.','Jogos, transmissões, estatísticas e tudo sobre a temporada da NBA.');
 const root=$('#pageContent');
