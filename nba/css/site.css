@@ -1320,3 +1320,119 @@ a.fav-info:hover,a.fav-info:focus-visible{border-color:var(--accent);background:
 @media(max-width:400px){
  .game-card.game-card-link .time .overnight-game-note{font-size:9px;padding:3px 5px}
 }
+
+/* DE LA QUADRA — Melhores jogadores: ranking responsivo baseado em box scores. */
+.leaders-controls{display:flex;flex-direction:column;gap:14px}
+.leaders-phase{display:inline-flex;align-items:center;align-self:flex-start;gap:4px;background:#151f2d;border:1px solid #36465c;
+ padding:4px;border-radius:12px;max-width:100%}
+.leaders-phase button{border:0;background:transparent;color:#b7c6d6;font-size:12px;font-weight:900;
+ padding:9px 14px;border-radius:8px}
+.leaders-phase button.selected{background:#443023;color:#ffc08b}
+.leaders-metrics{display:flex;gap:8px;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;padding:1px 2px 7px;scrollbar-width:thin}
+.leaders-metrics button{flex:0 0 auto;white-space:nowrap;border:1px solid #374b63;border-radius:10px;
+ background:#182638;color:#b9cadd;padding:10px 12px;font-size:12px;font-weight:850}
+.leaders-metrics button.selected{border-color:#ff9c53;background:#513324;color:#ffcd9d}
+.leaders-metrics button:hover{border-color:#ff9c53}
+.leaders-filters{display:flex;align-items:end;gap:10px;flex-wrap:wrap;background:#141e2c;
+ border:1px solid #2d4058;padding:14px;border-radius:13px}
+.leaders-filters>label:not(.leaders-following-toggle){display:flex;flex-direction:column;gap:5px;flex:1 1 165px;min-width:0;
+ font-size:11px;font-weight:800;color:#abbdd1}
+.leaders-filters>label:first-child{flex:1.4 1 220px}
+.leaders-filters .control{min-height:41px;width:100%;font-size:12px}
+.leaders-following-toggle{display:flex;align-items:center;gap:7px;min-height:41px;font-size:11px;font-weight:850;
+ color:#d2dfec;cursor:pointer;white-space:nowrap}
+.leaders-following-toggle input{accent-color:#ff9549;width:15px;height:15px}
+.leaders-count{display:flex;align-items:end;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:25px 0 14px}
+.leaders-count h2{margin:4px 0 0;font-size:clamp(20px,2.5vw,27px);line-height:1.2}
+.leaders-count h2 span{font-size:13px;color:#9faec3}
+.leaders-count>span{color:#9eafc5;font-size:12px}
+.leaders-podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:20px}
+.leaders-feature{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;column-gap:12px;row-gap:10px;
+ padding:17px;background:linear-gradient(130deg,#263040,#141e2b);border:1px solid #46566e;border-radius:16px;min-width:0}
+.leaders-feature:first-child{border-color:#ed9656;background:linear-gradient(135deg,#4a3025,#1a2633)}
+.leaders-feature-rank{color:#ffbf88;font-weight:950;font-size:22px;font-variant-numeric:tabular-nums}
+.leaders-athlete-info{display:flex;align-items:center;gap:11px;min-width:0}
+.leaders-headshot{width:54px;height:62px;object-fit:cover;object-position:top;border-radius:12px;
+ background:#253348;flex:none}
+.leaders-ident{display:flex;flex-direction:column;min-width:0;gap:4px}
+.leaders-ident strong{display:block;font-size:13px;color:#f6f8fe;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.leaders-ident>small{display:flex;align-items:center;gap:5px;font-size:11px;color:#a0b3c9;line-height:1.25;
+ overflow:hidden;white-space:nowrap;text-overflow:ellipsis;min-width:0}
+.leaders-ident small img{height:19px;width:19px;object-fit:contain;flex:none}
+.leaders-ident .leaders-season-gp{color:#738da9;font-size:10px}
+.leaders-scores{display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:0;font-variant-numeric:tabular-nums}
+.leaders-scores strong{font-size:24px;font-weight:950;color:#ffc28c;line-height:1}
+.leaders-scores>span{font-size:9px;color:#adc0d5;font-weight:850;white-space:nowrap}
+.leaders-scores small{font-size:10px;color:#b7c8da;white-space:nowrap}
+.leaders-follow{flex:none;border:1px solid #384c64;background:transparent;color:#a8b9cc;
+ width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:23px;line-height:1}
+.leaders-follow:hover,.leaders-follow:focus-visible{border-color:#ff9c89;color:#ffa69b}
+.leaders-follow.is-following{color:#ff9c89;background:#61332b3d}
+.leaders-feature .leaders-athlete-info{grid-column:2/4;align-self:center}
+.leaders-feature .leaders-scores{grid-column:1/3;align-items:flex-start}
+.leaders-feature .leaders-scores strong{font-size:34px}
+.leaders-feature .leaders-follow{grid-column:3;justify-self:end}
+.leaders-list{border:1px solid #33445a;border-radius:14px;overflow:hidden;background:#111c29}
+.leaders-list-head{display:flex;justify-content:space-between;gap:10px;padding:13px 15px;background:#1b2a3a;
+ border-bottom:1px solid #36485f;font-size:12px}
+.leaders-list-head span{color:#8ea5be}
+.leaders-athlete{display:grid;grid-template-columns:37px minmax(0,1fr) 112px 38px;align-items:center;gap:13px;
+ min-height:74px;padding:8px 15px;border-bottom:1px solid #2c3d50}
+.leaders-athlete:last-child{border-bottom:0}
+.leaders-athlete:nth-child(even){background:#162435}
+.leaders-athlete:hover{background:#223248}
+.leaders-rank{font-size:13px;font-weight:900;color:#8ea1b9;font-variant-numeric:tabular-nums}
+.leaders-athlete .leaders-scores strong{font-size:21px}
+.leaders-load{margin:17px auto 20px}
+.leaders-disclaimer{font-size:11px;color:#8fa4bd;line-height:1.8;margin:16px 0 25px}
+@media(max-width:1050px){
+ .leaders-podium{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+ .leaders-feature{padding:12px;column-gap:8px}
+ .leaders-feature .leaders-headshot{width:43px;height:54px}
+ .leaders-feature .leaders-ident strong{font-size:11px}
+ .leaders-feature .leaders-scores small{font-size:9px}
+}
+@media(max-width:770px){
+ .leaders-podium{grid-template-columns:1fr;gap:9px}
+ .leaders-feature{grid-template-columns:30px minmax(0,1fr) 88px 36px;padding:12px;min-height:86px}
+ .leaders-feature .leaders-athlete-info{grid-column:2;grid-row:1}
+ .leaders-feature .leaders-scores{grid-column:3;grid-row:1;align-items:flex-end}
+ .leaders-feature .leaders-scores strong{font-size:27px}
+ .leaders-feature .leaders-scores small{display:none}
+ .leaders-feature .leaders-follow{grid-column:4;grid-row:1}
+ .leaders-feature .leaders-ident strong{font-size:12px}
+ .leaders-athlete{gap:9px;padding:8px 11px}
+ .leaders-filters{padding:12px;gap:8px}
+}
+@media(max-width:520px){
+ .leaders-phase{width:100%;justify-content:space-between}
+ .leaders-phase button{flex:1;padding:8px 7px;font-size:11px}
+ .leaders-metrics button{padding:9px 11px;font-size:11px}
+ .leaders-filters>label:not(.leaders-following-toggle){flex:1 1 calc(50% - 6px)}
+ .leaders-filters>label:first-child{flex-basis:100%}
+ .leaders-filters .control{font-size:11px;padding:9px 8px}
+ .leaders-following-toggle{min-height:31px}
+ .leaders-count{align-items:start;margin:20px 0 12px}
+ .leaders-count>span{font-size:11px}
+ .leaders-athlete{grid-template-columns:23px minmax(0,1fr) 67px 32px;gap:6px;padding:9px 8px;min-height:72px}
+ .leaders-headshot{width:39px;height:51px;border-radius:8px}
+ .leaders-ident strong{font-size:11px}
+ .leaders-ident>small{font-size:9px}
+ .leaders-ident .leaders-season-gp{font-size:9px}
+ .leaders-ident small img{height:15px;width:15px}
+ .leaders-scores strong,.leaders-athlete .leaders-scores strong{font-size:19px}
+ .leaders-scores>span{font-size:8px}
+ .leaders-follow{width:31px;height:32px;font-size:19px;border-radius:7px}
+ .leaders-feature{grid-template-columns:21px minmax(0,1fr) 70px 31px;gap:6px}
+ .leaders-feature-rank{font-size:16px}
+ .leaders-feature .leaders-headshot{height:50px;width:39px}
+ .leaders-feature .leaders-scores strong{font-size:22px}
+ .leaders-list-head{font-size:11px}
+ .leaders-list-head span{font-size:10px}
+}
+@media(max-width:350px){
+ .leaders-feature,.leaders-athlete{column-gap:4px}
+ .leaders-headshot{width:34px}
+ .leaders-feature .leaders-headshot{width:34px}
+ .leaders-ident strong{font-size:10px}
+}
