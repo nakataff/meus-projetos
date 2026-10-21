@@ -1,4 +1,4 @@
-import {$,setupShared,loadGames,currentDate,dayShift,groupGames,effectiveGame,path,getData,note,handleWishes,esc,broadcastInfo,name,logo,MONTHS,shortDate,fetchBox,eventBox,playerLink,jsonFile,gameLink} from '../app.js?v=10';
+import {$,setupShared,loadGames,currentDate,dayShift,groupGames,effectiveGame,path,getData,note,handleWishes,esc,broadcastInfo,name,logo,MONTHS,shortDate,fetchBox,eventBox,playerLink,jsonFile,gameLink,gameRow} from '../app.js?v=10';
 import {topPerformance,ratingLabel} from '../performance-rating.js?v=2';
 setupShared('home','A NBA acontece aqui.','Jogos, transmissões, estatísticas e tudo sobre a temporada da NBA.');
 const root=$('#pageContent');
@@ -8,7 +8,7 @@ let followedStats={};
 const currentMonth=currentDate().slice(0,7);
 function section(title,actionLabel,href,body,empty){
  return '<section class="section"><div class="section-title"><h2>'+esc(title)+'</h2><a class="btn ghost" href="'+path(href)+'">'+esc(actionLabel)+' ↗</a></div>'+
- (body.length?groupGames(body):'<div class="filler">'+empty+'</div>')+'</section>';
+ (body.length?(title==='Jogos de hoje'?body.map(gameRow).join(''):groupGames(body)):'<div class="filler">'+empty+'</div>')+'</section>';
 }
 
 function isTeamGame(g,code){return g.away===code||g.home===code;}
