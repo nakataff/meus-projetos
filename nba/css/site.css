@@ -1292,3 +1292,8 @@ a.fav-info:hover,a.fav-info:focus-visible{border-color:var(--accent);background:
  .standings-team-live-dot{flex-basis:6px;width:6px;height:6px}
 }
 @media(prefers-reduced-motion:reduce){.standings-team-live-dot{animation:none}}
+
+/* A regra geral dos nomes das equipes usa flex vertical; sobrescrever apenas a linha do nome. */
+.standings-team-col>a .standings-name-line{display:flex;flex-direction:row;align-items:center;gap:6px;min-width:0;max-width:100%}
+.standings-team-col>a .standings-name-line>b{display:block;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(min-width:771px){.game-card-link .matchup-score-box{height:44px;font-size:22px}}
