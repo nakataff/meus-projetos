@@ -1,7 +1,7 @@
 /* Perfil de atleta QUADRA — temporada, jogos, ficha compartilhável. */
 import {$,setupShared,qs,TEAMS,name,logo,esc,fetchRoster,fetchBox,fetchMonth,MONTHS,
- currentDate,getData,modify,teamLink,gameLink,shortDate,toast,path} from '../app.js?v=10';
-import {fetchLiveBoxscore} from '../boxscore.js?v=1';
+ currentDate,getData,modify,teamLink,gameLink,shortDate,toast,path} from '../app.js?v=11';
+import {fetchLiveBoxscore} from '../boxscore.js?v=2';
 import {exportPlayerImage,sharePlayerLink} from '../share-card.js?v=3';
 
 const pid=qs('id')||'',rawTeam=(qs('team')||'').toUpperCase();
