@@ -32,22 +32,37 @@ function liveFixtures(){
   TEAMS[g.away]&&TEAMS[g.home]&&g.away!==g.home&&
   Number.isFinite(g.scoreAway)&&Number.isFinite(g.scoreHome));
 }
-function projectRows(fixtures){
- const rows=(board?.teams||[]).map(t=>({...t,lastFive:[...(t.lastFive||[])]}));
- if(!includeLive)return rows;
- const byTeam=new Map(rows.map(r=>[r.team,r]));
- for(const g of fixtures){
-  const away=byTeam.get(g.away),home=byTeam.get(g.home);
-  if(!away||!home)continue;
-  // Empate: jogo segue aberto, mas ainda não há vitória/derrota para projetar.
-  if(g.scoreAway===g.scoreHome)continue;
-  const winner=g.scoreAway>g.scoreHome?away:home;
-  const loser=g.scoreAway>g.scoreHome?home:away;
-  winner.w+=1;loser.l+=1;
-  away.pf+=g.scoreAway;away.pa+=g.scoreHome;
-  home.pf+=g.scoreHome;home.pa+=g.scoreAway;
-  // Apenas uma projeção temporária; resultados finais são preservados.
+// A ESPN publica FINAL antes de o workflow atualizar o JSON estático.
+// Confrontos ausentes de countedGameIds entram imediatamente, uma única vez.
+function pendingFinals(){
+ if(!Array.isArray(board?.countedGameIds))return [];
+ const counted=new Set(board.countedGameIds.map(String));
+ return [...(window.QUADRA_LIVE_GAMES?.values()||[])]
+  .filter(g=>g.status==='final'&&g.seasonType===2&&
+    TEAMS[g.away]&&TEAMS[g.home]&&g.away!==g.home&&
+    Number.isFinite(g.scoreAway)&&Number.isFinite(g.scoreHome)&&
+    g.scoreAway!==g.scoreHome&&!counted.has(String(g.id)))
+  .sort((a,b)=>a.date.localeCompare(b.date)||String(a.id).localeCompare(String(b.id)));
+}
+function applyFixture(byTeam,g,isFinal){
+ const away=byTeam.get(g.away),home=byTeam.get(g.home);
+ if(!away||!home||g.scoreAway===g.scoreHome)return false;
+ const winner=g.scoreAway>g.scoreHome?away:home;
+ const loser=g.scoreAway>g.scoreHome?home:away;
+ winner.w++;loser.l++;
+ away.pf+=g.scoreAway;away.pa+=g.scoreHome;
+ home.pf+=g.scoreHome;home.pa+=g.scoreAway;
+ if(isFinal){
+  away.lastFive=[...away.lastFive,g.scoreAway>g.scoreHome?'W':'L'].slice(-5);
+  home.lastFive=[...home.lastFive,g.scoreHome>g.scoreAway?'W':'L'].slice(-5);
  }
+ return true;
+}
+function projectRows(fixtures,finals){
+ const rows=(board?.teams||[]).map(t=>({...t,lastFive:[...(t.lastFive||[])]}));
+ const byTeam=new Map(rows.map(r=>[r.team,r]));
+ for(const g of finals)applyFixture(byTeam,g,true);
+ if(includeLive)for(const g of fixtures)applyFixture(byTeam,g,false);
  return rows;
 }
 function displayTable(rows,title){
@@ -79,10 +94,12 @@ function displayTable(rows,title){
 }
 function render(){
  if(!board)return;
- const fixtures=liveFixtures();
+ const fixtures=liveFixtures(),finals=pendingFinals();
  teamsPlaying=new Set(fixtures.flatMap(g=>[g.away,g.home]));
- const rows=projectRows(fixtures);
+ const rows=projectRows(fixtures,finals);
  const projected=includeLive?fixtures.filter(g=>g.scoreAway!==g.scoreHome).length:0;
+ const finalCount=(board.gamesCount||0)+finals.length;
+ const finalDate=[board.lastGameDate,...finals.map(g=>g.date)].filter(Boolean).sort().at(-1);
  const grouped=scope==='general'?
   displayTable(rows,'Classificação geral • 30 franquias'):
   scope==='east'||scope==='west'?
@@ -97,9 +114,9 @@ function render(){
     })();
  root.innerHTML=
  '<div class="standings-summary"><div><span class="caps">TEMPORADA REGULAR 2026/27</span>'+
- '<h2>'+board.gamesCount+' '+(board.gamesCount===1?'partida finalizada':'partidas finalizadas')+'</h2>'+
- '<span class="small subtle">Último jogo finalizado: '+(board.lastGameDate?shortDate(board.lastGameDate):'nenhum')+'</span></div>'+
- '<div class="standings-help"><span>'+(fixtures.length?fixtures.length+' '+(fixtures.length===1?'jogo ao vivo':'jogos ao vivo')+' • consulta a cada 15s':'Resultados finais importados')+'</span>'+
+ '<h2>'+finalCount+' '+(finalCount===1?'partida finalizada':'partidas finalizadas')+'</h2>'+
+ '<span class="small subtle">Último jogo finalizado: '+(finalDate?shortDate(finalDate):'nenhum')+'</span></div>'+
+ '<div class="standings-help"><span>'+(fixtures.length?fixtures.length+' '+(fixtures.length===1?'jogo ao vivo':'jogos ao vivo')+' • consulta a cada 15s':finals.length?'Resultado final atualizado pelo placar':'Resultados finais importados')+'</span>'+
  '<button type="button" class="btn ghost" id="standingsRefresh">↻ Atualizar</button></div></div>'+
  '<div class="standings-live-options"><label><input id="standingsIncludeLive" type="checkbox" '+(includeLive?'checked':'')+'> Considerar resultados parciais na classificação</label>'+ (fixtures.length&&includeLive?'<span>'+projected+' '+(projected===1?'jogo projetado':'jogos projetados')+' • apenas enquanto houver vantagem no placar</span>':'')+'</div>'+ 
  '<div class="standings-switches">'+[
@@ -110,16 +127,15 @@ function render(){
  '<option value="all">Todas as divisões</option>'+
  divisionChoices().map(x=>'<option value="'+esc(x.value)+'"'+(division===x.value?' selected':'')+'>'+
  esc(x.label)+'</option>').join('')+'</select></div>':'')+
- grouped+'<p class="standings-note">Resultados finais importados formam a classificação base. Quando ativada, a projeção considera temporariamente o placar dos jogos em andamento da temporada regular, podendo mudar a cada atualização; jogos empatados não recebem vitória nem derrota projetada. A sequência ÚLT. 5 inclui apenas resultados finais. Pré-temporada e playoffs ficam de fora. A classificação oficial da NBA usa outros critérios de desempate.</p>';
+ grouped+'<p class="standings-note">A classificação considera os resultados finais importados e os jogos recém-encerrados confirmados no placar, mesmo antes da sincronização do GitHub. A opção de projeção soma temporariamente jogos em andamento, sem contar empates como vitórias. ÚLT. 5 exibe apenas partidas encerradas. Pré-temporada e playoffs ficam de fora. A NBA aplica critérios oficiais de desempate adicionais.</p>';
 }
 async function load(force=false){
  root.innerHTML='<div class="filler">Carregando a classificação da temporada…</div>';
  try{
-  if(force){
-   const r=await fetch(path('data/standings/2026-27.json'),{cache:'no-store'});
-   if(!r.ok)throw Error('HTTP '+r.status);
-   board=await r.json();
-  }else board=await jsonFile('data/standings/2026-27.json');
+  // Arquivo pequeno: buscar versão atualizada em vez de reutilizar um JSON velho em cache.
+  const response=await fetch(path('data/standings/2026-27.json'),{cache:'no-store'});
+  if(!response.ok)throw Error('HTTP '+response.status);
+  board=await response.json();
   if(!Array.isArray(board?.teams)||board.teams.length!==30)throw Error('Classificação incompleta');
   render();
  }catch(e){
