@@ -1,4 +1,4 @@
-import {$,setupShared,EAST,WEST,name,logo,teamLink,esc,jsonFile,path} from '../app.js?v=10';
+import {$,setupShared,EAST,WEST,name,logo,teamLink,esc,jsonFile,path} from '../app.js?v=11';
 setupShared('teams','Franquias da NBA','As 30 equipes por conferência e divisão, com suas campanhas e elencos.');
 const root=$('#pageContent');
 let conference='east',standings=null;
