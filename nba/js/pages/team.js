@@ -1,7 +1,7 @@
 /* QUADRA — perfil leve de franquia com médias coletivas e por atleta. */
 import {$,setupShared,TEAMS,EAST,WEST,name,logo,esc,qs,fetchRoster,loadGames,MONTHS,
  currentDate,shortDate,teamLink,playerLink,path,jsonFile,getData,setSettings,
- modify,modal,closeModal,toast,groupGames,handleWishes} from '../app.js?v=11';
+ modify,modal,closeModal,toast,groupGames,handleWishes} from '../app.js?v=12';
 
 const code=(qs('id')||'BOS').toUpperCase(),root=$('#pageContent'),valid=!!TEAMS[code];
 setupShared('teams',valid?name(code):'Equipe não encontrada',
