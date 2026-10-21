@@ -1136,3 +1136,130 @@ a.fav-info:hover,a.fav-info:focus-visible{border-color:var(--accent);background:
  .standings-live-options{align-items:flex-start;flex-direction:column}
  .standings-live-game>strong{font-size:18px}}
 @media(prefers-reduced-motion:reduce){.standings-live-dot{animation:none}}
+
+/* Agenda DLQ: um seletor de data, dois filtros discretos e calendário em modal. */
+.agenda-date-nav{display:flex;align-items:stretch;gap:8px;margin:12px 0 13px;min-width:0}
+.agenda-day-arrow,.agenda-today,.agenda-date-open{background:#182535;border:1px solid #3a4e66;color:#e8f2ff;border-radius:11px;cursor:pointer}
+.agenda-day-arrow{width:43px;flex:0 0 43px;font-size:28px;font-weight:800}
+.agenda-date-open{display:flex;align-items:center;justify-content:center;gap:13px;flex:1;min-width:0;padding:13px 15px}
+.agenda-date-open>span:nth-child(2){display:flex;flex-direction:column;gap:3px;min-width:0;text-align:left}
+.agenda-date-open strong{font-size:15px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-transform:capitalize}
+.agenda-date-open small{font-size:11px;color:#a3b8cf}
+.agenda-cal-icon{font-size:22px;color:#ffbc83;flex:none}
+.agenda-cal-chevron{font-size:20px;color:#9fb5cb;flex:none}
+.agenda-day-arrow:hover,.agenda-date-open:hover,.agenda-today:hover,
+.agenda-day-arrow:focus-visible,.agenda-date-open:focus-visible,.agenda-today:focus-visible{border-color:#ffad75;background:#23344a}
+.agenda-today{padding:0 14px;font-size:12px;font-weight:900}
+.agenda-compact-toolbar{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.agenda-select{display:flex;flex-direction:column;gap:6px;flex:1 1 170px;min-width:0}
+.agenda-select>span,.agenda-filter-panel label{font-size:10px;color:#b6c6da;font-weight:850}
+.agenda-select .control{width:100%;min-width:0;min-height:41px;font-size:12px;cursor:pointer}
+.agenda-more-filters{flex:0 0 auto;position:relative}
+.agenda-more-filters summary{display:flex;align-items:center;gap:8px;list-style:none;cursor:pointer;padding:12px 14px;
+ min-height:41px;background:#192538;border:1px solid #384e68;border-radius:10px;font-size:12px;font-weight:800;color:#dbe9f9}
+.agenda-more-filters summary::-webkit-details-marker{display:none}
+.agenda-more-filters[open] summary{border-color:#ffad75;color:#ffc08c}
+.agenda-filter-panel{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;
+ padding:13px;margin-top:8px;background:#172337;border:1px solid #384d65;border-radius:13px}
+.agenda-more-filters[open]{flex:1 0 100%}
+.agenda-filter-panel label{display:flex;flex-direction:column;gap:6px;min-width:0}
+.agenda-filter-panel .control{width:100%;min-width:0;font-size:12px;min-height:40px}
+.agenda-calendar-modal h2{font-size:19px;text-align:center;margin:0 0 15px}
+#modalRoot .modal:has(.agenda-calendar-modal){max-width:420px}
+.agenda-calendar-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:15px}
+.agenda-calendar-head strong{font-size:16px;color:#f2f6fd;text-transform:capitalize}
+.agenda-month-arrow{width:39px;height:39px;border:1px solid #40556d;border-radius:9px;background:#203149;color:#fff;font-size:24px;cursor:pointer}
+.agenda-month-arrow:hover{border-color:#ffab6c}
+.agenda-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.agenda-week-label{font-size:10px;font-weight:800;color:#92a8c1;text-align:center;padding:5px 0}
+.agenda-calendar-day{aspect-ratio:1/1;position:relative;min-width:0;display:grid;place-items:center;
+ border:1px solid transparent;border-radius:9px;background:#1b293c;color:#f0f5ff;cursor:pointer;font-size:13px}
+.agenda-calendar-day b{font-weight:850}
+.agenda-calendar-day i{position:absolute;bottom:4px;height:3px;width:3px;border-radius:50%;background:#ffb77a}
+.agenda-calendar-day:not(:disabled):hover,.agenda-calendar-day:focus-visible{border-color:#ffa85c;background:#30415a}
+.agenda-calendar-day.is-selected{background:#442e26;border-color:#ff9951;color:#ffbc82}
+.agenda-calendar-day.is-today:not(.is-selected){box-shadow:inset 0 0 0 1px #697b91}
+.agenda-calendar-day:disabled{opacity:.25;cursor:default}
+.agenda-calendar-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:14px;color:#8198b0;font-size:10px}
+.agenda-calendar-foot .btn{font-size:11px;padding:7px 11px}
+
+/* Cartões de partidas: as transmissões devem permanecer clicáveis em todas as telas. */
+.game-card-link .game-meta .broadcast-badge{position:relative;z-index:2}
+@media(max-width:770px){
+ .game-card.game-card-link{display:grid;grid-template-columns:minmax(0,1fr);row-gap:13px;column-gap:0;
+  padding:14px 14px 12px;min-height:0;border-radius:15px}
+ .game-card.game-card-link .time{display:flex;align-items:center;gap:8px;width:100%;min-width:0;
+  padding-bottom:9px;border-bottom:1px solid #293b50;font-size:13px;font-weight:850;color:#d1def0;line-height:1.25}
+ .game-card.game-card-link .time small{display:none}
+ .game-card-link .time .live-indicator{margin:0 0 0 auto;font-size:10px}
+ .game-card-link .matchup{width:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(102px,auto) minmax(0,1fr);
+  gap:6px;min-height:76px;align-items:center}
+ .game-card-link .matchup .club,.game-card-link .matchup .club.right{display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:7px;min-width:0;width:100%;text-align:center}
+ .game-card-link .matchup .club img{height:43px;width:43px;flex:none;object-fit:contain}
+ .game-card-link .matchup .club>span,.game-card-link .matchup .club.right>span{text-align:center!important;flex:none;min-width:0}
+ .game-card-link .matchup .club strong{display:none}
+ .game-card-link .matchup .club small{font-size:12px;letter-spacing:.045em;font-weight:950;color:#dbe6f4;display:block}
+ .game-card-link .matchup .matchup-center{gap:6px;min-height:60px}
+ .game-card-link .matchup-score-pair{grid-template-columns:39px 15px 39px;gap:3px}
+ .game-card-link .matchup-score-box{height:37px;font-size:19px;border-radius:8px;padding:0 2px}
+ .game-card-link .matchup-vs{font-size:10px}
+ .game-card-link .matchup-phase{font-size:10px;white-space:normal;letter-spacing:0;line-height:1.4}
+ .game-card-link .game-meta{grid-column:1;grid-row:auto;display:flex;flex-wrap:wrap;align-items:center;
+  justify-content:space-between;gap:8px;width:100%;min-width:0;padding-top:9px;border-top:1px solid #293b50}
+ .game-card-link .game-status{display:flex;justify-content:flex-start;order:2;gap:5px}
+ .game-card-link .game-status:empty{display:none}
+ .game-card-link .broadcast-badge,.game-card-link .broadcast-badge.multi,
+ .game-card-link .broadcast-badge.league{width:auto;max-width:calc(100% - 50px);min-height:0;
+  padding:0;border:0;background:transparent;align-items:flex-start;order:1;flex:0 1 auto;font-size:11px}
+ .game-card-link .broadcast-badge .broadcast-links{display:flex!important;flex-direction:row!important;flex-wrap:wrap;
+  width:auto;max-width:100%;gap:5px;justify-content:flex-start}
+ .game-card-link .broadcast-badge .broadcast-links>a{display:inline-flex;padding:7px 9px;background:#22334d;
+  border:1px solid #3f5b7e;border-radius:8px;font-size:11px;font-weight:850;line-height:1.3;color:#c6d9f8;
+  white-space:normal;text-align:left}
+ .game-card-link .broadcast-badge .broadcast-links>a:hover{color:#fff;background:#304b73}
+ .game-card-link .broadcast-badge .broadcast-unavailable{display:block;text-align:left;font-size:11px;color:#8ea5bd}
+ .game-card-link .fav{order:3;margin-left:auto;width:41px;height:40px;font-size:24px;flex:0 0 41px}
+ .game-list-meta{margin:8px 0 8px}
+ .game-list-meta .small{font-size:12px}
+ .dayhead{font-size:15px;line-height:1.4;margin:19px 0 9px;padding-bottom:8px}
+ .section-title{gap:9px}
+ .section-title h2{font-size:clamp(17px,4vw,21px)}
+ .section-title>.btn{font-size:11px;padding:8px 10px;min-height:0}
+ .agenda-compact-toolbar{gap:8px}
+ .agenda-select{flex:1 1 calc(50% - 4px)}
+ .agenda-more-filters{flex:0 0 auto}
+ .agenda-more-filters[open]{flex:1 0 100%}
+ .agenda-more-filters:not([open]){margin-left:auto}
+ .agenda-filter-panel{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:520px){
+ .agenda-date-nav{gap:6px;margin:5px 0 12px}
+ .agenda-day-arrow{width:36px;flex-basis:36px;font-size:24px}
+ .agenda-date-open{padding:10px 8px;gap:8px}
+ .agenda-date-open strong{font-size:12px}
+ .agenda-date-open small{font-size:9px}
+ .agenda-cal-icon{font-size:18px}
+ .agenda-cal-chevron{font-size:15px}
+ .agenda-today{padding:0 8px;font-size:10px}
+ .agenda-select>span{font-size:10px}
+ .agenda-compact-toolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .agenda-select{min-width:0;width:100%}
+ .agenda-select .control{min-height:39px;font-size:11px;padding:7px 24px 7px 9px}
+ .agenda-more-filters{grid-column:1/-1;justify-self:end;width:auto}
+ .agenda-more-filters[open]{width:100%}
+ .agenda-more-filters summary{padding:8px 11px;min-height:34px;font-size:11px}
+ .agenda-filter-panel{grid-template-columns:1fr 1fr}
+ .game-card.game-card-link{padding:12px 12px 11px;row-gap:11px}
+ .game-card-link .matchup .club img{height:40px;width:40px}
+ .game-card-link .matchup .club small{font-size:12px}
+ .game-card-link .matchup-score-box{height:36px;font-size:19px}
+ .game-card-link .matchup-phase{font-size:9px}
+}
+@media(max-width:360px){
+ .game-card-link .matchup{grid-template-columns:minmax(0,1fr) 100px minmax(0,1fr);gap:3px}
+ .game-card-link .matchup-score-pair{grid-template-columns:36px 15px 36px;gap:2px}
+ .game-card-link .matchup-score-box{font-size:17px;height:34px}
+ .game-card-link .matchup .club img{width:35px;height:35px}
+ .agenda-filter-panel{grid-template-columns:1fr}
+}
