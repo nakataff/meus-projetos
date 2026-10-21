@@ -1,6 +1,6 @@
 import {$,setupShared,qs,esc,name,logo,tlogo,effectiveGame,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,note,getData,setNote,setExtraGroup,platform,broadcastLinks,shortDate,currentDate,toast,modal,closeModal,eventBox,fetchRoster,livePeriodLabel} from '../app.js?v=13';
 import {fetchLiveBoxscore,projectStartingFive} from '../boxscore.js?v=2';
-import {exportPlayerImage} from '../share-card.js?v=4';
+import {openPlayerCardComposer} from '../share-card.js?v=5';
 import {performanceRating,ratingLabel,topPerformance,RATING_EXPLANATION} from '../performance-rating.js?v=2';
 const id=qs('id')||'',hint=qs('data')||'',root=$('#pageContent');
 setupShared('games','Centro da partida','Escalações, estatísticas e seu diário pessoal de basquete.');
@@ -589,35 +589,21 @@ function openPlayerPerformance(pid,code){
   statText(p,key)+'</strong><span>'+label+'</span></div>').join('')+'</div>'+
   '<p class="performance-source">Estatísticas '+(current.status==='live'?'parciais, sujeitas a mudanças.':'disponíveis para esta partida.')+'</p>'+
   '<div class="performance-actions">'+
-  '<button type="button" class="btn accent" id="playerShareImage">↗ Compartilhar imagem</button>'+
-  '<button type="button" class="btn" id="playerExportImage">⇩ Salvar PNG</button>'+
+  '<button type="button" class="btn accent" id="playerShareImage">▣ Gerar card da partida</button>'+
+  
   '<a class="btn ghost" href="'+esc(url)+'">Perfil completo →</a></div></div>');
- const shareButton=document.getElementById('playerShareImage');
- const saveButton=document.getElementById('playerExportImage');
- async function handleImage(mode,button){
-  const label=button.textContent;
-  shareButton.disabled=true;saveButton.disabled=true;
-  button.textContent='Preparando imagem…';
-  try{
-   const latest=(box?.players?.[code]||[]).find(x=>String(x.id)===String(pid))||p;
-   const result=await exportPlayerImage({
-    player:latest,teamName:name(code),teamCode:code,teamLogo:logo(code),headshot:portrait,
-    gameLabel:name(game.away)+' x '+name(game.home),date:shortDate(game.date),
-    score:(()=>{
-      const now=gameStatus();
-      return now.scoreAway!=null&&now.scoreHome!=null?
-       now.scoreAway+' - '+now.scoreHome:'';
-     })(),opponent:name(opponent),opponentLogo:logo(opponent),
-    rating:ratingLabel(performanceRating(latest)),
-    filename:'DLQ-'+p.name.replace(/\s+/g,'-')+'-'+game.date,mode
-   });
-   if(result==='copied')toast('Imagem copiada! Cole no aplicativo onde deseja compartilhar.');
-   if(result==='downloaded')toast(mode==='share'?'Compartilhamento indisponível aqui: PNG salvo para enviar.':'Imagem PNG salva!');
-  }catch(e){console.warn('DLQ: imagem do atleta',e);toast('Não foi possível gerar a imagem. '+e.message);}
-  finally{shareButton.disabled=false;saveButton.disabled=false;button.textContent=label;}
- }
- shareButton.onclick=()=>handleImage('share',shareButton);
- saveButton.onclick=()=>handleImage('download',saveButton);
+ const generateButton=document.getElementById('playerShareImage');
+ generateButton.onclick=()=>{
+  const latest=(box?.players?.[code]||[]).find(x=>String(x.id)===String(pid))||p;
+  const now=gameStatus();
+  openPlayerCardComposer({
+   kind:'game',player:latest,teamName:name(code),teamCode:code,teamLogo:logo(code),headshot:portrait,
+   gameLabel:name(game.away)+' x '+name(game.home),date:shortDate(game.date),
+   score:now.scoreAway!=null&&now.scoreHome!=null?now.scoreAway+' - '+now.scoreHome:'',
+   opponent:name(opponent),opponentLogo:logo(opponent),
+   rating:ratingLabel(performanceRating(latest))
+  });
+ };
 }
 function ratePlayer(pid,code){
  const info=(box?.players?.[code]||[]).find(p=>String(p.id)===String(pid));if(!info)return toast('Jogador indisponível.');
