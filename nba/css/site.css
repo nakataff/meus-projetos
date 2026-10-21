@@ -1308,3 +1308,15 @@ a.fav-info:hover,a.fav-info:focus-visible{border-color:var(--accent);background:
  background:#542b36;border-color:#bb6470;color:#ffe0e3;
  box-shadow:inset 0 1px #ffffff12,0 0 0 1px #bd5e721c;
 }
+
+/* Partida iniciada no dia anterior e ainda exibida após meia-noite (BRT). */
+.overnight-game-note{display:inline-flex;align-items:center;width:max-content;max-width:100%;
+ font-size:10px;font-weight:800;color:#abc1dc;background:#243448;border:1px solid #40536b;
+ border-radius:7px;padding:3px 7px;line-height:1.25}
+@media(max-width:770px){
+ .game-card.game-card-link .time .overnight-game-note{margin-left:0;font-size:10px;white-space:nowrap}
+ .game-card.game-card-link .time:has(.overnight-game-note){flex-wrap:wrap}
+}
+@media(max-width:400px){
+ .game-card.game-card-link .time .overnight-game-note{font-size:9px;padding:3px 5px}
+}
