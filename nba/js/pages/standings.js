@@ -1,5 +1,5 @@
 /* Classificação DE LA QUADRA 2026/27 — resultados finais com projeção ao vivo opcional. */
-import {$,setupShared,EAST,WEST,TEAMS,name,logo,esc,path,teamLink,jsonFile,shortDate,gameLink} from '../app.js?v=10';
+import {$,setupShared,EAST,WEST,TEAMS,name,logo,esc,path,teamLink,jsonFile,shortDate,gameLink,livePeriodLabel} from '../app.js?v=10';
 
 setupShared('standings','Classificação da NBA','Tabela geral, conferências Leste e Oeste e divisões da temporada regular 2026/27.');
 const root=$('#pageContent');
@@ -9,6 +9,7 @@ const divisionOf=team=>Object.keys(EAST).find(c=>EAST[c].includes(team))||
  Object.keys(WEST).find(c=>WEST[c].includes(team))||'—';
 let board=null,scope='general',division='all',focus=new URLSearchParams(location.search).get('time')||'';
 let includeLive=true; // Projeção independente do histórico finalizado
+let teamsPlaying=new Set();
 
 const tally=t=>(t.w||0)+(t.l||0);
 const ratio=t=>tally(t)?(t.w||0)/tally(t):0;
@@ -45,7 +46,7 @@ function projectRows(fixtures){
   winner.w+=1;loser.l+=1;
   away.pf+=g.scoreAway;away.pa+=g.scoreHome;
   home.pf+=g.scoreHome;home.pa+=g.scoreAway;
-  for(const team of [away,home])team.liveProjection=true;
+  // Apenas uma projeção temporária; resultados finais são preservados.
  }
  return rows;
 }
@@ -77,10 +78,10 @@ function displayTable(rows,title){
  sorted.map((r,i)=>{
  const rank=tally(r)?(i+1)+'º':'—';
  const streak=(r.lastFive||[]).map(x=>'<span class="standings-form '+(x==='W'?'win':'loss')+'">'+(x==='W'?'V':'D')+'</span>').join('');
- return '<tr class="'+(r.team===focus?'highlight ':'')+(r.liveProjection?'standings-projecting':'')+'"><th scope="row" class="standings-team-col">'+
+ return '<tr class="'+(r.team===focus?'highlight':'')+'"><th scope="row" class="standings-team-col">'+
  '<span class="standings-rank">'+rank+'</span><a href="'+teamLink(r.team)+'">'+
  '<img src="'+esc(logo(r.team))+'" alt="" loading="lazy" decoding="async"><span>'+
- '<b>'+esc(name(r.team))+'</b><small>'+esc(conferenceOf(r.team))+' • '+esc(divisionOf(r.team))+'</small>'+ (r.liveProjection?'<small class="standings-projection-label">↗ PROJEÇÃO AO VIVO</small>':'')+
+ '<span class="standings-name-line"><b>'+esc(name(r.team))+'</b>'+ (teamsPlaying.has(r.team)?'<i class="standings-team-live-dot" role="img" aria-label="Jogando agora" title="Jogando agora"></i>':'')+'</span><small>'+esc(conferenceOf(r.team))+' • '+esc(divisionOf(r.team))+'</small>'+
  '</span></a></th>'+
  '<td>'+tally(r)+'</td><td>'+r.w+'</td><td>'+r.l+'</td>'+
  '<td class="standings-pct">'+percentage(r)+'</td>'+
@@ -93,6 +94,7 @@ function displayTable(rows,title){
 function render(){
  if(!board)return;
  const fixtures=liveFixtures();
+ teamsPlaying=new Set(fixtures.flatMap(g=>[g.away,g.home]));
  const rows=projectRows(fixtures);
  const projected=includeLive?fixtures.filter(g=>g.scoreAway!==g.scoreHome).length:0;
  const grouped=scope==='general'?
@@ -113,7 +115,6 @@ function render(){
  '<span class="small subtle">Último jogo finalizado: '+(board.lastGameDate?shortDate(board.lastGameDate):'nenhum')+'</span></div>'+
  '<div class="standings-help"><span>'+(fixtures.length?fixtures.length+' '+(fixtures.length===1?'jogo ao vivo':'jogos ao vivo')+' • consulta a cada 15s':'Resultados finais importados')+'</span>'+
  '<button type="button" class="btn ghost" id="standingsRefresh">↻ Atualizar</button></div></div>'+
- liveScorecards(fixtures)+
  '<div class="standings-live-options"><label><input id="standingsIncludeLive" type="checkbox" '+(includeLive?'checked':'')+'> Considerar resultados parciais na classificação</label>'+ (fixtures.length&&includeLive?'<span>'+projected+' '+(projected===1?'jogo projetado':'jogos projetados')+' • apenas enquanto houver vantagem no placar</span>':'')+'</div>'+ 
  '<div class="standings-switches">'+[
   ['general','Geral'],['east','Leste'],['west','Oeste'],['divisions','Divisões']
