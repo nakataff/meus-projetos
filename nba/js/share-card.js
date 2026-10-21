@@ -137,16 +137,16 @@ export async function buildPlayerCard(options={}){
   txt(ctx,'NBA 2026–27',736,138,23,COLOR.orange,950,290);
   txt(ctx,season?'MÉDIAS DA TEMPORADA':'DESEMPENHO INDIVIDUAL',80,264,29,COLOR.muted,950);
   txt(ctx,matchLabel(options),80,322,20,COLOR.muted,700,925);
-  portrait(ctx,playerPic,78,386,924,610);
-  if(teamPic){rect(ctx,852,848,135,133,22,'#16263c');imageFit(ctx,teamPic,867,860,105,103);}
-  title(ctx,playerName,79,1070,72,928);
-  txt(ctx,teamName,82,1159,35,COLOR.muted,900,912);
-  ratingBlock(ctx,stat.rating,797,1214,205,130);
-  for(let i=0;i<3;i++)metric(ctx,79+i*309,1380,297,165,stat.values[i],stat.headings[i],65);
+  portrait(ctx,playerPic,78,376,924,560);
+  if(teamPic){rect(ctx,852,800,135,122,22,'#16263c');imageFit(ctx,teamPic,867,811,105,98);}
+  title(ctx,playerName,79,1012,72,928);
+  txt(ctx,teamName,82,1095,35,COLOR.muted,900,912);
+  ratingBlock(ctx,stat.rating,797,1133,205,125);
+  for(let i=0;i<3;i++)metric(ctx,79+i*309,1272,297,165,stat.values[i],stat.headings[i],65);
   txt(ctx,season?stat.gameCount+' JOGOS DISPUTADOS • TEMPORADA 2026/27':
-    (options.opponent?'vs '+options.opponent:'NBA 2026/27'),82,1614,24,COLOR.muted,850,913);
+    (options.opponent?'vs '+options.opponent:'NBA 2026/27'),82,1481,24,COLOR.muted,850,913);
   // Rodapé informativo antes da área de ações do Story.
-  txt(ctx,'DE LA QUADRA',82,1672,20,COLOR.orange,950,450);
+  txt(ctx,'DE LA QUADRA',82,1519,20,COLOR.orange,950,450);
  }
  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
  if(!blob)throw Error('Não foi possível gerar a imagem');
