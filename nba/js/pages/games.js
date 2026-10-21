@@ -1,6 +1,6 @@
 import {$,setupShared,MONTHS,loadGames,TEAMS,groupGames,gameRow,handleWishes,currentDate,dayShift,niceDate,note,esc,qs,modal,closeModal} from '../app.js?v=10';
 
-setupShared('games','Agenda NBA','Veja os jogos de hoje, avance ou volte pelo calendário e filtre os confrontos da temporada.');
+setupShared('games','Agenda NBA','Calendário, horários e transmissões dos jogos da temporada.');
 const root=$('#pageContent'),today=currentDate();
 const calendarStart='2026-10-01',calendarEnd='2027-05-31';
 const requested=qs('data');
@@ -21,11 +21,14 @@ function dayLabel(date){
 function fullDay(date){return dayLabel(date).replace(/^./,x=>x.toUpperCase());}
 function dateNav(){
  const label=dayLabel(selectedDate);
+ const labelDate=new Date(selectedDate+'T12:00:00Z');
+ const short=labelDate.toLocaleDateString('pt-BR',{timeZone:'UTC',day:'numeric',month:'long',year:'numeric'});
+ const weekday=labelDate.toLocaleDateString('pt-BR',{timeZone:'UTC',weekday:'long'});
  return '<div class="agenda-date-nav" aria-label="Selecionar data da agenda">'+
  '<button type="button" class="agenda-day-arrow" data-step="-1" aria-label="Dia anterior">‹</button>'+
  '<button type="button" class="agenda-date-open" id="openGameCalendar" aria-label="Abrir calendário, data selecionada: '+esc(label)+'">'+
- '<span class="agenda-cal-icon" aria-hidden="true">▦</span><span><strong>'+esc(fullDay(selectedDate))+'</strong>'+
- '<small>Toque para escolher outra data</small></span><span class="agenda-cal-chevron" aria-hidden="true">⌄</span></button>'+
+ '<span class="agenda-cal-icon" aria-hidden="true">▦</span><span><strong>'+esc(short)+'</strong>'+
+ '<small>'+esc(weekday)+' · Abrir calendário</small></span><span class="agenda-cal-chevron" aria-hidden="true">⌄</span></button>'+
  '<button type="button" class="agenda-day-arrow" data-step="1" aria-label="Próximo dia">›</button>'+
  (selectedDate!==today?'<button type="button" class="agenda-today" id="goToday">Hoje</button>':'')+
  '</div>';
