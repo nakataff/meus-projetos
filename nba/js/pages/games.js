@@ -69,9 +69,9 @@ function calendarHTML(month){
    '<b>'+day+'</b>'+(count?'<i aria-hidden="true"></i>':'')+'</button>';
  }).join('');
  return '<div class="agenda-calendar" role="group" aria-label="Calendário de jogos">'+
- '<div class="agenda-calendar-head"><button type="button" class="agenda-month-arrow" data-cal-month="-1" aria-label="Mês anterior">‹</button>'+
+ '<div class="agenda-calendar-head"><button type="button" class="agenda-month-arrow" data-cal-month="-1" aria-label="Mês anterior" '+(month<='2026-10'?'disabled':'')+'>‹</button>'+
  '<strong>'+esc(heading.charAt(0).toUpperCase()+heading.slice(1))+'</strong>'+
- '<button type="button" class="agenda-month-arrow" data-cal-month="1" aria-label="Próximo mês">›</button></div>'+
+ '<button type="button" class="agenda-month-arrow" data-cal-month="1" aria-label="Próximo mês" '+(month>='2027-05'?'disabled':'')+'>›</button></div>'+
  '<div class="agenda-calendar-grid">'+['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(x=>
   '<span class="agenda-week-label">'+x+'</span>').join('')+dates+'</div>'+
  '<div class="agenda-calendar-foot"><span>• Dias com partidas já carregadas</span>'+
@@ -167,7 +167,7 @@ async function reload(){
  }
 }
 function setDay(date){
- if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(Date.parse(date+'T12:00:00Z')))return;
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(Date.parse(date+'T12:00:00Z'))||date<calendarStart||date>calendarEnd)return;
  selectedDate=date;
  view='day';
  order='asc';limit=60;
