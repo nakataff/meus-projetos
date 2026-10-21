@@ -1164,12 +1164,14 @@ a.fav-info:hover,a.fav-info:focus-visible{border-color:var(--accent);background:
 .agenda-more-filters[open]{flex:1 0 100%}
 .agenda-filter-panel label{display:flex;flex-direction:column;gap:6px;min-width:0}
 .agenda-filter-panel .control{width:100%;min-width:0;font-size:12px;min-height:40px}
+.agenda-calendar-modal{clear:both;padding-top:8px}
 .agenda-calendar-modal h2{font-size:19px;text-align:center;margin:0 0 15px}
 #modalRoot .modal:has(.agenda-calendar-modal){max-width:420px}
 .agenda-calendar-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:15px}
 .agenda-calendar-head strong{font-size:16px;color:#f2f6fd;text-transform:capitalize}
 .agenda-month-arrow{width:39px;height:39px;border:1px solid #40556d;border-radius:9px;background:#203149;color:#fff;font-size:24px;cursor:pointer}
 .agenda-month-arrow:hover{border-color:#ffab6c}
+.agenda-month-arrow:disabled{opacity:.3;cursor:default}
 .agenda-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
 .agenda-week-label{font-size:10px;font-weight:800;color:#92a8c1;text-align:center;padding:5px 0}
 .agenda-calendar-day{aspect-ratio:1/1;position:relative;min-width:0;display:grid;place-items:center;
