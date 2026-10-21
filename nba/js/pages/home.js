@@ -121,7 +121,8 @@ function render(){
  section('Onde assistir no Brasil','Todas as transmissões','jogos/?tv=br',tv,'Ainda não há transmissões brasileiras confirmadas no período carregado.')+
  '<section class="section"><div class="section-title"><h2>Minha agenda da semana</h2><a class="btn ghost" href="'+path('perfil/?tab=atividade&filtro=desejos')+'">Minha lista ↗</a></div>'+
  (watchlist.length?groupGames(watchlist):'<div class="filler"><b>Você ainda não marcou jogos para esta semana</b>Toque no ♡ dos confrontos para montar sua agenda personalizada.</div>')+'</section>'+
- '<div class="grid two"><a class="card link" href="'+path('equipes/')+'"><div class="caps">Explore</div><h3>🏀 As 30 franquias</h3><p>Conferências, elencos, quintetos e próximos jogos.</p></a>'+
+ '<div class="grid leaders-home-shortcuts"><a class="card link" href="'+path('equipes/')+'"><div class="caps">Explore</div><h3>🏀 As 30 franquias</h3><p>Conferências, elencos, quintetos e próximos jogos.</p></a>'+
+ '<a class="card link" href="'+path('melhores/')+'"><div class="caps">Destaques da temporada</div><h3>🏅 Melhores jogadores</h3><p>Médias de pontos, rebotes, assistências, NOTA DLQ e muito mais.</p></a>'+
  '<a class="card link" href="'+path('perfil/')+'"><div class="caps">Sua jornada</div><h3>☆ Meu perfil</h3><p>Partidas assistidas, rankings, conquistas e dados pessoais.</p></a></div>';
 }
 root.innerHTML='<div class="filler">Carregando os jogos de hoje…</div>';
