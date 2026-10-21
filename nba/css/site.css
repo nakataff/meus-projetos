@@ -1532,3 +1532,89 @@ a.fav-info:hover,a.fav-info:focus-visible{border-color:var(--accent);background:
  .leaders-table-photo{width:30px;height:33px}
  .leaders-table-rank{min-width:11px}
 }
+
+
+/* QUADRA 2D — reprodução orientada a eventos reais da ESPN, sem simular tracking. */
+.court-panel{border:1px solid #3a4b64;border-radius:18px;background:#111b29;padding:18px;overflow:hidden}
+.court-panel-head{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:16px}
+.court-panel-head h2{font-size:clamp(21px,3vw,29px);margin:3px 0 5px;font-weight:950}
+.court-panel-head p{margin:0;color:#b1c1d1;font-size:12px;line-height:1.5;max-width:660px}
+.court-source-badge{display:inline-block;vertical-align:middle;color:#9cbbdc;background:#213249;
+ border:1px solid #3b5673;border-radius:6px;font-size:10px;font-weight:900;padding:4px 7px;letter-spacing:.04em}
+.court-panel-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.court-panel-actions .btn{white-space:nowrap}
+.court-feed-state{display:inline-flex;align-items:center;gap:7px;background:#273246;border:1px solid #3d5269;
+ border-radius:30px;padding:7px 10px;color:#d0dbea;font-weight:900;font-size:10px;white-space:nowrap}
+.court-feed-state::before{content:"";width:6px;height:6px;background:#9aadc3;border-radius:50%;flex:none}
+.court-feed-state.is-live{color:#ffa3a6;border-color:#a04a58;background:#401f2c}
+.court-feed-state.is-live::before{background:#fa5b62;animation:dlq-standings-live-pulse 1.6s ease-in-out infinite}
+.court-feed-state.is-final{color:#b1ebc8;border-color:#3e7d58}
+.court-feed-state.is-final::before{background:#5bc98c}
+.court-feed-state.is-error{color:#ffbb98;border-color:#9f684a}
+.court-feed-state.is-error::before{background:#e59a57}
+.court-board{position:relative;background:#9d693c;border:1px solid #dfb98c;border-radius:14px;overflow:hidden}
+.court-svg{display:block;width:100%;height:auto;max-height:440px;aspect-ratio:940/500}
+.court-board-teams{position:absolute;top:10px;left:15px;right:15px;display:flex;align-items:center;justify-content:space-between;
+ z-index:2;pointer-events:none;gap:8px;font-size:12px;font-weight:950;text-shadow:0 2px 5px #231209a8}
+.court-team-away,.court-team-home{background:#192938e6;padding:5px 10px;border:1px solid #ffffff55;border-radius:8px;letter-spacing:.05em}
+.court-board-teams #courtPeriod{font-size:10px;color:#fae6c3;background:#231e1bc7;border-radius:20px;padding:5px 11px;text-align:center}
+.court-event-overlay{pointer-events:none;position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
+ min-width:190px;max-width:calc(100% - 24px);padding:10px 16px;border-radius:10px;
+ background:#111c2bdf;border:1px solid #fcb66a9c;box-shadow:0 6px 18px #44260b55;
+ display:flex;align-items:center;flex-direction:column;text-align:center;gap:3px}
+.court-event-overlay strong{font-weight:950;color:#ffc58b;font-size:12px}
+.court-event-overlay span{font-size:11px;color:#dbe5f0}
+.court-event-overlay.court-event-flash{animation:court-lance-pop .7s ease-out}
+@keyframes court-lance-pop{0%{transform:translateX(-50%) scale(.85);opacity:.65}
+ 50%{transform:translateX(-50%) scale(1.045);opacity:1}100%{transform:translateX(-50%) scale(1);opacity:1}}
+.court-latest{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 13px;
+ background:#19283a;border:1px solid #364960;border-radius:12px;margin-top:13px}
+.court-latest>div{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.court-latest strong{font-size:14px;font-weight:900;line-height:1.4}
+.court-latest>div>span:last-child{font-size:11px;color:#a1b5cb}
+.court-event-badge{display:inline-block;max-width:150px;text-align:center;background:#27394c;color:#e1edfa;
+ padding:7px 10px;border-radius:8px;border:1px solid #39536f;font-size:10px;font-weight:950;white-space:normal}
+.court-event-badge.court-scored{background:#194938;border-color:#55a875;color:#c0fbd6}
+.court-event-badge.court-kind-three.court-scored{background:#564021;border-color:#d9a352;color:#ffe3a4}
+.court-timeline-header{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:20px 0 11px;flex-wrap:wrap}
+.court-timeline-header h3{font-size:16px;margin:0}
+.court-timeline-header>div{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.court-timeline-header .btn{font-size:11px;padding:7px 9px}
+.court-timeline{border:1px solid #31455d;border-radius:12px;overflow:hidden}
+.court-log-item{width:100%;display:grid;grid-template-columns:58px minmax(0,1fr) 26px;gap:12px;align-items:center;
+ text-align:left;border:0;border-bottom:1px solid #263a51;background:#141f2e;padding:10px 12px;color:#ecf3fc;min-height:63px}
+.court-log-item:last-child{border-bottom:0}
+.court-log-item:nth-child(even){background:#172538}
+.court-log-item:hover,.court-log-item:focus-visible{background:#253950}
+.court-log-time{display:flex;flex-direction:column;font-weight:900;font-size:12px;color:#f5c18b}
+.court-log-time small{font-size:11px;color:#9bb3d0;font-weight:700}
+.court-log-body{min-width:0;display:flex;flex-direction:column;gap:3px}
+.court-log-body strong{font-size:12px;color:#f3f7fd}
+.court-log-body small{font-size:11px;color:#a9bfd3;line-height:1.4}
+.court-log-replay{color:#e4ab71;font-size:20px;font-weight:900;text-align:center}
+.court-no-plays{padding:24px 16px;text-align:center;color:#aec0d2;font-size:12px}
+.court-load-more{display:block;margin:14px auto}
+.court-disclaimer{font-size:11px;color:#8fa5bc;margin:17px 0 0;line-height:1.7}
+@media(max-width:700px){
+ .court-panel{padding:11px;border-radius:14px}
+ .court-panel-head{align-items:stretch;flex-direction:column;gap:11px}
+ .court-panel-actions{justify-content:space-between}
+ .court-board-teams{top:7px;left:7px;right:7px;font-size:11px}
+ .court-team-away,.court-team-home{padding:4px 7px}
+ .court-board-teams #courtPeriod{font-size:9px;padding:4px 5px}
+ .court-event-overlay{bottom:6px;min-width:0;width:max-content;padding:6px 10px;gap:1px}
+ .court-event-overlay strong{font-size:9px}
+ .court-event-overlay span{font-size:9px}
+ .court-latest{padding:11px 10px}
+ .court-latest strong{font-size:12px}
+ .court-event-badge{font-size:9px;max-width:116px;padding:7px}
+ .court-log-item{gap:7px;grid-template-columns:44px minmax(0,1fr) 18px;padding:8px}
+ .court-log-body small{font-size:10px}
+ .court-log-body strong{font-size:11px}
+ .court-log-time,.court-log-time small{font-size:10px}
+ .court-timeline-header h3{font-size:14px}
+}
+@media(prefers-reduced-motion:reduce){
+ .court-feed-state.is-live::before,.court-event-overlay.court-event-flash{animation:none}
+ #courtBall,#courtActionHalo{transition:none!important}
+}
