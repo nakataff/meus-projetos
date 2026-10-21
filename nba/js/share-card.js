@@ -2,6 +2,7 @@
  * Geradas localmente: prévia, cópia, compartilhamento nativo ou PNG opcional.
  */
 import {modal,closeModal,toast} from './app.js?v=13';
+import {performanceRating,ratingLabel} from './performance-rating.js?v=2';
 const COLOR={base:'#0c1421',panel:'#1f3046',line:'#3c526c',orange:'#ff9d4d',white:'#f5f7fd',muted:'#afbed3'};
 export const PLAYER_CARD_FORMATS=Object.freeze({
  landscape:{width:1200,height:630,label:'Horizontal • 1200 × 630'},
@@ -43,11 +44,11 @@ function avg(value,gp){return gp?Number(value||0)/gp:null;}
 function number(v){return v===null||v===undefined?'—':Number(v).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});}
 function summarize(options){
  const p=options.player||{};
- if(options.kind!=='season')return {gameCount:1,values:[valid(p.pts),valid(p.reb),valid(p.ast)],rating:options.rating??null,
+ if(options.kind!=='season')return {gameCount:1,values:[valid(p.pts),valid(p.reb),valid(p.ast)],rating:options.rating??ratingLabel(performanceRating(p)),
   headings:['PONTOS','REBOTES','ASSISTÊNCIAS']};
  const season=options.season||{},gp=Number(season.gp)||0;
  return {gameCount:gp,values:[number(avg(season.pts,gp)),number(avg(season.reb,gp)),number(avg(season.ast,gp))],
-  rating:season.ratingGames?number(avg(season.ratingSum,season.ratingGames)):null,
+  rating:season.ratingGames?number(avg(season.ratingSum,season.ratingGames)):'—',
   headings:['PTS / JOGO','REB / JOGO','AST / JOGO']};
 }
 function metric(ctx,x,y,w,h,value,label,big=52){
@@ -66,7 +67,7 @@ function brand(ctx,image,x,y,maxW,maxH,format){
  return subtitle;
 }
 function ratingBlock(ctx,value,x,y,w=180,h=102){
- if(value===null||value===undefined||value==='')return;
+ // Preserve o bloco de NOTA DLQ mesmo quando um box score ainda não tiver nota.
  rect(ctx,x,y,w,h,15,'#2d3a4b');
  txt(ctx,'NOTA DLQ',x+15,y+27,16,COLOR.muted,900,w-30);
  txt(ctx,valid(value),x+15,y+h-30,43,COLOR.orange,950,w-30);
