@@ -1,17 +1,25 @@
-import {$,setupShared,MONTHS,loadGames,TEAMS,groupGames,gameRow,handleWishes,currentDate,dayShift,niceDate,note,esc,qs,modal,closeModal} from '../app.js?v=12';
+import {$,setupShared,MONTHS,loadGames,TEAMS,groupGames,gameRow,handleWishes,currentDate,dayShift,niceDate,note,esc,qs,modal,closeModal,overnightGame} from '../app.js?v=12';
 
 setupShared('games','Agenda NBA','Calendário, horários e transmissões dos jogos da temporada.');
-const root=$('#pageContent'),today=currentDate();
+const root=$('#pageContent');
+let today=currentDate();
 const calendarStart='2026-10-01',calendarEnd='2027-05-31';
 const requested=qs('data');
 let selectedDate=/^\d{4}-\d{2}-\d{2}$/.test(requested||'') && !Number.isNaN(Date.parse(requested+'T12:00:00Z')) ? requested : today;
+let followToday=!requested;
 let view=qs('view')==='upcoming'||(qs('tv')==='br'&&!qs('data'))?'upcoming':qs('view')==='season'?'season':'day';
 let mode=qs('tv')==='br'?'br':'all',order='asc',limit=60;
 let games=[],loadedMonths=new Set(),requestCounter=0,ready=false,busy=false;
 const validMonth=date=>MONTHS.includes(date.slice(0,7));
 const monthsFor=(date)=>{
  const target=date.slice(0,7);
- return validMonth(date)?[target]:[];
+ const months=validMonth(date)?[target]:[];
+ // No primeiro dia do mês, o jogo iniciado ontem ainda está no arquivo anterior.
+ if(date===today){
+  const prior=dayShift(date,-1).slice(0,7);
+  if(prior!==target&&MONTHS.includes(prior))months.unshift(prior);
+ }
+ return months;
 };
 function dayLabel(date){
  return new Date(date+'T12:00:00Z').toLocaleDateString('pt-BR',{
@@ -86,7 +94,7 @@ function openCalendar(month=selectedDate.slice(0,7)){
  if(!panel)return;
  panel.addEventListener('click',e=>{
   const day=e.target.closest('[data-cal-date]');
-  if(day&&!day.disabled){closeModal();setDay(day.dataset.calDate);return;}
+  if(day&&!day.disabled){closeModal();setDay(day.dataset.calDate,day.dataset.calDate===today);return;}
   const nav=e.target.closest('[data-cal-month]');
   if(nav){
    const [y,m]=month.split('-').map(Number);
@@ -121,8 +129,8 @@ function matchFilter(g){
  const team=$('#teamGames')?.value||'';
  const stage=$('#stageGames')?.value||'';
  const n=note(g.id);
- if(view==='day'&&g.date!==selectedDate)return false;
- if(view==='upcoming'&&g.date<today)return false;
+ if(view==='day'&&g.date!==selectedDate&&!(selectedDate===today&&overnightGame(g)))return false;
+ if(view==='upcoming'&&g.date<today&&!overnightGame(g))return false;
  if(team&&g.away!==team&&g.home!==team)return false;
  if(stage&&g.stage!==stage)return false;
  if(search&&![g.away,g.home,TEAMS[g.away]?.[0],TEAMS[g.home]?.[0]].join(' ').toLowerCase().includes(search))return false;
@@ -147,7 +155,7 @@ function render(){
  updateActive();
  let filtered=games.filter(matchFilter);
  if(order==='desc')filtered=filtered.reverse();
- $('#resultCount').textContent=filtered.length+' '+(filtered.length===1?'partida':'partidas')+(view==='upcoming'?' • próximos jogos':view==='season'?' • temporada':'');
+ $('#resultCount').textContent=filtered.length+' '+(filtered.length===1?'partida':'partidas')+(view==='upcoming'?' • próximos jogos':view==='season'?' • temporada':filtered.some(g=>g.date<selectedDate)?' • inclui jogo iniciado ontem':'');
  $('#gamesList').innerHTML=filtered.length?(view==='day'?filtered.slice(0,limit).map(gameRow).join(''):groupGames(filtered.slice(0,limit)))+
  (filtered.length>limit?'<p class="center"><button class="btn" id="loadMore">Carregar mais '+Math.min(60,filtered.length-limit)+' partidas ↓</button></p>':''):emptyMessage();
 }
@@ -169,9 +177,10 @@ async function reload(){
   $('#gamesList').innerHTML='<div class="filler"><b>Calendário indisponível agora</b>Tente atualizar a página.</div>';
  }
 }
-function setDay(date){
+function setDay(date,autoFollow=false){
  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(Date.parse(date+'T12:00:00Z'))||date<calendarStart||date>calendarEnd)return;
  selectedDate=date;
+ followToday=autoFollow;
  view='day';
  order='asc';limit=60;
  renderNav();syncURL();reload();
@@ -183,7 +192,7 @@ root.addEventListener('click',e=>{
  if(e.target.closest('#openGameCalendar')){openCalendar();return;}
  const step=e.target.closest('[data-step]');if(step){setDay(dayShift(selectedDate,Number(step.dataset.step)));return;}
  const go=e.target.closest('[data-go-date]');if(go){setDay(go.dataset.goDate);return;}
- if(e.target.closest('#goToday')){setDay(today);return;}
+ if(e.target.closest('#goToday')){setDay(today,true);return;}
  if(e.target.closest('#loadMore')){limit+=60;render();return;}
 });
 root.addEventListener('input',e=>{
@@ -204,5 +213,16 @@ root.addEventListener('change',e=>{
  if(['teamGames','stageGames'].includes(e.target.id)){limit=60;render();}
 });
 
-window.addEventListener('quadra:refresh',render);
-window.addEventListener('quadra:live-update',render);
+function refreshForClock(){
+ const actual=currentDate();
+ if(today!==actual){
+  today=actual;
+  if(followToday&&view==='day'){
+   selectedDate=today;
+   renderNav();syncURL();reload();return;
+  }
+ }
+ render();
+}
+window.addEventListener('quadra:refresh',refreshForClock);
+window.addEventListener('quadra:live-update',refreshForClock);
