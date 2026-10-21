@@ -483,6 +483,119 @@ def sync_team_summaries():
             data[phase]["players"] = rows
         save(ROOT / "team-stats" / (team + ".json"), data)
 
+def _dlq_rating(player):
+    """Mesma avaliação por partida definida em nba/js/performance-rating.js."""
+    try:
+        pts = float(player["pts"])
+        reb = float(player["reb"])
+        ast = float(player["ast"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    mins = _minutes(player.get("min"))
+    if mins <= 0:
+        return None
+    def stat(key):
+        try:
+            return float(player.get(key) or 0)
+        except (TypeError, ValueError):
+            return 0.0
+    fgm, fga = _shot_totals(player.get("fg"))
+    plus = stat("plusMinus")
+    value = (5.8 + pts * .105 + reb * .13 + ast * .19 +
+             stat("stl") * .32 + stat("blk") * .28 -
+             stat("to") * .23 - (fga - fgm) * .13 +
+             max(-.25, min(.25, plus * .015)))
+    if mins < 8:
+        value -= .35
+    return int(max(1, min(10, value)) * 10 + .5) / 10
+
+
+def sync_player_leaders():
+    """Um único JSON de ranking: não carregar 30 elencos nem 7 arquivos de jogos no cliente.
+
+    Apenas box scores de partidas FINALIZADAS; DNP/minutos zero não contam.
+    Jogador transferido é deduplicado por ID para não duplicar produção.
+    """
+    calendar = {}
+    for month in MONTHS:
+        for event in read(ROOT / "months" / (month + ".json"), {}).get("events", []):
+            if event.get("id"):
+                calendar[str(event["id"])] = event
+    phases = {"regular": {}, "preseason": {}}
+    seen = set()
+    for month in MONTHS:
+        boxes = read(ROOT / "stats" / (month + ".json"), {}).get("games", {})
+        for game_id, game in boxes.items():
+            event = calendar.get(str(game_id))
+            if not event or event.get("status") != "final":
+                continue
+            phase = {"2": "regular", "1": "preseason"}.get(str(event.get("stage")))
+            if not phase:
+                continue
+            for team, athletes in (game.get("players") or {}).items():
+                if team not in CODES:
+                    continue
+                for player in athletes:
+                    ident = str(player.get("id") or "")
+                    if not ident or not player.get("name"):
+                        continue
+                    key = (phase, str(game_id), ident)
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    minutes = _minutes(player.get("min"))
+                    if minutes <= 0:
+                        continue
+                    rank = phases[phase]
+                    row = rank.setdefault(ident, {
+                        "id": ident, "name": player["name"], "team": team,
+                        "lastDate": "", "gp": 0, "pts": 0, "reb": 0, "ast": 0,
+                        "stl": 0, "blk": 0, "to": 0, "min": 0,
+                        "fgm": 0, "fga": 0, "threeM": 0, "threeA": 0,
+                        "ratingSum": 0, "ratingGames": 0,
+                    })
+                    date = str(event.get("date") or "")
+                    if date >= row["lastDate"]:
+                        row["team"] = team
+                        row["name"] = player["name"]
+                        row["lastDate"] = date
+                    row["gp"] += 1
+                    row["min"] += minutes
+                    for field in ("pts", "reb", "ast", "stl", "blk", "to"):
+                        try:
+                            row[field] += float(player.get(field) or 0)
+                        except (ValueError, TypeError):
+                            pass
+                    fgm, fga = _shot_totals(player.get("fg"))
+                    three_m, three_a = _shot_totals(player.get("three"))
+                    row["fgm"] += fgm
+                    row["fga"] += fga
+                    row["threeM"] += three_m
+                    row["threeA"] += three_a
+                    rating = _dlq_rating(player)
+                    if rating is not None:
+                        row["ratingSum"] += rating
+                        row["ratingGames"] += 1
+    for rank in phases.values():
+        for row in rank.values():
+            row["min"] = round(row["min"], 2)
+            row["ratingSum"] = round(row["ratingSum"], 2)
+            for key in ("pts", "reb", "ast", "stl", "blk", "to"):
+                row[key] = int(row[key])
+        # Lista estável, ordenada pelo ID; a ordenação estatística é feita no cliente.
+    save(ROOT / "player-leaders" / "2026-27.json", {
+        "season": "2026-27",
+        "source": "Box scores finais ESPN (não oficial)",
+        "description": "Médias por partida disputada; NOTA DLQ é a média da fórmula própria aplicada jogo a jogo. Rankings parciais, sujeitos a atualizações.",
+        "lastGameDate": max((event.get("date", "") for event in calendar.values()
+                             if event.get("status") == "final"), default=None),
+        "regular": list(phases["regular"].values()),
+        "preseason": list(phases["preseason"].values()),
+    })
+    LOGS.append("Rankings NBA: %d atletas na fase regular e %d na pré-temporada" %
+                (len(phases["regular"]), len(phases["preseason"])))
+
+
 def main():
     ROOT.mkdir(parents=True, exist_ok=True)
     sync_calendar()
@@ -490,6 +603,7 @@ def main():
     sync_rosters()
     sync_final_stats()
     sync_team_summaries()
+    sync_player_leaders()
     print("\n".join(LOGS))
     # Sem matar o site quando uma fonte externa ficar temporariamente indisponível.
     return 0
