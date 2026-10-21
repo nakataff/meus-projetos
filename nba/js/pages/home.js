@@ -1,4 +1,4 @@
-import {$,setupShared,loadGames,currentDate,dayShift,groupGames,effectiveGame,path,getData,note,handleWishes,esc,broadcastInfo,name,logo,MONTHS,shortDate,fetchBox,eventBox,playerLink,jsonFile,gameLink,gameRow} from '../app.js?v=12';
+import {$,setupShared,loadGames,currentDate,dayShift,groupGames,effectiveGame,path,getData,note,handleWishes,esc,broadcastInfo,name,logo,MONTHS,shortDate,fetchBox,eventBox,playerLink,jsonFile,gameLink,gameRow,overnightGame} from '../app.js?v=12';
 import {topPerformance,ratingLabel} from '../performance-rating.js?v=2';
 setupShared('home','A NBA acontece aqui.','Jogos, transmissões, estatísticas e tudo sobre a temporada da NBA.');
 const root=$('#pageContent');
@@ -97,8 +97,10 @@ function followedPanel(){
 function render(){
  if(!loaded)return;
  const today=currentDate(),tomorrow=dayShift(today,1),week=dayShift(today,7);
- const future=games.filter(g=>g.date>=today);
- const todayGames=future.filter(g=>g.date===today);
+ // NBA atravessa a meia-noite em Brasília: jogos que começaram ontem
+ // ainda em andamento (ou encerrados há pouco) continuam no resumo de hoje.
+ const future=games.filter(g=>g.date>=today||overnightGame(g));
+ const todayGames=future.filter(g=>g.date===today||overnightGame(g));
  const tv=future.filter(broadcastInfo).slice(0,5);
  const {settings}=getData(),fav=settings.fav;
  const watchlist=future.filter(g=>g.date<week&&note(g.id).wish&&!note(g.id).watched).slice(0,6);
