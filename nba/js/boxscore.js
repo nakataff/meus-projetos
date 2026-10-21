@@ -44,6 +44,8 @@ function parseStatus(payload){
   status:info.completed===true||state==='post'?'final':state==='in'?'live':'scheduled',
   quarter:Number(status.period||0),
   clock:String(status.displayClock||'').trim(),
+  statusName:String(info.name||''),
+  statusDetail:String(info.shortDetail||info.detail||info.description||''),
   competitors:match?.competitors||[]
  };
 }
@@ -98,6 +100,8 @@ export function normalizeSummary(payload,game){
   status:status.status,
   quarter:status.quarter,
   clock:status.clock,
+  statusName:status.statusName,
+  statusDetail:status.statusDetail,
   scoreAway:scores[game.away]??null,
   scoreHome:scores[game.home]??null,
   starters,
