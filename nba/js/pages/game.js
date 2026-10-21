@@ -1,4 +1,4 @@
-import {$,setupShared,qs,esc,name,logo,tlogo,effectiveGame,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,note,getData,setNote,setExtraGroup,platform,broadcastLinks,shortDate,currentDate,toast,modal,closeModal,eventBox,fetchRoster} from '../app.js?v=10';
+import {$,setupShared,qs,esc,name,logo,tlogo,effectiveGame,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,note,getData,setNote,setExtraGroup,platform,broadcastLinks,shortDate,currentDate,toast,modal,closeModal,eventBox,fetchRoster,livePeriodLabel} from '../app.js?v=10';
 import {fetchLiveBoxscore,projectStartingFive} from '../boxscore.js?v=1';
 import {exportPlayerImage} from '../share-card.js?v=4';
 import {performanceRating,ratingLabel,topPerformance,RATING_EXPLANATION} from '../performance-rating.js?v=2';
@@ -23,7 +23,9 @@ function gameStatus(){
   }
   if(remoteStatus.status==='live'){
    out.livePeriod=remoteStatus.quarter||event.livePeriod||0;
-   out.liveClock=remoteStatus.clock||event.liveClock||'';
+   out.liveClock=remoteStatus.clock??event.liveClock??'';
+   out.liveStatusName=remoteStatus.statusName||event.liveStatusName||'';
+   out.liveStatusDetail=remoteStatus.statusDetail||event.liveStatusDetail||'';
   }
  }
  return out;
@@ -309,12 +311,11 @@ function scoreboard(){
  const scores=scoreAvailable?[event.scoreAway,event.scoreHome]:null;
  const type=typeof game.stage==='string' && isNaN(Number(game.stage))?game.stage:
   Number(game.stage)===1?'Pré-temporada':Number(game.stage)===3?'Playoffs':'Temporada regular';
- const period=Number(event.livePeriod||0);
- const phase=period>4?'Prorrogação':period>0?period+'º quarto':'Ao vivo';
+ const phase=livePeriodLabel(event);
  return '<section class="card"><div class="eyebrow center">'+esc(type)+' • '+esc(shortDate(game.date))+' • '+esc(game.time||'Hora a definir')+' BRT</div>'+
  '<div class="scoreboard"><div class="side"><a href="'+teamLink(game.away)+'">'+tlogo(game.away,76)+'</a><span class="names">'+esc(name(game.away))+'</span></div>'+
  '<div class="center"><span class="bigscore">'+(scores?'<span data-score-team="away">'+esc(scores[0])+'</span> <span class="subtle">–</span> <span data-score-team="home">'+esc(scores[1])+'</span>':'VS')+'</span>'+
- '<div class="small subtle">'+(final?'Partida encerrada':live?phase+(event.liveClock?' • '+esc(event.liveClock):''):'Jogo agendado')+'</div></div>'+
+ '<div class="small subtle">'+(final?'Partida encerrada':live?esc(phase):'Jogo agendado')+'</div></div>'+
  '<div class="side"><a href="'+teamLink(game.home)+'">'+tlogo(game.home,76)+'</a><span class="names">'+esc(name(game.home))+'</span></div></div>'+
  '<div class="switches game-broadcast-platforms" style="justify-content:center">'+broadcastLinks(game)+
  (live?'<span class="live-indicator"><i aria-hidden="true"></i>AO VIVO</span>':'')+'</div></section>';
