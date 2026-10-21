@@ -92,7 +92,8 @@ function courtHTML(game){
  '<div id="courtTimeline" class="court-timeline"><div class="filler">Consultando histórico de lances…</div></div>'+
  '<button id="courtLoadMore" type="button" class="btn ghost court-load-more" hidden>Ver mais lances ↓</button>'+
  '<p class="court-disclaimer">Atualização por consulta à ESPN. Pode haver atraso, correções e eventos sem coordenadas.'+
- ' Posições e trajetórias na quadra são ilustrativas e não reproduzem o movimento real dos atletas.'+
+ ' A origem de arremessos usa as coordenadas da ESPN quando disponíveis; outras posições e trajetórias são ilustrativas.'+
+ ' Não reproduz o movimento real dos atletas.'+
  ' As consultas detalhadas param ao sair desta aba.</p></section>';
 }
 function labelFor(p){
@@ -114,6 +115,16 @@ function positionFor(play,game){
  const left=play.team===game.home;
  const hoop=left?75:865;
  const direction=left?1:-1;
+ // A ESPN normaliza arremessos no mesmo aro: X=largura da quadra (0..50 pés),
+ // Y=distância do aro rumo ao meio (aprox. -1..31 pés). Ignorar sentinelas.
+ // A quadra virtual escolhe lados ilustrativos; a origem de um arremesso, quando
+ // informada, reflete o ponto do evento e não o tracking do atleta.
+ const xy=play.coordinates;
+ if(['shot','three'].includes(play.kind)&&xy&&
+   xy.x>=0&&xy.x<=50&&xy.y>=-1&&xy.y<=34){
+  return {x:Math.max(15,Math.min(925,hoop+direction*Math.max(0,xy.y)*10)),
+   y:Math.max(12,Math.min(488,250+(xy.x-25)*9.5)),hoop};
+ }
  const key=String(play.id).split('').reduce((n,c)=>n+c.charCodeAt(0),0);
  const delta=(key%90)-45;
  switch(play.kind){
@@ -201,6 +212,8 @@ export function mountCourtTracker({element,game,getStatus,onSummary}){
   if(!Array.isArray(plays))return;
   const fresh=plays.filter(p=>!state.known.has(p.id));
   for(const p of plays)state.known.add(p.id);
+  // Não apagar lances já conhecidos se a API devolver uma resposta parcial.
+  if(!plays.length&&state.plays.length)return;
   state.plays=plays;
   updateLog();
   if(state.initial){
