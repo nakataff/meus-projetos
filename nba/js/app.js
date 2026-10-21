@@ -198,6 +198,7 @@ export function gameRow(g){
  const broadcast='<span class="broadcast-badge '+tv.variant+(tv.lines.length>1?' multi':'')+'" title="Transmissão: '+esc(tv.lines.join(' / '))+'">'+channels+'</span>';
  return '<article class="game-card game-card-link">'+
  '<div class="time">'+esc(g.time||'—')+'<small>BRASÍLIA</small>'+
+ (overnightGame(g)?'<span class="overnight-game-note">Iniciado ontem</span>':'')+
  (live?'<span class="live-indicator"><i aria-hidden="true"></i>AO VIVO</span>':'')+'</div>'+
  '<a class="matchup" href="'+esc(href)+'" aria-label="Abrir partida: '+esc(name(g.away))+' x '+esc(name(g.home))+'">'+
  '<span class="club">'+tlogo(g.away,42)+'<span><strong>'+esc(name(g.away))+'</strong><small>'+esc(g.away)+'</small></span></span>'+
