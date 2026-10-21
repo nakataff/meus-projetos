@@ -19,6 +19,22 @@ export const logo=code=>TEAMS[code]?asset('assets/teams/'+encodeURIComponent(TEA
 export const path=(s='')=>new URL(s,ROOT).href;
 export const currentDate=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 export function dayShift(date,n){const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);}
+// Jogos que começaram ontem não somem da tela quando passa da meia-noite no Brasil.
+// Até 6h mantemos finais da noite anterior; partidas comprovadamente AO VIVO
+// continuam visíveis enquanto a fonte ainda as informar em andamento.
+export function overnightGame(g,at=new Date()){
+ if(!g?.date)return false;
+ const brDate=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(at);
+ if(g.date!==dayShift(brDate,-1))return false;
+ const hour=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'America/Sao_Paulo',hour:'2-digit',hourCycle:'h23'}).format(at));
+ const state=effectiveGame(g);
+ const id=String(g.externalId||String(g.id||'').replace(/^espn_/,''));
+ const live=window.QUADRA_LIVE_GAMES?.get(id);
+ if(state.status==='live')return hour<8||live?.status==='live';
+ // Depois do encerramento, exibir só jogos com início à noite,
+ // e só até a manhã seguinte. Não modificar a data da partida.
+ return hour<6&&state.status==='final'&&String(g.time||'')>='21:00';
+}
 export function niceDate(date){return new Date(date+'T12:00:00Z').toLocaleDateString('pt-BR',{timeZone:'UTC',weekday:'long',day:'numeric',month:'long',year:'numeric'});}
 export const shortDate=date=>date?new Date(date+'T12:00:00Z').toLocaleDateString('pt-BR',{timeZone:'UTC'}):'—';
 export function read(key,fallback){try{return JSON.parse(localStorage.getItem(key))||fallback}catch{return fallback;}}
