@@ -1,4 +1,4 @@
-import {$,setupShared,MONTHS,loadGames,TEAMS,groupGames,gameRow,handleWishes,currentDate,dayShift,niceDate,note,esc,qs,modal,closeModal,overnightGame} from '../app.js?v=12';
+import {$,setupShared,MONTHS,loadGames,TEAMS,groupGames,gameRow,handleWishes,currentDate,dayShift,niceDate,note,esc,qs,modal,closeModal,overnightGame} from '../app.js?v=13';
 
 setupShared('games','Agenda NBA','Calendário, horários e transmissões dos jogos da temporada.');
 const root=$('#pageContent');
