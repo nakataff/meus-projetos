@@ -95,22 +95,57 @@ def normalize_event(ev):
         LOGS.append(f"Evento ignorado: {exc}")
         return None
 
+def choose_event(old, incoming):
+    """Um resumo mensal atrasado nunca pode desfazer um resultado FINAL já confirmado."""
+    if old and old.get("status") == "final" and incoming.get("status") != "final":
+        return old
+    return incoming
+
+
 def sync_calendar():
     total = 0
     for month in MONTHS:
         target = ROOT / "months" / f"{month}.json"
+        previous = {str(e["id"]): e for e in read(target, {}).get("events", []) if e.get("id")}
         result = get_json("scoreboard", {"dates": month.replace("-", ""), "limit": 500})
-        events = [normalize_event(ev) for ev in (result or {}).get("events", [])]
-        events = [e for e in events if e]
-        # Eventos de madrugada podem cair no mês civil seguinte: sem truncar para não perder jogos.
-        if result is None or not events:
+        fresh = [normalize_event(ev) for ev in (result or {}).get("events", [])]
+        fresh = [e for e in fresh if e]
+        if result is None or not fresh:
             LOGS.append(f"Calendário {month}: sem novos dados, mantendo arquivo existente")
             continue
-        events = sorted({e["id"]: e for e in events}.values(), key=lambda e:(e["date"],e["time"]))
+        # Preserva partidas que desapareceram de respostas incompletas da fonte.
+        for event in fresh:
+            previous[event["id"]] = choose_event(previous.get(event["id"]), event)
+        events = sorted(previous.values(), key=lambda e:(e["date"],e["time"]))
         save(target, {"month": month, "source":"ESPN (não oficial)", "events": events})
         total += len(events)
         time.sleep(0.22)
-    LOGS.append(f"Eventos processados: {total}")
+
+    # O endpoint mensal pode permanecer atrasado após o apito final. Uma
+    # consulta pequena dos dias mais recentes reconcilia FINAL sem esperar
+    # outra atualização mensal. Só grava meses efetivamente alterados.
+    local_today = NOW.astimezone(BR).date()
+    daily = {}
+    for offset in (-1, 0, 1):
+        day = local_today + timedelta(days=offset)
+        response = get_json("scoreboard", {"dates": day.strftime("%Y%m%d"), "limit": 50})
+        for raw in (response or {}).get("events", []):
+            event = normalize_event(raw)
+            if not event:
+                continue
+            month = event["date"][:7]
+            if month not in MONTHS:
+                continue
+            if month not in daily:
+                target = ROOT / "months" / f"{month}.json"
+                daily[month] = {str(e["id"]): e for e in read(target, {}).get("events", []) if e.get("id")}
+            daily[month][event["id"]] = choose_event(daily[month].get(event["id"]), event)
+        time.sleep(0.18)
+    for month, events_by_id in daily.items():
+        target = ROOT / "months" / f"{month}.json"
+        events = sorted(events_by_id.values(), key=lambda e:(e["date"],e["time"]))
+        save(target, {"month": month, "source":"ESPN (não oficial)", "events":events})
+    LOGS.append(f"Eventos processados: {total}; calendário recente reconciliado por dia")
 
 def normalize_roster(code_, obj):
     # Roster ESPN: athletes pode vir como grupos ou lista simples.
@@ -291,6 +326,7 @@ def sync_standings():
         "tieBreaker": "Apenas ordenação simplificada por aproveitamento e saldo, não classificação oficial da NBA",
         "lastGameDate": max((row[0] for row in games.values()), default=None),
         "gamesCount": len(games),
+        "countedGameIds": sorted(games),
         "teams": ordered,
     })
     LOGS.append(f"Classificação derivada: {len(games)} jogos da temporada regular")
