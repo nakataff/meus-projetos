@@ -2,7 +2,7 @@
 import {$,setupShared,qs,TEAMS,name,logo,esc,fetchRoster,fetchBox,fetchMonth,MONTHS,
  currentDate,getData,modify,teamLink,gameLink,shortDate,toast,path,jsonFile} from '../app.js?v=13';
 import {fetchLiveBoxscore} from '../boxscore.js?v=2';
-import {openPlayerCardComposer} from '../share-card.js?v=5';
+import {openPlayerCardComposer} from '../share-card.js?v=6';
 
 const pid=qs('id')||'',rawTeam=(qs('team')||'').toUpperCase();
 const highlightGame=qs('game')||'',hintDate=qs('data')||'';
