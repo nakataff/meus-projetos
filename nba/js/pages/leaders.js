@@ -1,5 +1,6 @@
 /* DE LA QUADRA — ranking de atletas gerado a partir dos box scores finalizados. */
 import {$,setupShared,jsonFile,TEAMS,EAST,WEST,name,logo,esc,path,playerLink,getData,modify,toast} from '../app.js?v=13';
+import {openPlayerCardComposer} from '../share-card.js?v=5';
 setupShared('leaders','Melhores jogadores','Ranking de jogadores da NBA por médias e NOTA DLQ, com filtros de temporada e equipe.');
 const root=$('#pageContent');
 const metrics=[
@@ -59,52 +60,82 @@ function athleteImage(id){
  return 'https://a.espncdn.com/i/headshots/nba/players/full/'+encodeURIComponent(String(id))+'.png';
 }
 function followed(id){return !!getData().extras.players?.[id]?.favorite;}
-function athlete(row,index,featured=false){
- const href=playerLink(row.id,row.team),val=fmt(metricValue(row));
- const point=featured?'<span class="leaders-feature-rank">#'+(index+1)+'</span>':'<span class="leaders-rank">'+(index+1)+'º</span>';
- return '<article class="'+(featured?'leaders-feature':'leaders-athlete')+'">'+
- point+
- '<a class="leaders-athlete-info" href="'+esc(href)+'" aria-label="Ver perfil de '+esc(row.name)+'">'+
- '<img class="leaders-headshot" loading="lazy" decoding="async" src="'+athleteImage(row.id)+'" alt="" referrerpolicy="no-referrer" onerror="this.style.opacity=.15">'+
- '<span class="leaders-ident"><strong>'+esc(row.name)+'</strong><small><img loading="lazy" src="'+esc(logo(row.team))+'" alt="">'+esc(name(row.team))+'</small>'+
- '<small class="leaders-season-gp">'+row.gp+' '+(row.gp===1?'jogo':'jogos')+'</small></span></a>'+
- '<div class="leaders-scores"><strong>'+val+'</strong><span>'+esc(metrics.find(m=>m[0]===metric)?.[2]||metric)+'</span>'+
- (featured?'<small>'+fmt(avg(row,'pts'))+' PTS • '+fmt(avg(row,'reb'))+' REB • '+fmt(avg(row,'ast'))+' AST</small>':'')+'</div>'+
- '<button type="button" class="leaders-follow'+(followed(row.id)?' is-following':'')+'" data-leader-follow="'+esc(row.id)+'"'+
- ' aria-pressed="'+followed(row.id)+'" aria-label="'+(followed(row.id)?'Deixar de seguir ':'Seguir ')+esc(row.name)+'" title="'+(followed(row.id)?'Seguindo':'Seguir jogador')+'">'+(followed(row.id)?'♥':'♡')+'</button></article>';
+
+function cellMetric(row,key){
+ const val=metricValue(row,key);
+ if(val===null||val===undefined)return '—';
+ return fmt(val);
 }
+function ratingClass(value){
+ if(value===null)return 'unrated';
+ if(value>=8.5)return 'great';
+ if(value>=7)return 'good';
+ if(value>=6)return 'average';
+ return 'low';
+}
+function rowHTML(p,i){
+ const info='<div class="leaders-table-player">'+
+  '<span class="leaders-table-rank">'+(i+1)+'</span>'+
+  '<img class="leaders-table-photo" src="'+athleteImage(p.id)+'" loading="lazy" decoding="async" alt="" referrerpolicy="no-referrer" onerror="this.style.opacity=.18">'+
+  '<div class="leaders-table-player-info">'+
+   '<a href="'+esc(playerLink(p.id,p.team))+'" title="Ver perfil de '+esc(p.name)+'"><b>'+esc(p.name)+'</b></a>'+
+   '<span class="leaders-table-club"><img src="'+esc(logo(p.team))+'" alt="" loading="lazy">'+esc(p.team)+' • '+p.gp+' '+(p.gp===1?'jogo':'jogos')+'</span>'+
+   '<div class="leaders-row-actions"><button type="button" data-leader-follow="'+esc(p.id)+'" class="leaders-row-action'+(followed(p.id)?' is-following':'')+'" title="'+(followed(p.id)?'Deixar de seguir':'Seguir jogador')+'" aria-label="'+(followed(p.id)?'Deixar de seguir ':'Seguir ')+esc(p.name)+'" aria-pressed="'+followed(p.id)+'">'+(followed(p.id)?'♥':'♡')+'</button>'+
+   '<button type="button" class="leaders-row-action" data-leader-card="'+esc(p.id)+'" title="Gerar card das médias" aria-label="Gerar card das médias de '+esc(p.name)+'">▣</button></div>'+
+  '</div></div>';
+ const fields=['pts','reb','ast','stl','blk','rating'].map(key=>{
+  const val=metricValue(p,key);
+  const label=key==='rating'?'Nota DLQ':(metricName[key]||key)+' por jogo';
+  return '<span role="cell" class="leaders-table-stat '+(metric===key?' is-active':'')+'">'+
+    (key==='rating'?'<span class="leaders-rating-badge '+ratingClass(val)+'">'+cellMetric(p,key)+'</span>':
+    '<span>'+cellMetric(p,key)+'</span>')+'</span>';
+ }).join('');
+ return '<div class="leaders-table-row" role="row">'+
+  '<div role="cell" class="leaders-table-player-cell">'+info+'</div>'+fields+'</div>';
+}
+function tableHTML(rows){
+ const headers=[['pts','PTS'],['reb','REB'],['ast','AST'],['stl','STL'],['blk','BLK'],['rating','RTG']];
+ return '<div class="leaders-rank-table" role="table" aria-label="Ranking geral dos jogadores">'+
+ '<div role="rowgroup"><div role="row" class="leaders-table-header">'+
+ '<div role="columnheader" class="leaders-table-player-head">Jogador</div>'+
+ headers.map(([id,label])=>'<button type="button" role="columnheader" data-leaders-metric="'+id+
+ '" class="leaders-table-sort'+(metric===id?' is-active':'')+'" aria-label="Ordenar por '+esc(id==='rating'?'Nota DLQ':metricName[id])+'" aria-sort="'+(metric===id?'descending':'none')+'">'+label+
+ (metric===id?'<span aria-hidden="true">▼</span>':'')+'</button>').join('')+'</div></div>'+
+ '<div role="rowgroup">'+rows.map(rowHTML).join('')+'</div></div>';
+}
+
 function toolbar(){
  return '<div class="leaders-controls">'+
+ '<label class="leaders-search-bar"><span class="leaders-search-icon" aria-hidden="true">⌕</span>'+
+ '<input id="leadersSearch" class="control" type="search" value="'+esc(search)+'" placeholder="Pesquisar jogador pelo nome…" autocomplete="off" aria-label="Pesquisar jogador"></label>'+
  '<div class="leaders-phase" role="group" aria-label="Fase da temporada">'+
  '<button type="button" data-leaders-phase="regular" class="'+(phase==='regular'?'selected':'')+'">Temporada regular</button>'+
  '<button type="button" data-leaders-phase="preseason" class="'+(phase==='preseason'?'selected':'')+'">Pré-temporada</button></div>'+
- '<div class="leaders-metrics" aria-label="Estatística do ranking">'+metrics.map(([id,label])=>
+ '<div class="leaders-metrics" aria-label="Ordenar por estatística">'+metrics.map(([id,label])=>
   '<button type="button" data-leaders-metric="'+id+'" class="'+(metric===id?'selected':'')+'" aria-pressed="'+(metric===id)+'">'+esc(label)+'</button>').join('')+'</div>'+
- '<div class="leaders-filters"><label>Buscar jogador<input id="leadersSearch" class="control" type="search" value="'+esc(search)+'" placeholder="Nome do atleta…"></label>'+
+ '<div class="leaders-filters">'+
  '<label>Equipe<select class="control" id="leadersTeam"><option value="all">Toda a liga</option>'+Object.keys(TEAMS).sort((a,b)=>name(a).localeCompare(name(b))).map(c=>
   '<option value="'+esc(c)+'"'+(team===c?' selected':'')+'>'+esc(name(c))+'</option>').join('')+'</select></label>'+
  '<label>Mínimo de jogos<select class="control" id="leadersMinimum">'+[1,3,5,10,20].map(v=>
   '<option value="'+v+'"'+(minimum===v?' selected':'')+'>'+v+' '+(v===1?'jogo':'jogos')+'</option>').join('')+'</select></label>'+
  '<label class="leaders-following-toggle"><input id="leadersFollowing" type="checkbox"'+(followingOnly?' checked':'')+'> Só jogadores que sigo</label></div></div>';
 }
+
 function renderResults(){
  const target=$('#leadersResults');if(!target||!board)return;
  const rows=ranked(),shown=rows.slice(0,limit);
  const heading=metricName[metric]||'Melhores jogadores';
- const lead=rows.slice(0,3);
- const available=(board[phase]||[]).filter(p=>p.gp>=minimum).length;
- target.innerHTML='<div class="leaders-count"><div><span class="caps">RANKING • '+esc(heading.toUpperCase())+'</span>'+
- '<h2>'+esc(heading)+' <span>2026/27</span></h2></div><span>'+rows.length+' atletas no filtro</span></div>'+
+ target.innerHTML='<div class="leaders-count"><div><span class="caps">RANKING GERAL • '+esc(phase==='regular'?'TEMPORADA REGULAR':'PRÉ-TEMPORADA')+'</span>'+
+ '<h2>Melhores jogadores <span>2026/27</span></h2></div><span>'+rows.length+' atletas • Ordem: '+esc(heading)+'</span></div>'+
  (rows.length?
-  '<div class="leaders-podium">'+lead.map((p,i)=>athlete(p,i,true)).join('')+'</div>'+
-  '<section class="leaders-list"><div class="leaders-list-head"><b>Classificação completa</b><span>Ordenado por '+esc(heading.toLocaleLowerCase('pt-BR'))+'</span></div>'+
-  shown.map((p,i)=>athlete(p,i)).join('')+'</section>'+
+  tableHTML(shown)+
   (rows.length>limit?'<div class="center leaders-load"><button class="btn" id="leadersLoadMore" type="button">Ver mais '+Math.min(30,rows.length-limit)+' jogadores ↓</button></div>':''):
   '<div class="filler"><b>Nenhum jogador com esses filtros</b>Reduza o mínimo de partidas ou escolha outra estatística.</div>')+
- '<p class="leaders-disclaimer">Fonte: '+esc(board.source)+'. Médias somente dos box scores de partidas encerradas e importadas.'+
- ' NOTA DLQ é a média das notas automáticas por partida (1 a 10), não uma nota oficial da NBA.'+
- ' Percentuais exigem uma quantidade mínima de tentativas. '+esc(board.description||'')+'</p>';
+ '<p class="leaders-disclaimer">Toque em PTS, REB, AST, STL, BLK ou RTG para ordenar. Os números são médias por jogo; RTG é a NOTA DLQ.'+
+ ' Fonte: '+esc(board.source)+'. São considerados somente jogos finalizados já importados. A NOTA DLQ não é oficial da NBA.'+
+ ' Os rankings de porcentagem exigem um mínimo de arremessos.</p>';
 }
+
 function render(){
  if(!board)return;
  root.innerHTML=toolbar()+'<div id="leadersResults"></div>';renderResults();
@@ -124,6 +155,14 @@ root.addEventListener('click',e=>{
  const phaseBtn=e.target.closest('[data-leaders-phase]');
  if(phaseBtn){phase=phaseBtn.dataset.leadersPhase;limit=30;syncURL();render();return;}
  if(e.target.closest('#leadersLoadMore')){limit+=30;renderResults();return;}
+ const card=e.target.closest('[data-leader-card]');
+ if(card){
+  const row=(board?.[phase]||[]).find(p=>p.id===card.dataset.leaderCard);
+  if(!row)return;
+  openPlayerCardComposer({kind:'season',phase,season:row,player:{id:row.id,name:row.name},
+   teamCode:row.team,teamName:name(row.team),teamLogo:logo(row.team),headshot:athleteImage(row.id)});
+  return;
+ }
  if(e.target.closest('#leadersRetry')){location.reload();return;}
  const follow=e.target.closest('[data-leader-follow]');
  if(follow){
@@ -141,7 +180,7 @@ root.addEventListener('click',e=>{
    for(const btn of root.querySelectorAll('[data-leader-follow="'+id+'"]')){
     btn.classList.toggle('is-following',now);btn.textContent=now?'♥':'♡';
     btn.setAttribute('aria-pressed',String(now));
-    btn.title=now?'Seguindo':'Seguir jogador';
+    btn.title=now?'Deixar de seguir':'Seguir jogador';
     btn.setAttribute('aria-label',(now?'Deixar de seguir ':'Seguir ')+player.name);
    }
   }
