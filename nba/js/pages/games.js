@@ -1,4 +1,4 @@
-import {$,setupShared,MONTHS,loadGames,TEAMS,groupGames,handleWishes,currentDate,dayShift,niceDate,note,esc,qs} from '../app.js?v=10';
+import {$,setupShared,MONTHS,loadGames,TEAMS,groupGames,gameRow,handleWishes,currentDate,dayShift,niceDate,note,esc,qs,modal,closeModal} from '../app.js?v=10';
 
 setupShared('games','Agenda NBA','Veja os jogos de hoje, avance ou volte pelo calendário e filtre os confrontos da temporada.');
 const root=$('#pageContent'),today=currentDate();
@@ -14,41 +14,87 @@ const monthsFor=(date)=>{
  return validMonth(date)?[target]:[];
 };
 function dayLabel(date){
- return new Date(date+'T12:00:00Z').toLocaleDateString('pt-BR',{timeZone:'UTC',weekday:'short',day:'numeric'});
+ return new Date(date+'T12:00:00Z').toLocaleDateString('pt-BR',{
+  timeZone:'UTC',weekday:'long',day:'numeric',month:'long',year:'numeric'
+ });
 }
-function fullDay(date){
- return niceDate(date).replace(/^./,x=>x.toUpperCase());
-}
+function fullDay(date){return dayLabel(date).replace(/^./,x=>x.toUpperCase());}
 function dateNav(){
- const strip=Array.from({length:7},(_,i)=>dayShift(selectedDate,i-3)).map(date=>
- '<button type="button" class="game-day '+(date===selectedDate?'active':'')+(date===today?' today':'')+'" data-day="'+date+'" aria-pressed="'+(date===selectedDate)+'"><span>'+
- esc(dayLabel(date).split(',')[0])+'</span><b>'+date.slice(8,10)+'</b></button>').join('');
- return '<section class="date-navigator" aria-label="Navegação pelo calendário">'+
- '<div class="date-navigator-head"><div><span class="caps">DATA SELECIONADA</span><h2 id="selectedDayTitle">'+esc(fullDay(selectedDate))+'</h2></div>'+
- '<div class="date-actions"><button class="btn ghost" type="button" id="goToday">Hoje</button>'+
- '<button class="btn day-arrow" type="button" data-step="-1" aria-label="Dia anterior">‹</button>'+
- '<input class="control date-input" type="date" id="gameDate" aria-label="Escolher dia no calendário" value="'+selectedDate+'" min="'+calendarStart+'" max="'+calendarEnd+'">'+
- '<button class="btn day-arrow" type="button" data-step="1" aria-label="Próximo dia">›</button></div></div>'+
- '<div class="date-week">'+strip+'</div></section>';
+ const label=dayLabel(selectedDate);
+ return '<div class="agenda-date-nav" aria-label="Selecionar data da agenda">'+
+ '<button type="button" class="agenda-day-arrow" data-step="-1" aria-label="Dia anterior">‹</button>'+
+ '<button type="button" class="agenda-date-open" id="openGameCalendar" aria-label="Abrir calendário, data selecionada: '+esc(label)+'">'+
+ '<span class="agenda-cal-icon" aria-hidden="true">▦</span><span><strong>'+esc(fullDay(selectedDate))+'</strong>'+
+ '<small>Toque para escolher outra data</small></span><span class="agenda-cal-chevron" aria-hidden="true">⌄</span></button>'+
+ '<button type="button" class="agenda-day-arrow" data-step="1" aria-label="Próximo dia">›</button>'+
+ (selectedDate!==today?'<button type="button" class="agenda-today" id="goToday">Hoje</button>':'')+
+ '</div>';
 }
 function toolbar(){
  const teams=Object.entries(TEAMS).sort((a,b)=>a[1][0].localeCompare(b[1][0]))
- .map(([code,t])=>'<option value="'+code+'">'+esc(t[0])+'</option>').join('');
- return '<nav class="switches game-views" aria-label="Período dos jogos">'+
- [['day','Por dia'],['upcoming','Próximos jogos'],['season','Temporada inteira']].map(([key,label])=>
- '<button type="button" class="pill" data-view="'+key+'">'+label+'</button>').join('')+'</nav>'+
- '<div id="dayNavigation">'+dateNav()+'</div>'+
- '<div class="controls game-filters"><input id="searchGames" class="control" type="search" placeholder="Buscar equipe…">'+
- '<select id="teamGames" class="control"><option value="">Todas as equipes</option>'+teams+'</select>'+
- '<select id="stageGames" class="control"><option value="">Todas as fases</option><option value="Temporada regular">Temporada regular</option><option value="Pré-temporada">Pré-temporada</option><option value="Copa NBA">Copa NBA</option><option value="Playoffs">Playoffs</option></select></div>'+
- '<div class="switches game-categories" aria-label="Filtro de partidas">'+[
- ['all','Todos'],['br','TV / Streaming BR'],['unknown','Sem TV BR informada'],
- ['wish','Quero assistir'],['watched','Assistidos'],['rated','Avaliados']
- ].map(([key,label])=>'<button type="button" class="pill" data-mode="'+key+'">'+label+'</button>').join('')+'</div>'+
- '<div class="game-list-meta"><span class="small subtle" id="resultCount">Carregando jogos…</span>'+
- '<button type="button" class="btn ghost" id="sortGames">↑ Mais próximos</button></div>'+
+  .map(([code,t])=>'<option value="'+code+'">'+esc(t[0])+'</option>').join('');
+ return '<div id="dayNavigation">'+(view==='day'?dateNav():'')+'</div>'+
+ '<div class="agenda-compact-toolbar">'+
+ '<label class="agenda-select"><span>Período</span><select class="control" id="agendaView">'+
+ '<option value="day">Por dia</option><option value="upcoming">Próximos jogos</option><option value="season">Temporada inteira</option></select></label>'+
+ '<label class="agenda-select"><span>Mostrar</span><select class="control" id="agendaMode">'+
+ '<option value="all">Todos os jogos</option><option value="br">TV / streaming BR</option>'+
+ '<option value="unknown">Sem TV BR</option><option value="wish">Quero assistir</option>'+
+ '<option value="watched">Assistidos</option><option value="rated">Avaliados</option></select></label>'+
+ '<details class="agenda-more-filters" id="advancedGameFilters"><summary>⚙ Filtros <span aria-hidden="true">⌄</span></summary>'+
+ '<div class="agenda-filter-panel"><label>Buscar equipe<input id="searchGames" class="control" type="search" placeholder="Nome ou sigla…"></label>'+
+ '<label>Equipe<select id="teamGames" class="control"><option value="">Todas as equipes</option>'+teams+'</select></label>'+
+ '<label>Fase<select id="stageGames" class="control"><option value="">Todas as fases</option>'+
+ '<option value="Temporada regular">Temporada regular</option><option value="Pré-temporada">Pré-temporada</option>'+
+ '<option value="Copa NBA">Copa NBA</option><option value="Playoffs">Playoffs</option></select></label>'+
+ '<label>Ordem<select id="sortGames" class="control"><option value="asc">Mais próximos primeiro</option>'+
+ '<option value="desc">Mais distantes primeiro</option></select></label></div></details></div>'+
+ '<div class="game-list-meta"><span class="small subtle" id="resultCount">Carregando jogos…</span></div>'+
  '<div id="gamesList" aria-live="polite"></div>';
 }
+function calendarHTML(month){
+ const [year,mon]=month.split('-').map(Number);
+ const first=new Date(Date.UTC(year,mon-1,1));
+ const last=new Date(Date.UTC(year,mon,0)).getUTCDate();
+ const weekday=(first.getUTCDay()+6)%7;
+ const heading=first.toLocaleDateString('pt-BR',{timeZone:'UTC',month:'long',year:'numeric'});
+ const dates=Array.from({length:weekday+last},(_,i)=>{
+  if(i<weekday)return '<span class="agenda-calendar-blank" aria-hidden="true"></span>';
+  const day=i-weekday+1,iso=month+'-'+String(day).padStart(2,'0');
+  const count=games.filter(g=>g.date===iso).length;
+  const disabled=iso<calendarStart||iso>calendarEnd;
+  return '<button type="button" class="agenda-calendar-day'+(iso===today?' is-today':'')+
+   (iso===selectedDate?' is-selected':'')+'" data-cal-date="'+iso+'"'+(disabled?' disabled':'')+
+   ' aria-label="'+esc(dayLabel(iso))+(count?' • '+count+' jogos':'')+'" aria-pressed="'+(iso===selectedDate)+'">'+
+   '<b>'+day+'</b>'+(count?'<i aria-hidden="true"></i>':'')+'</button>';
+ }).join('');
+ return '<div class="agenda-calendar" role="group" aria-label="Calendário de jogos">'+
+ '<div class="agenda-calendar-head"><button type="button" class="agenda-month-arrow" data-cal-month="-1" aria-label="Mês anterior">‹</button>'+
+ '<strong>'+esc(heading.charAt(0).toUpperCase()+heading.slice(1))+'</strong>'+
+ '<button type="button" class="agenda-month-arrow" data-cal-month="1" aria-label="Próximo mês">›</button></div>'+
+ '<div class="agenda-calendar-grid">'+['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(x=>
+  '<span class="agenda-week-label">'+x+'</span>').join('')+dates+'</div>'+
+ '<div class="agenda-calendar-foot"><span>• Dias com partidas já carregadas</span>'+
+ '<button type="button" class="btn ghost" data-cal-date="'+today+'">Hoje</button></div></div>';
+}
+function openCalendar(month=selectedDate.slice(0,7)){
+ modal('<div class="agenda-calendar-modal"><h2>Escolher data</h2>'+calendarHTML(month)+'</div>');
+ const panel=document.querySelector('#modalRoot .agenda-calendar-modal');
+ if(!panel)return;
+ panel.addEventListener('click',e=>{
+  const day=e.target.closest('[data-cal-date]');
+  if(day&&!day.disabled){closeModal();setDay(day.dataset.calDate);return;}
+  const nav=e.target.closest('[data-cal-month]');
+  if(nav){
+   const [y,m]=month.split('-').map(Number);
+   const next=new Date(Date.UTC(y,m-1+Number(nav.dataset.calMonth),1));
+   const candidate=next.toISOString().slice(0,7);
+   if(candidate<'2026-10'||candidate>'2027-05')return;
+   openCalendar(candidate);
+  }
+ });
+}
+
 function syncURL(){
  const url=new URL(location.href);
  url.searchParams.delete('view');url.searchParams.delete('data');
@@ -62,9 +108,10 @@ function renderNav(){
  $('#dayNavigation').innerHTML=view==='day'?dateNav():'';
 }
 function updateActive(){
- root.querySelectorAll('[data-view]').forEach(x=>x.classList.toggle('active',x.dataset.view===view));
- root.querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('active',x.dataset.mode===mode));
- $('#sortGames').textContent=order==='asc'?'↑ Mais próximos':'↓ Mais distantes';
+ const period=$('#agendaView'),category=$('#agendaMode'),sort=$('#sortGames');
+ if(period)period.value=view;
+ if(category)category.value=mode;
+ if(sort)sort.value=order;
 }
 function matchFilter(g){
  const search=($('#searchGames')?.value||'').toLowerCase().trim();
@@ -97,8 +144,8 @@ function render(){
  updateActive();
  let filtered=games.filter(matchFilter);
  if(order==='desc')filtered=filtered.reverse();
- $('#resultCount').textContent=filtered.length+' '+(filtered.length===1?'partida':'partidas')+(view==='day'?' • '+fullDay(selectedDate):view==='upcoming'?' a partir de hoje':' na temporada');
- $('#gamesList').innerHTML=filtered.length?groupGames(filtered.slice(0,limit))+
+ $('#resultCount').textContent=filtered.length+' '+(filtered.length===1?'partida':'partidas')+(view==='upcoming'?' • próximos jogos':view==='season'?' • temporada':'');
+ $('#gamesList').innerHTML=filtered.length?(view==='day'?filtered.slice(0,limit).map(gameRow).join(''):groupGames(filtered.slice(0,limit)))+
  (filtered.length>limit?'<p class="center"><button class="btn" id="loadMore">Carregar mais '+Math.min(60,filtered.length-limit)+' partidas ↓</button></p>':''):emptyMessage();
 }
 async function reload(){
@@ -130,29 +177,29 @@ root.innerHTML=toolbar();ready=true;
 renderNav();updateActive();reload();
 root.addEventListener('click',e=>{
  if(handleWishes(e.target,render)){e.preventDefault();return;}
- const v=e.target.closest('[data-view]');
- if(v){view=v.dataset.view;order='asc';limit=60;renderNav();syncURL();reload();return;}
- const modeBtn=e.target.closest('[data-mode]');
- if(modeBtn){
-  mode=modeBtn.dataset.mode;
-  // Histórico e lista pessoal devem mostrar registros do período completo.
-  if(['watched','rated'].includes(mode)&&view==='day'){view='season';renderNav();reload();}
-  else if(mode==='wish'&&view==='day'){view='upcoming';renderNav();reload();}
-  syncURL();render();return;
- }
+ if(e.target.closest('#openGameCalendar')){openCalendar();return;}
  const step=e.target.closest('[data-step]');if(step){setDay(dayShift(selectedDate,Number(step.dataset.step)));return;}
- const day=e.target.closest('[data-day]');if(day){setDay(day.dataset.day);return;}
  const go=e.target.closest('[data-go-date]');if(go){setDay(go.dataset.goDate);return;}
  if(e.target.closest('#goToday')){setDay(today);return;}
- if(e.target.closest('#sortGames')){order=order==='asc'?'desc':'asc';render();return;}
  if(e.target.closest('#loadMore')){limit+=60;render();return;}
 });
 root.addEventListener('input',e=>{
- if(['searchGames','teamGames','stageGames'].includes(e.target.id)){limit=60;render();}
+ if(e.target.id==='searchGames'){limit=60;render();}
 });
 root.addEventListener('change',e=>{
- if(e.target.id==='gameDate'){setDay(e.target.value);return;}
+ if(e.target.id==='agendaView'){
+  view=e.target.value;order='asc';limit=60;
+  renderNav();syncURL();reload();return;
+ }
+ if(e.target.id==='agendaMode'){
+  mode=e.target.value;
+  if(['watched','rated'].includes(mode)&&view==='day')view='season';
+  else if(mode==='wish'&&view==='day')view='upcoming';
+  renderNav();syncURL();reload();return;
+ }
+ if(e.target.id==='sortGames'){order=e.target.value;render();return;}
  if(['teamGames','stageGames'].includes(e.target.id)){limit=60;render();}
 });
+
 window.addEventListener('quadra:refresh',render);
 window.addEventListener('quadra:live-update',render);
