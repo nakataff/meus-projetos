@@ -18,11 +18,17 @@ const metrics=[
  ['min','Minutos','MIN / JOGO']
 ];
 const metricName=Object.fromEntries(metrics.map(([id,label])=>[id,label]));
+const isAverageOnly=key=>['rating','fgpct','threepct'].includes(key);
+const metricUnit=key=>key==='rating'?'NOTA DLQ':isAverageOnly(key)?key.endsWith('pct')?'APROVEITAMENTO':'NOTA DLQ':
+ valueMode==='total'?'TOTAL':'/ JOGO';
 const query=new URLSearchParams(location.search);
 const valid=new Set(metrics.map(x=>x[0]));
 let metric=valid.has(query.get('stat'))?query.get('stat'):'pts';
 let phase=query.get('fase')==='preseason'?'preseason':'regular';
 let team=TEAMS[query.get('time')]?query.get('time'):'all';
+let valueMode=query.get('modo')==='total'?'total':'average';
+let selectedRounds=new Set(),roundData=null,roundPromise=null,roundError='',roundPickerOpen=false;
+let lastRoundRefresh=0;
 let minimum=1,search='',followingOnly=false,limit=30,board=null;
 let refreshPending=false,lastDataSignature='',recentSyncPending=false,lastRecentScan=0;
 const recentFinals=new Map();
@@ -32,7 +38,7 @@ function metricValue(p,key=metric){
  if(key==='rating')return p.ratingGames?n(p.ratingSum)/p.ratingGames:null;
  if(key==='fgpct')return p.fga?100*n(p.fgm)/p.fga:null;
  if(key==='threepct')return p.threeA?100*n(p.threeM)/p.threeA:null;
- return avg(p,key);
+ return valueMode==='total'?n(p[key]):avg(p,key);
 }
 function qualifies(p){
  if(!p.gp||p.gp<minimum)return false;
@@ -93,6 +99,114 @@ function mergedRows(phaseName=phase){
  }
  return [...map.values()];
 }
+/* Rodada N é a N-ésima partida de CADA atleta na fase. Carregar o
+ * arquivo compacto somente quando um filtro de rodadas for selecionado.
+ * Tupla: id, rodada, jogo, time, pts, reb, ast, stl, blk, to,
+ *        minutos, fgm, fga, 3pm, 3pa, nota. */
+function roundMax(){
+ return mergedRows().reduce((max,p)=>Math.max(max,p.gp||0),0);
+}
+function roundOptions(){
+ const max=roundMax(),all=!selectedRounds.size;
+ return '<details class="leaders-round-picker player-round-picker" id="leadersRoundPicker"'+(roundPickerOpen?' open':'')+'>'+
+ '<summary><span class="player-round-summary"><strong>Rodadas</strong><small>'+
+ esc(all?'Todas ('+max+')':([...selectedRounds].sort((a,b)=>a-b).join(', ')))+
+ '</small></span><span class="player-round-chevron" aria-hidden="true">⌄</span></summary>'+
+ '<div class="player-round-menu"><label class="player-round-option player-round-all">'+
+ '<input type="checkbox" data-leaders-round-all'+(all?' checked':'')+(max?'':' disabled')+
+ '><span>Todas</span><small>'+max+' disponíveis</small></label>'+
+ (max?Array.from({length:max},(_,i)=>i+1).map(round=>
+ '<div class="player-round-option"><label class="player-round-choice">'+
+ '<input type="checkbox" data-leaders-round="'+round+'"'+(selectedRounds.has(round)?' checked':'')+'>'+
+ '<span><strong>Rodada '+round+'</strong><small>'+round+'º jogo de cada atleta</small></span></label>'+
+ '<button type="button" class="player-round-only" data-leaders-only="'+round+'">Somente</button></div>').join(''):
+ '<p class="small subtle player-round-empty">Nenhuma partida importada ainda.</p>')+
+ '</div></details>';
+}
+function emptyRow(id,teamCode,nameStr){
+ return {id,name:nameStr||'Jogador',team:teamCode,lastDate:'',gp:0,
+  pts:0,reb:0,ast:0,stl:0,blk:0,to:0,min:0,fgm:0,fga:0,
+  threeM:0,threeA:0,ratingSum:0,ratingGames:0};
+}
+function addRoundRow(map,base,row){
+ // Preserva nome e último time do ranking consolidado, mesmo que o atleta
+ // tenha mudado de franquia entre as rodadas selecionadas.
+ const [id,,gameId,teamCode,pts,reb,ast,stl,blk,tov,mins,fgm,fga,threeM,threeA,rating]=row;
+ let current=map.get(String(id));
+ if(!current){
+  const reference=base.get(String(id));
+  current=emptyRow(String(id),reference?.team||teamCode,reference?.name);
+  map.set(String(id),current);
+ }
+ for(const [field,value] of Object.entries({pts,reb,ast,stl,blk,to:tov,min:mins,fgm,fga,threeM,threeA}))
+  current[field]+=Number(value)||0;
+ current.gp++;
+ if(rating!==null&&rating!==undefined){
+  current.ratingSum+=Number(rating)||0;current.ratingGames++;
+ }
+}
+function roundRows(){
+ if(!selectedRounds.size)return mergedRows();
+ if(!roundData)return [];
+ const base=new Map(mergedRows().map(p=>[String(p.id),p]));
+ const output=new Map(),all=roundData[phase]||[];
+ const counts=new Map();
+ for(const tuple of all){
+  const pid=String(tuple[0]);
+  counts.set(pid,Math.max(counts.get(pid)||0,Number(tuple[1])||0));
+  if(selectedRounds.has(Number(tuple[1])))addRoundRow(output,base,tuple);
+ }
+ // Complementar os jogos recém-encerrados que ainda não foram para o JSON.
+ const counted=new Set(roundData.countedGameIds?.[phase]||[]);
+ const latest=[...recentFinals.values()].filter(r=>r.phase===phase&&!counted.has(String(r.event.id)))
+  .sort((a,b)=>String(a.event.date||'').localeCompare(String(b.event.date||''))||
+   String(a.event.id).localeCompare(String(b.event.id)));
+ for(const record of latest){
+  for(const {athlete,team:teamCode} of record.athletes){
+   const id=String(athlete.id);
+   const gameNo=(counts.get(id)||0)+1;counts.set(id,gameNo);
+   if(!selectedRounds.has(gameNo))continue;
+   const [fgm,fga]=shot(athlete.fg),[thm,tha]=shot(athlete.three);
+   const rating=performanceRating(athlete);
+   addRoundRow(output,base,[id,gameNo,record.event.id,teamCode,
+    num(athlete.pts),num(athlete.reb),num(athlete.ast),num(athlete.stl),num(athlete.blk),
+    num(athlete.to),minutes(athlete.min),fgm,fga,thm,tha,rating]);
+  }
+ }
+ return [...output.values()];
+}
+async function loadRoundData(force=false){
+ if(!selectedRounds.size)return;
+ if(roundPromise)return roundPromise;
+ if(roundData&&!force&&Date.now()-lastRoundRefresh<60000)return;
+ roundError='';
+ roundPromise=(async()=>{
+  try{
+   const response=await fetch(asset('data/player-rounds/2026-27.json'),{cache:'no-store'});
+   if(!response.ok)throw Error('HTTP '+response.status);
+   const data=await response.json();
+   if(!Array.isArray(data.regular)||!Array.isArray(data.preseason))
+    throw Error('Arquivo de rodadas incompleto');
+   roundData=data;lastRoundRefresh=Date.now();roundError='';
+  }catch(err){
+   console.warn('DLQ: não foi possível buscar as rodadas',err);
+   roundError='Não foi possível carregar as rodadas. Toque em Atualizar para tentar novamente.';
+  }finally{
+   roundPromise=null;
+   if($('#leadersResults'))renderResults();
+  }
+ })();
+ return roundPromise;
+}
+function setRound(round,only=false){
+ if(only)selectedRounds=new Set([round]);
+ else if(selectedRounds.has(round))selectedRounds.delete(round);
+ else selectedRounds.add(round);
+ // Quando a última caixa é desmarcada, o conjunto vazio significa "Todas".
+ limit=30;syncURL();render();
+ if(selectedRounds.size)loadRoundData();
+}
+
 function overlayCount(phaseName=phase){
  return [...recentFinals.values()].filter(record=>
   record.phase===phaseName&&!alreadyCounted(record.event,phaseName)).length;
@@ -112,10 +226,8 @@ async function refreshLeaders(force=false){
   const changed=signature!==lastDataSignature;
   lastDataSignature=signature;
   board=data;
-  if(changed||force){
-   if(!$('#leadersResults'))render();
-   else renderResults();
-  }
+  if(changed||force)render();
+  if(changed&&selectedRounds.size)loadRoundData(true);
   if(changed)syncRecentFinals(true);
  }catch(error){
   console.warn('DLQ: falha ao atualizar ranking',error);
@@ -129,6 +241,7 @@ async function refreshLeaders(force=false){
   // Mesmo com JSON igual, repetir a busca de jogos finais ausentes: a ESPN
   // pode ter publicado o box score alguns minutos depois do placar final.
   if(board)syncRecentFinals();
+  if(selectedRounds.size&&roundData)loadRoundData();
  }
 }
 async function syncRecentFinals(force=false){
@@ -178,17 +291,22 @@ async function syncRecentFinals(force=false){
  }
 }
 function ranked(){
- return mergedRows().filter(qualifies).sort((a,b)=>
+ return roundRows().filter(qualifies).sort((a,b)=>
   metricValue(b)-metricValue(a)||b.gp-a.gp||a.name.localeCompare(b.name,'pt-BR'));
 }
-function fmt(value){
+function fmt(value,key=''){
  if(value===null||value===undefined)return '—';
- return round(value).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
+ const integer=valueMode==='total'&&!isAverageOnly(key)&&key!=='min';
+ return (integer?Math.round(value):round(value)).toLocaleString('pt-BR',{
+  minimumFractionDigits:integer?0:1,maximumFractionDigits:integer?0:1});
 }
 function syncURL(){
  const url=new URL(location.href);
  url.searchParams.set('stat',metric);
  url.searchParams.set('fase',phase);
+ url.searchParams.set('modo',valueMode);
+ if(selectedRounds.size)url.searchParams.set('rodadas',[...selectedRounds].sort((a,b)=>a-b).join(','));
+ else url.searchParams.delete('rodadas');
  if(team!=='all')url.searchParams.set('time',team);else url.searchParams.delete('time');
  history.replaceState(null,'',url.pathname+url.search);
 }
@@ -200,7 +318,7 @@ function followed(id){return !!getData().extras.players?.[id]?.favorite;}
 function cellMetric(row,key){
  const val=metricValue(row,key);
  if(val===null||val===undefined)return '—';
- return fmt(val);
+ return fmt(val,key);
 }
 function ratingClass(value){
  if(value===null)return 'unrated';
@@ -221,7 +339,7 @@ function rowHTML(p,i){
   '</div></div>';
  const fields=['pts','reb','ast','stl','blk','rating'].map(key=>{
   const val=metricValue(p,key);
-  const label=key==='rating'?'Nota DLQ':(metricName[key]||key)+' por jogo';
+  const label=key==='rating'?'Nota DLQ':(metricName[key]||key)+(valueMode==='total'?' total':' por jogo');
   return '<span role="cell" class="leaders-table-stat '+(metric===key?' is-active':'')+'">'+
     (key==='rating'?'<span class="leaders-rating-badge '+ratingClass(val)+'">'+cellMetric(p,key)+'</span>':
     '<span>'+cellMetric(p,key)+'</span>')+'</span>';
@@ -249,7 +367,14 @@ function toolbar(){
  '<button type="button" data-leaders-phase="preseason" class="'+(phase==='preseason'?'selected':'')+'">Pré-temporada</button></div>'+
  '<div class="leaders-metrics" aria-label="Ordenar por estatística">'+metrics.map(([id,label])=>
   '<button type="button" data-leaders-metric="'+id+'" class="'+(metric===id?'selected':'')+'" aria-pressed="'+(metric===id)+'">'+esc(label)+'</button>').join('')+'</div>'+
- '<div class="leaders-filters">'+
+ '<div class="leaders-filters leaders-extra-filters">'+
+ '<div class="leaders-mode-group"><span>Exibir estatísticas</span>'+
+ '<div class="leaders-mode-buttons" role="group" aria-label="Modo de cálculo">'+
+ '<button type="button" data-leaders-mode="average" class="'+(valueMode==='average'?'selected':'')+
+ '" aria-pressed="'+(valueMode==='average')+'">Média por jogo</button>'+
+ '<button type="button" data-leaders-mode="total" class="'+(valueMode==='total'?'selected':'')+
+ '" aria-pressed="'+(valueMode==='total')+'">Soma total</button></div></div>'+
+ roundOptions()+
  '<label>Equipe<select class="control" id="leadersTeam"><option value="all">Toda a liga</option>'+Object.keys(TEAMS).sort((a,b)=>name(a).localeCompare(name(b))).map(c=>
   '<option value="'+esc(c)+'"'+(team===c?' selected':'')+'>'+esc(name(c))+'</option>').join('')+'</select></label>'+
  '<label>Mínimo de jogos<select class="control" id="leadersMinimum">'+[1,3,5,10,20].map(v=>
@@ -263,16 +388,24 @@ function renderResults(){
  const heading=metricName[metric]||'Melhores jogadores';
  target.innerHTML='<div class="leaders-count"><div><span class="caps">RANKING GERAL • '+esc(phase==='regular'?'TEMPORADA REGULAR':'PRÉ-TEMPORADA')+'</span>'+
  '<h2>Melhores jogadores <span>2026/27</span></h2></div><div class="leaders-update-info">'+
- '<span>'+rows.length+' atletas • Ordem: '+esc(heading)+'</span>'+
+ '<span>'+rows.length+' atletas • Ordem: '+esc(heading)+
+ ' • '+(valueMode==='total'?'Soma total':'Média por jogo')+
+ (selectedRounds.size?' • Rodadas '+[...selectedRounds].sort((a,b)=>a-b).join(', '):' • Todas as rodadas')+'</span>'+
  '<span>Consolidado até '+esc(board.lastGameDate?
   board.lastGameDate.split('-').reverse().join('/'):'sem partidas finalizadas')+
  (overlayCount()?' • +'+overlayCount()+' jogos finais recentes':'')+'</span>'+
  '<button type="button" class="btn ghost" id="leadersRefresh">↻ Atualizar</button></div></div>'+
- (rows.length?
+ (selectedRounds.size&&!roundData?
+  '<div class="filler"><b>'+(roundError?'Rodadas indisponíveis':'Carregando estatísticas das rodadas…')+
+  '</b>'+(roundError?esc(roundError):'A tabela será atualizada ao terminar o carregamento.')+'</div>':
+  rows.length?
   tableHTML(shown)+
   (rows.length>limit?'<div class="center leaders-load"><button class="btn" id="leadersLoadMore" type="button">Ver mais '+Math.min(30,rows.length-limit)+' jogadores ↓</button></div>':''):
   '<div class="filler"><b>Nenhum jogador com esses filtros</b>Reduza o mínimo de partidas ou escolha outra estatística.</div>')+
- '<p class="leaders-disclaimer">Toque em PTS, REB, AST, STL, BLK ou RTG para ordenar. Os números são médias por jogo; RTG é a NOTA DLQ.'+
+ '<p class="leaders-disclaimer">Toque em PTS, REB, AST, STL, BLK ou RTG para ordenar. '+
+ (valueMode==='total'?'PTS, REB, AST, STL e BLK mostram a soma das partidas selecionadas.':
+ 'PTS, REB, AST, STL e BLK mostram médias por partida.')+
+ ' A nota RTG (NOTA DLQ) e os percentuais continuam como médias.'+
  ' Fonte: '+esc(board.source)+'. São considerados somente jogos finalizados já importados. A NOTA DLQ não é oficial da NBA.'+
  ' Os rankings de porcentagem exigem um mínimo de arremessos.</p>';
 }
@@ -280,6 +413,7 @@ function renderResults(){
 function render(){
  if(!board)return;
  root.innerHTML=toolbar()+'<div id="leadersResults"></div>';renderResults();
+ if(selectedRounds.size&&!roundData&&!roundPromise)loadRoundData();
 }
 root.innerHTML='<div class="filler">Preparando ranking dos jogadores…</div>';
 refreshLeaders(true);
@@ -294,14 +428,27 @@ root.addEventListener('click',e=>{
  const stat=e.target.closest('[data-leaders-metric]');
  if(stat){metric=stat.dataset.leadersMetric;limit=30;syncURL();render();return;}
  const phaseBtn=e.target.closest('[data-leaders-phase]');
- if(phaseBtn){phase=phaseBtn.dataset.leadersPhase;limit=30;syncURL();render();return;}
+ if(phaseBtn){
+  phase=phaseBtn.dataset.leadersPhase;selectedRounds.clear();roundError='';
+  limit=30;syncURL();render();return;
+ }
+ const modeButton=e.target.closest('[data-leaders-mode]');
+ if(modeButton){valueMode=modeButton.dataset.leadersMode;limit=30;syncURL();render();return;}
+ const only=e.target.closest('[data-leaders-only]');
+ if(only){roundPickerOpen=true;setRound(Number(only.dataset.leadersOnly),true);return;}
  if(e.target.closest('#leadersLoadMore')){limit+=30;renderResults();return;}
- if(e.target.closest('#leadersRefresh')){refreshLeaders(true);syncRecentFinals(true);return;}
+ if(e.target.closest('#leadersRefresh')){
+  refreshLeaders(true);syncRecentFinals(true);
+  if(selectedRounds.size)loadRoundData(true);
+  return;
+ }
  const card=e.target.closest('[data-leader-card]');
  if(card){
-  const row=mergedRows().find(p=>p.id===card.dataset.leaderCard);
+  const row=roundRows().find(p=>p.id===card.dataset.leaderCard);
   if(!row)return;
-  openPlayerCardComposer({kind:'season',phase,season:row,player:{id:row.id,name:row.name},
+  openPlayerCardComposer({kind:'season',phase,season:row,
+   roundsLabel:selectedRounds.size?'RODADAS '+[...selectedRounds].sort((a,b)=>a-b).join(', '):'',
+   player:{id:row.id,name:row.name},
    teamCode:row.team,teamName:name(row.team),teamLogo:logo(row.team),headshot:athleteImage(row.id)});
   return;
  }
@@ -309,7 +456,7 @@ root.addEventListener('click',e=>{
  const follow=e.target.closest('[data-leader-follow]');
  if(follow){
   const id=follow.dataset.leaderFollow;
-  const player=mergedRows().find(p=>p.id===id);
+  const player=roundRows().find(p=>p.id===id);
   if(!player)return;
   const now=!followed(id);
   modify(b=>{
@@ -334,8 +481,17 @@ root.addEventListener('input',e=>{
  }
 });
 root.addEventListener('change',e=>{
+ if(e.target.matches('[data-leaders-round-all]')){
+  selectedRounds.clear();limit=30;syncURL();render();return;
+ }
+ const tick=e.target.closest('[data-leaders-round]');
+ if(tick){roundPickerOpen=true;setRound(Number(tick.dataset.leadersRound));return;}
  if(e.target.id==='leadersTeam'){team=e.target.value;limit=30;syncURL();renderResults();}
  if(e.target.id==='leadersMinimum'){minimum=Number(e.target.value)||1;limit=30;renderResults();}
  if(e.target.id==='leadersFollowing'){followingOnly=e.target.checked;limit=30;renderResults();}
 });
 window.addEventListener('quadra:refresh',()=>{if(board)renderResults();});
+
+root.addEventListener('toggle',e=>{
+ if(e.target.id==='leadersRoundPicker')roundPickerOpen=e.target.open;
+},true);
