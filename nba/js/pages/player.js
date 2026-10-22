@@ -1,6 +1,6 @@
 /* Perfil de atleta QUADRA — temporada, jogos, ficha compartilhável. */
 import {$,setupShared,qs,TEAMS,name,logo,esc,fetchRoster,fetchBox,fetchMonth,MONTHS,
- currentDate,getData,modify,teamLink,gameLink,shortDate,toast,path,jsonFile} from '../app.js?v=13';
+ currentDate,getData,modify,teamLink,gameLink,shortDate,toast,path} from '../app.js?v=13';
 import {fetchLiveBoxscore} from '../boxscore.js?v=2';
 import {openPlayerCardComposer} from '../share-card.js?v=7';
 import {performanceRating,ratingLabel} from '../performance-rating.js?v=2';
@@ -11,6 +11,8 @@ const root=$('#pageContent');
 setupShared('teams','Perfil do jogador','Médias da temporada, histórico por jogo e desempenho compartilhável.');
 let team=TEAMS[rawTeam]?rawTeam:'',player=null,gameStats=[],selectedMonth='all',selectedGame=highlightGame,
  sort='recent',onlyStarters=false,loading=false,leaguePlayers=[];
+let seasonPhase='regular',selectedRounds=new Set();
+const calendarById=new Map();
 const percentField=value=>value!==undefined&&value!==null&&value!==''?value:'—';
 function getPlayer(){return getData().extras.players?.[pid]||{};}
 function refGameID(event){return String(event.id||'').replace(/^espn_/,'');}
@@ -44,6 +46,77 @@ function metrics(rows){
  renderStat('REB / JOGO',avg(rows,'reb'))+renderStat('AST / JOGO',avg(rows,'ast'))+
  renderStat('MIN / JOGO',avg(rows,'min'))+renderStat('STL / JOGO',avg(rows,'stl'))+
  renderStat('BLK / JOGO',avg(rows,'blk'))+renderStat('3PT / JOGO',avg(rows,'three'))+'</div>';
+}
+
+
+/* Aqui, "rodada" é a 1ª, 2ª, 3ª... partida do próprio atleta em cada fase:
+ * a NBA não publica um número universal de rodada para toda a liga. */
+function gamesInPhase(){
+ return gameStats.filter(g=>g.phase===seasonPhase&&(statNumber(g.row,'min')??0)>0)
+  .slice().sort((a,b)=>a.date.localeCompare(b.date)||
+   String(a.event.time||'').localeCompare(String(b.event.time||''))||
+   refGameID(a.event).localeCompare(refGameID(b.event)))
+  .map((g,index)=>({...g,round:index+1}));
+}
+function roundSelection(games=gamesInPhase()){
+ return selectedRounds.size?games.filter(g=>selectedRounds.has(g.round)):games;
+}
+function pickerHTML(games){
+ const all=selectedRounds.size===0;
+ const total=games.length;
+ return '<details class="player-round-picker" id="playerRoundPicker"><summary>'+
+  '<span class="player-round-summary"><strong>Rodadas</strong><small>'+esc(
+  all?'Todas ('+total+')':selectedRounds.size+' de '+total+' selecionadas')+'</small></span>'+
+  '<span class="player-round-chevron" aria-hidden="true">⌄</span></summary>'+
+  '<div class="player-round-menu"><label class="player-round-option player-round-all">'+
+  '<input type="checkbox" data-round-all'+(all?' checked':'')+(total?'':' disabled')+'>'+
+  '<span>Todas</span><small>'+total+' jogos</small></label>'+
+  (total?games.map(g=>'<div class="player-round-option">'+
+   '<label class="player-round-choice"><input type="checkbox" data-round-check="'+g.round+'"'+
+    (selectedRounds.has(g.round)?' checked':'')+'>'+
+   '<span><strong>Rodada '+g.round+'</strong><small>'+esc(shortDate(g.date))+
+   ' • vs '+esc(name(g.opponent))+'</small></span></label>'+
+   '<button type="button" class="player-round-only" data-round-only="'+g.round+
+   '" aria-label="Selecionar somente a rodada '+g.round+'">Somente</button></div>').join(''):
+   '<p class="small subtle player-round-empty">Nenhum jogo desta fase foi importado ainda.</p>')+
+  '</div></details>';
+}
+function updateSeasonMetrics(){
+ const games=gamesInPhase(),selected=roundSelection(games);
+ const picker=$('#playerRoundPicker'),open=picker?.open||false;
+ if(picker){picker.outerHTML=pickerHTML(games);$('#playerRoundPicker').open=open;}
+ const stats=$('#playerSeasonStats');
+ if(stats)stats.innerHTML='<span class="small subtle player-season-context">'+
+  games.length+' '+(games.length===1?'jogo disponível':'jogos disponíveis')+' na '+
+  (seasonPhase==='regular'?'temporada regular':'pré-temporada')+
+  (selectedRounds.size?' • '+selected.length+' '+(selected.length===1?'rodada selecionada':'rodadas selecionadas'):'')+
+  '</span>'+metrics(selected);
+ const button=$('#makeSeasonCard');if(button)button.disabled=!selected.length;
+}
+function changeRound(round){
+ const games=gamesInPhase();
+ if(!games.some(g=>g.round===round))return;
+ if(selectedRounds.has(round))selectedRounds.delete(round);
+ else selectedRounds.add(round);
+ // Desmarcar a última rodada selecionada volta a TODAS automaticamente.
+ if(selectedRounds.size===games.length)selectedRounds.clear();
+ updateSeasonMetrics();
+}
+function makeSeasonFromGames(games){
+ const season={id:pid,name:player?.name||'',team,gp:games.length,
+  pts:0,reb:0,ast:0,stl:0,blk:0,to:0,min:0,fgm:0,fga:0,threeM:0,threeA:0,ratingSum:0,ratingGames:0};
+ for(const g of games){
+  const p=g.row;
+  for(const key of ['pts','reb','ast','stl','blk','to'])season[key]+=statNumber(p,key)??0;
+  season.min+=statNumber(p,'min')??0;
+  for(const [key,m,a] of [['fg','fgm','fga'],['three','threeM','threeA']]){
+   const match=String(p[key]||'').match(/^(\d+)-(\d+)$/);
+   if(match){season[m]+=Number(match[1]);season[a]+=Number(match[2]);}
+  }
+  const rating=performanceRating(p);
+  if(rating!==null){season.ratingSum+=rating;season.ratingGames++;}
+ }
+ return season;
 }
 
 /* Comparação baseada nos box scores mensais já carregados nesta página. */
@@ -133,8 +206,15 @@ function profileHTML(){
  '<button type="button" id="followPlayer" class="btn '+(p.favorite?'accent':'ghost')+'" aria-pressed="'+!!p.favorite+'">'+(p.favorite?'♥ Seguindo':'♡ Seguir jogador')+'</button></div></div></section>'+
  (selected?matchDetail(selected):selectedGame?
   '<div class="info">Este jogo ainda não possui estatísticas individuais disponíveis. Os resultados aparecerão quando a fonte publicar o box score.</div>':'')+
- '<section class="section"><div class="section-title"><h2>Médias dos jogos importados</h2><div class="season-card-actions"><select class="control" id="seasonCardPhase" aria-label="Competição do card"><option value="regular">Temporada regular</option><option value="preseason">Pré-temporada</option></select><button type="button" class="btn accent" id="makeSeasonCard">▣ Card das médias</button></div></div><span class="small subtle">'+all.length+' jogos disponíveis (incluindo pré-temporada, quando houver)</span>'+
- metrics(all)+'</section>'+leagueComparison()+
+ '<section class="section"><div class="section-title"><h2>Médias dos jogos importados</h2><div class="season-card-actions">'+
+ '<select class="control" id="seasonCardPhase" aria-label="Fase das médias">'+
+ '<option value="regular"'+(seasonPhase==='regular'?' selected':'')+'>Temporada regular</option>'+
+ '<option value="preseason"'+(seasonPhase==='preseason'?' selected':'')+'>Pré-temporada</option></select>'+
+ '<button type="button" class="btn accent" id="makeSeasonCard"'+(roundSelection().length?'':' disabled')+'>▣ Card das médias</button></div></div>'+
+ pickerHTML(gamesInPhase())+
+ '<div id="playerSeasonStats"><span class="small subtle player-season-context">'+gamesInPhase().length+
+ ' jogos disponíveis na '+(seasonPhase==='regular'?'temporada regular':'pré-temporada')+'</span>'+
+ metrics(roundSelection())+'</div></section>'+leagueComparison()+
  '<section class="section"><div class="section-title"><h2>Histórico por partida</h2>'+
  '<span class="small subtle">'+visible.length+' partidas no filtro</span></div>'+
  '<div class="player-game-filters"><label>Mês<select class="control" id="playerMonth"><option value="all">Todos</option>'+
