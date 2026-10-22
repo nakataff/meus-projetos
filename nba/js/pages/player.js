@@ -254,6 +254,17 @@ function setSelectedGame(id){
 }
 root.addEventListener('input',e=>{if(e.target.id==='rateProfile')$('#currentRating').textContent=e.target.value;});
 root.addEventListener('change',e=>{
+ if(e.target.id==='seasonCardPhase'){
+  seasonPhase=e.target.value==='preseason'?'preseason':'regular';
+  selectedRounds.clear();
+  updateSeasonMetrics();return;
+ }
+ if(e.target.matches('[data-round-all]')){
+  selectedRounds.clear();updateSeasonMetrics();return;
+ }
+ if(e.target.matches('[data-round-check]')){
+  changeRound(Number(e.target.dataset.roundCheck));return;
+ }
  if(e.target.id==='playerMonth'){
   selectedMonth=e.target.value;
   if(selectedGame&&!gameStats.some(g=>refGameID(g.event)===selectedGame &&
@@ -277,6 +288,14 @@ root.addEventListener('submit',e=>{
  toast('Avaliação salva');profileHTML();
 });
 root.addEventListener('click',async e=>{
+ const only=e.target.closest('[data-round-only]');
+ if(only){
+  const round=Number(only.dataset.roundOnly);
+  if(gamesInPhase().some(g=>g.round===round)){
+   selectedRounds=new Set([round]);updateSeasonMetrics();
+  }
+  return;
+ }
  if(e.target.closest('#followPlayer')){
   const followed=!!getPlayer().favorite;
   modify(b=>{
@@ -287,20 +306,15 @@ root.addEventListener('click',async e=>{
   profileHTML();return;
  }
  if(e.target.closest('#makeSeasonCard')){
-  const phase=$('#seasonCardPhase')?.value==='preseason'?'preseason':'regular';
-  const button=e.target.closest('#makeSeasonCard');button.disabled=true;
-  try{
-   const leaders=await jsonFile('data/player-leaders/2026-27.json');
-   const season=leaders?.[phase]?.find(row=>String(row.id)===pid);
-   if(!season?.gp){toast('Ainda não há jogos finalizados nesta fase para gerar médias.');return;}
-   const code=season.team||team;
-   openPlayerCardComposer({
-    kind:'season',phase,season,
-    player:{id:pid,name:season.name||player.name},teamCode:code,teamName:name(code),
-    teamLogo:logo(code),headshot:player.headshot||'https://a.espncdn.com/i/headshots/nba/players/full/'+pid+'.png'
-   });
-  }catch(err){toast('Não foi possível carregar as médias: '+err.message);}
-  finally{button.disabled=false;}
+  const games=roundSelection();
+  if(!games.length){toast('Ainda não há partidas nesta seleção.');return;}
+  const season=makeSeasonFromGames(games);
+  const roundsLabel=selectedRounds.size?'RODADAS '+[...selectedRounds].sort((a,b)=>a-b).join(', '):'';
+  openPlayerCardComposer({
+   kind:'season',phase:seasonPhase,season,roundsLabel,
+   player:{id:pid,name:player.name},teamCode:team,teamName:name(team),
+   teamLogo:logo(team),headshot:player.headshot||'https://a.espncdn.com/i/headshots/nba/players/full/'+pid+'.png'
+  });
   return;
  }
  if(e.target.closest('#exportFeaturedCard')){
@@ -356,6 +370,15 @@ async function boot(){
       event:{...match,scoreAway:fresh.scoreAway,scoreHome:fresh.scoreHome}});
     }catch(e){console.info('QUADRA: card compartilhado ainda não disponível',e);}
    }
+  }
+  // Os box scores não informam a fase. Vincular cada jogo ao calendário,
+  // senão as médias da pré-temporada se misturam com a fase regular.
+  const relevantMonths=[...new Set(gameStats.map(g=>g.date.slice(0,7)))];
+  const calendars=await Promise.all(relevantMonths.map(fetchMonth));
+  for(const event of calendars.flat())calendarById.set(String(event.id),Number(event.stage));
+  for(const g of gameStats){
+   const stage=Number(g.event.stage||calendarById.get(refGameID(g.event)));
+   g.phase=stage===2?'regular':stage===1?'preseason':null;
   }
   if(!player){
    const known=gameStats.find(g=>g.row?.name)?.row;
