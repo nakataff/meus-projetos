@@ -73,7 +73,7 @@ function ratingBlock(ctx,value,x,y,w=180,h=102){
  txt(ctx,valid(value),x+15,y+h-30,43,COLOR.orange,950,w-30);
 }
 function matchLabel(o){
- if(o.kind==='season')return 'MÉDIAS POR PARTIDA • '+(o.phase==='preseason'?'PRÉ-TEMPORADA':'TEMPORADA REGULAR');
+ if(o.kind==='season')return (o.phase==='preseason'?'PRÉ-TEMPORADA':'TEMPORADA REGULAR')+(o.roundsLabel?' • '+o.roundsLabel:' • MÉDIAS POR PARTIDA');
  return (o.date||'')+(o.gameLabel?' • '+o.gameLabel:'');
 }
 export async function buildPlayerCard(options={}){
