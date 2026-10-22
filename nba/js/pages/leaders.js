@@ -19,15 +19,15 @@ const metrics=[
 ];
 const metricName=Object.fromEntries(metrics.map(([id,label])=>[id,label]));
 const isAverageOnly=key=>['rating','fgpct','threepct'].includes(key);
-const metricUnit=key=>key==='rating'?'NOTA DLQ':isAverageOnly(key)?key.endsWith('pct')?'APROVEITAMENTO':'NOTA DLQ':
- valueMode==='total'?'TOTAL':'/ JOGO';
 const query=new URLSearchParams(location.search);
 const valid=new Set(metrics.map(x=>x[0]));
 let metric=valid.has(query.get('stat'))?query.get('stat'):'pts';
 let phase=query.get('fase')==='preseason'?'preseason':'regular';
 let team=TEAMS[query.get('time')]?query.get('time'):'all';
 let valueMode=query.get('modo')==='total'?'total':'average';
-let selectedRounds=new Set(),roundData=null,roundPromise=null,roundError='',roundPickerOpen=false;
+let selectedRounds=new Set(
+ (query.get('rodadas')||'').split(',').filter(x=>/^\d+$/.test(x)&&Number(x)>0&&Number(x)<=82).map(Number)
+),roundData=null,roundPromise=null,roundError='',roundPickerOpen=false;
 let lastRoundRefresh=0;
 let minimum=1,search='',followingOnly=false,limit=30,board=null;
 let refreshPending=false,lastDataSignature='',recentSyncPending=false,lastRecentScan=0;
