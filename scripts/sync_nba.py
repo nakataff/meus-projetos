@@ -532,6 +532,9 @@ def sync_player_leaders():
             if event.get("id"):
                 calendar[str(event["id"])] = event
     phases = {"regular": {}, "preseason": {}}
+    # Tuplas compactas: ID, rodada (calculada mais abaixo), evento, time,
+    # PTS, REB, AST, STL, BLK, TO, MIN, FGM, FGA, 3PM, 3PA, Nota.
+    round_details = {"regular": [], "preseason": []}
     counted = {"regular": set(), "preseason": set()}
     seen = set()
     for month in MONTHS:
@@ -591,6 +594,12 @@ def sync_player_leaders():
                     if rating is not None:
                         row["ratingSum"] += rating
                         row["ratingGames"] += 1
+                    round_details[phase].append((
+                        ident, date, str(event.get("time") or ""), str(game_id),
+                        team, int(player.get("pts") or 0), int(player.get("reb") or 0),
+                        int(player.get("ast") or 0), int(player.get("stl") or 0),
+                        int(player.get("blk") or 0), int(player.get("to") or 0),
+                        round(minutes, 2), fgm, fga, three_m, three_a, rating))
             if any_player:
                 counted[phase].add(str(game_id))
     for rank in phases.values():
@@ -600,6 +609,25 @@ def sync_player_leaders():
             for key in ("pts", "reb", "ast", "stl", "blk", "to"):
                 row[key] = int(row[key])
         # Lista estável, ordenada pelo ID; a ordenação estatística é feita no cliente.
+    # Ordenar por data e hora para numerar jogos do próprio atleta por fase.
+    # Isso não é uma rodada oficial compartilhada pela liga inteira.
+    round_payload = {}
+    for phase, details in round_details.items():
+        details.sort(key=lambda x:(x[0], x[1], x[2], x[3]))
+        counts = {}
+        compact = []
+        for ident, date, match_time, gid, team, pts, reb, ast, stl, blk, tov, mins, fgm, fga, thm, tha, rating in details:
+            counts[ident] = counts.get(ident, 0) + 1
+            compact.append([ident, counts[ident], gid, team,
+                            pts, reb, ast, stl, blk, tov, mins, fgm, fga, thm, tha, rating])
+        round_payload[phase] = compact
+    save(ROOT / "player-rounds" / "2026-27.json", {
+        "season": "2026-27",
+        "description": "Rodada N = enésima partida disputada do atleta na fase; dados de box scores finais",
+        "regular": round_payload["regular"],
+        "preseason": round_payload["preseason"],
+        "countedGameIds": {key: sorted(ids) for key, ids in counted.items()},
+    })
     save(ROOT / "player-leaders" / "2026-27.json", {
         "season": "2026-27",
         "source": "Box scores finais ESPN (não oficial)",
