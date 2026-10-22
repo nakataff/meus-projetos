@@ -23,11 +23,12 @@ const query=new URLSearchParams(location.search);
 const valid=new Set(metrics.map(x=>x[0]));
 let metric=valid.has(query.get('stat'))?query.get('stat'):'pts';
 let phase=query.get('fase')==='preseason'?'preseason':'regular';
-let team=TEAMS[query.get('time')]?query.get('time'):'all';
+const requestedTeams=(query.get('times')||query.get('time')||'').split(',');
+let selectedTeams=new Set(requestedTeams.filter(code=>Object.hasOwn(TEAMS,code)));
 let valueMode=query.get('modo')==='total'?'total':'average';
 let selectedRounds=new Set(
  (query.get('rodadas')||'').split(',').filter(x=>/^\d+$/.test(x)&&Number(x)>0&&Number(x)<=82).map(Number)
-),roundData=null,roundPromise=null,roundError='',roundPickerOpen=false;
+),roundData=null,roundPromise=null,roundError='',openFilter='';
 let lastRoundRefresh=0;
 let minimum=1,search='',followingOnly=false,limit=30,board=null;
 let refreshPending=false,lastDataSignature='',recentSyncPending=false,lastRecentScan=0;
@@ -42,7 +43,7 @@ function metricValue(p,key=metric){
 }
 function qualifies(p){
  if(!p.gp||p.gp<minimum)return false;
- if(team!=='all'&&p.team!==team)return false;
+ if(selectedTeams.size&&!selectedTeams.has(p.team))return false;
  if(search&&!String(p.name).toLocaleLowerCase('pt-BR').includes(search))return false;
  if(followingOnly&&!getData().extras.players?.[p.id]?.favorite)return false;
  if(metric==='rating'&&!p.ratingGames)return false;
@@ -106,22 +107,38 @@ function mergedRows(phaseName=phase){
 function roundMax(){
  return mergedRows().reduce((max,p)=>Math.max(max,p.gp||0),0);
 }
-function roundOptions(){
- const max=roundMax(),all=!selectedRounds.size;
- return '<details class="leaders-round-picker player-round-picker" id="leadersRoundPicker"'+(roundPickerOpen?' open':'')+'>'+
- '<summary><span class="player-round-summary"><strong>Rodadas</strong><small>'+
- esc(all?'Todas ('+max+')':([...selectedRounds].sort((a,b)=>a-b).join(', ')))+
- '</small></span><span class="player-round-chevron" aria-hidden="true">⌄</span></summary>'+
- '<div class="player-round-menu"><label class="player-round-option player-round-all">'+
- '<input type="checkbox" data-leaders-round-all'+(all?' checked':'')+(max?'':' disabled')+
- '><span>Todas</span><small>'+max+' disponíveis</small></label>'+
- (max?Array.from({length:max},(_,i)=>i+1).map(round=>
- '<div class="player-round-option"><label class="player-round-choice">'+
- '<input type="checkbox" data-leaders-round="'+round+'"'+(selectedRounds.has(round)?' checked':'')+'>'+
- '<span><strong>Rodada '+round+'</strong><small>'+round+'º jogo de cada atleta</small></span></label>'+
- '<button type="button" class="player-round-only" data-leaders-only="'+round+'">Somente</button></div>').join(''):
- '<p class="small subtle player-round-empty">Nenhuma partida importada ainda.</p>')+
- '</div></details>';
+const teamCodes=Object.keys(TEAMS).sort((a,b)=>name(a).localeCompare(name(b),'pt-BR'));
+function filterOptions(type){
+ const rounds=type==='rounds',selected=rounds?selectedRounds:selectedTeams;
+ const max=rounds?roundMax():teamCodes.length;
+ const all=!selected.size;
+ const title=rounds?'Rodadas':'Equipe';
+ const label=all?(rounds?'Todas ('+max+')':'Toda a liga'):
+  rounds?([...selected].sort((a,b)=>a-b).join(', ')):
+  selected.size===1?name([...selected][0]):selected.size+' equipes selecionadas';
+ const options=rounds?Array.from({length:max},(_,i)=>({
+  value:i+1,text:'Rodada '+(i+1),desc:(i+1)+'º jogo de cada atleta'
+ })):teamCodes.map(code=>({value:code,text:name(code),desc:code}));
+ return '<div class="leaders-select-field"><span class="leaders-select-label">'+title+'</span>'+
+ '<details class="leaders-select-dropdown" data-leaders-filter="'+type+'"'+
+ (openFilter===type?' open':'')+'>'+
+ '<summary aria-label="Escolher '+title.toLowerCase()+'"><span class="leaders-select-value">'+esc(label)+'</span>'+
+ '<span class="leaders-select-chevron" aria-hidden="true">⌄</span></summary>'+
+ '<div class="leaders-select-menu">'+
+ '<label class="leaders-select-option leaders-select-all"><input type="checkbox" data-leaders-'+
+ (rounds?'round':'team')+'-all'+(all?' checked':'')+(max?'':' disabled')+'>'+
+ '<strong>'+(rounds?'Todas':'Toda a liga')+'</strong><small>'+max+
+ (rounds?' disponíveis':' equipes')+'</small></label>'+
+ (options.length?options.map(opt=>
+ '<div class="leaders-select-option"><label class="leaders-select-choice">'+
+ '<input type="checkbox" data-leaders-'+(rounds?'round':'team')+'="'+opt.value+'"'+
+ (selected.has(opt.value)?' checked':'')+'>'+
+ '<span><strong>'+esc(opt.text)+'</strong>'+
+ '<small>'+esc(opt.desc)+'</small></span></label>'+
+ '<button type="button" class="leaders-select-only" data-leaders-'+
+ (rounds?'only':'only-team')+'="'+opt.value+'" aria-label="Selecionar somente '+esc(opt.text)+'">Somente</button></div>'
+ ).join(''):'<p class="small subtle leaders-select-empty">Nenhuma opção disponível.</p>')+
+ '</div></details></div>';
 }
 function emptyRow(id,teamCode,nameStr){
  return {id,name:nameStr||'Jogador',team:teamCode,lastDate:'',gp:0,
@@ -198,13 +215,16 @@ async function loadRoundData(force=false){
  })();
  return roundPromise;
 }
-function setRound(round,only=false){
- if(only)selectedRounds=new Set([round]);
- else if(selectedRounds.has(round))selectedRounds.delete(round);
- else selectedRounds.add(round);
- // Quando a última caixa é desmarcada, o conjunto vazio significa "Todas".
- limit=30;syncURL();render();
- if(selectedRounds.size)loadRoundData();
+function applyFilter(type,value,only=false,all=false){
+ const rounds=type==='rounds',selected=rounds?selectedRounds:selectedTeams;
+ if(all)selected.clear();
+ else if(only){
+  selected.clear();selected.add(value);
+ }else if(selected.has(value))selected.delete(value);
+ else selected.add(value);
+ // Conjunto vazio = Todas / Toda a liga.
+ openFilter=type;limit=30;syncURL();render();
+ if(rounds&&selectedRounds.size)loadRoundData();
 }
 
 function overlayCount(phaseName=phase){
@@ -307,7 +327,9 @@ function syncURL(){
  url.searchParams.set('modo',valueMode);
  if(selectedRounds.size)url.searchParams.set('rodadas',[...selectedRounds].sort((a,b)=>a-b).join(','));
  else url.searchParams.delete('rodadas');
- if(team!=='all')url.searchParams.set('time',team);else url.searchParams.delete('time');
+ url.searchParams.delete('time');url.searchParams.delete('times');
+ if(selectedTeams.size===1)url.searchParams.set('time',[...selectedTeams][0]);
+ else if(selectedTeams.size>1)url.searchParams.set('times',[...selectedTeams].sort().join(','));
  history.replaceState(null,'',url.pathname+url.search);
 }
 function athleteImage(id){
@@ -374,9 +396,8 @@ function toolbar(){
  '" aria-pressed="'+(valueMode==='average')+'">Média por jogo</button>'+
  '<button type="button" data-leaders-mode="total" class="'+(valueMode==='total'?'selected':'')+
  '" aria-pressed="'+(valueMode==='total')+'">Soma total</button></div></div>'+
- roundOptions()+
- '<label>Equipe<select class="control" id="leadersTeam"><option value="all">Toda a liga</option>'+Object.keys(TEAMS).sort((a,b)=>name(a).localeCompare(name(b))).map(c=>
-  '<option value="'+esc(c)+'"'+(team===c?' selected':'')+'>'+esc(name(c))+'</option>').join('')+'</select></label>'+
+ filterOptions('rounds')+
+ filterOptions('teams')+
  '<label>Mínimo de jogos<select class="control" id="leadersMinimum">'+[1,3,5,10,20].map(v=>
   '<option value="'+v+'"'+(minimum===v?' selected':'')+'>'+v+' '+(v===1?'jogo':'jogos')+'</option>').join('')+'</select></label>'+
  '<label class="leaders-following-toggle"><input id="leadersFollowing" type="checkbox"'+(followingOnly?' checked':'')+'> Só jogadores que sigo</label></div></div>';
@@ -412,7 +433,14 @@ function renderResults(){
 
 function render(){
  if(!board)return;
- root.innerHTML=toolbar()+'<div id="leadersResults"></div>';renderResults();
+ // Preservar a posição do menu, evitando voltar ao topo ao selecionar
+ // equipes ou rodadas no fim da lista.
+ const previous=root.querySelector('.leaders-select-dropdown[open]');
+ const previousScroll=previous?.querySelector('.leaders-select-menu')?.scrollTop||0;
+ root.innerHTML=toolbar()+'<div id="leadersResults"></div>';
+ const current=root.querySelector('.leaders-select-dropdown[open] .leaders-select-menu');
+ if(current)current.scrollTop=previousScroll;
+ renderResults();
  if(selectedRounds.size&&!roundData&&!roundPromise)loadRoundData();
 }
 root.innerHTML='<div class="filler">Preparando ranking dos jogadores…</div>';
@@ -435,7 +463,9 @@ root.addEventListener('click',e=>{
  const modeButton=e.target.closest('[data-leaders-mode]');
  if(modeButton){valueMode=modeButton.dataset.leadersMode;limit=30;syncURL();render();return;}
  const only=e.target.closest('[data-leaders-only]');
- if(only){roundPickerOpen=true;setRound(Number(only.dataset.leadersOnly),true);return;}
+ if(only){applyFilter('rounds',Number(only.dataset.leadersOnly),true);return;}
+ const teamOnly=e.target.closest('[data-leaders-only-team]');
+ if(teamOnly){applyFilter('teams',teamOnly.dataset.leadersOnlyTeam,true);return;}
  if(e.target.closest('#leadersLoadMore')){limit+=30;renderResults();return;}
  if(e.target.closest('#leadersRefresh')){
   refreshLeaders(true);syncRecentFinals(true);
@@ -482,16 +512,41 @@ root.addEventListener('input',e=>{
 });
 root.addEventListener('change',e=>{
  if(e.target.matches('[data-leaders-round-all]')){
-  selectedRounds.clear();limit=30;syncURL();render();return;
+  applyFilter('rounds',null,false,true);return;
  }
- const tick=e.target.closest('[data-leaders-round]');
- if(tick){roundPickerOpen=true;setRound(Number(tick.dataset.leadersRound));return;}
- if(e.target.id==='leadersTeam'){team=e.target.value;limit=30;syncURL();renderResults();}
+ if(e.target.matches('[data-leaders-team-all]')){
+  applyFilter('teams',null,false,true);return;
+ }
+ const roundTick=e.target.closest('[data-leaders-round]');
+ if(roundTick){applyFilter('rounds',Number(roundTick.dataset.leadersRound));return;}
+ const teamTick=e.target.closest('[data-leaders-team]');
+ if(teamTick){applyFilter('teams',teamTick.dataset.leadersTeam);return;}
  if(e.target.id==='leadersMinimum'){minimum=Number(e.target.value)||1;limit=30;renderResults();}
  if(e.target.id==='leadersFollowing'){followingOnly=e.target.checked;limit=30;renderResults();}
 });
 window.addEventListener('quadra:refresh',()=>{if(board)renderResults();});
 
 root.addEventListener('toggle',e=>{
- if(e.target.id==='leadersRoundPicker')roundPickerOpen=e.target.open;
+ const details=e.target.closest?.('.leaders-select-dropdown');
+ if(!details||!details.isConnected)return;
+ const type=details.dataset.leadersFilter;
+ if(details.open){
+  openFilter=type;
+  for(const other of root.querySelectorAll('.leaders-select-dropdown[open]')){
+   if(other!==details)other.open=false;
+  }
+ }else if(openFilter===type)openFilter='';
 },true);
+document.addEventListener('pointerdown',e=>{
+ if(!openFilter||e.target.closest?.('.leaders-select-dropdown'))return;
+ const active=root.querySelector('.leaders-select-dropdown[open]');
+ if(active)active.open=false;openFilter='';
+});
+document.addEventListener('keydown',e=>{
+ if(e.key!=='Escape'||!openFilter)return;
+ const active=root.querySelector('.leaders-select-dropdown[open]');
+ if(active){
+  active.open=false;active.querySelector('summary')?.focus();
+  openFilter='';e.preventDefault();
+ }
+});
