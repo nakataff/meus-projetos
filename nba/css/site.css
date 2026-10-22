@@ -1651,3 +1651,26 @@ a.fav-info:hover,a.fav-info:focus-visible{border-color:var(--accent);background:
 .player-season-context{display:block;margin:5px 0 10px;color:#aebfd6}
 .season-card-actions button:disabled{opacity:.45;cursor:not-allowed}
 @media(max-width:670px){.player-round-picker{max-width:100%}.player-round-option{padding:9px 7px}.player-round-choice small{font-size:10px}}
+
+/* RANKING GERAL — filtro de rodadas (jogo N de cada atleta) + média/soma. */
+.leaders-extra-filters{align-items:center}
+.leaders-mode-group{display:flex;flex-direction:column;gap:6px;flex:0 1 275px;min-width:0}
+.leaders-mode-group>span{font-size:11px;font-weight:900;color:#acbed3}
+.leaders-mode-buttons{display:flex;gap:3px;background:#101a27;border:1px solid #44566d;padding:3px;border-radius:10px;min-height:40px}
+.leaders-mode-buttons button{flex:1;padding:8px 10px;border:0;border-radius:7px;color:#aec0d4;background:transparent;
+ font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap}
+.leaders-mode-buttons button.selected{background:#513523;color:#ffc28e;box-shadow:0 1px 5px #0004}
+.leaders-mode-buttons button:hover:not(.selected){background:#28364a;color:#eaf2fb}
+.leaders-round-picker{flex:0 1 280px;min-width:0;max-width:100%;margin:0;align-self:center}
+.leaders-round-picker>summary{min-height:43px;padding:7px 12px}
+.leaders-round-picker .player-round-menu{max-height:300px}
+.leaders-round-picker .player-round-choice small{font-size:10px}
+.leaders-round-picker .player-round-only{font-size:10px}
+.leaders-round-picker[open]{z-index:3}
+.leaders-round-picker .player-round-menu{background:#152235}
+@media(max-width:660px){
+ .leaders-mode-group,.leaders-round-picker{flex:1 1 100%;width:100%}
+ .leaders-extra-filters{align-items:stretch}
+ .leaders-mode-buttons button{min-height:37px}
+ .leaders-round-picker{margin:2px 0}
+}
