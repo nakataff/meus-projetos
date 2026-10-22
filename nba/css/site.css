@@ -1623,3 +1623,31 @@ a.fav-info:hover,a.fav-info:focus-visible{border-color:var(--accent);background:
 .leaders-update-info{display:flex;flex-direction:column;align-items:flex-end;gap:5px;color:#a9bad0;font-size:11px;text-align:right}
 .leaders-update-info .btn{font-size:11px;min-height:31px;padding:5px 10px}
 @media(max-width:520px){.leaders-update-info{align-items:flex-start;text-align:left;gap:3px}.leaders-update-info .btn{margin-top:4px}}
+
+/* Filtros de rodadas — perfil individual NBA */
+.player-round-picker{margin:13px 0 15px;max-width:500px;border:1px solid #40536c;background:#152235;border-radius:11px;position:relative}
+.player-round-picker[open]{border-color:#ff943e}
+.player-round-picker>summary{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:11px 15px;cursor:pointer;list-style:none;min-height:52px;user-select:none}
+.player-round-picker>summary::-webkit-details-marker{display:none}
+.player-round-summary{display:flex;flex-direction:column;gap:3px;min-width:0}
+.player-round-summary strong{font-size:12px;color:#edf3fc;font-weight:900}
+.player-round-summary small{font-size:11px;color:#adbed3}
+.player-round-chevron{font-size:20px;line-height:1;color:#ffae6d;transition:transform .2s}
+.player-round-picker[open] .player-round-chevron{transform:rotate(180deg)}
+.player-round-menu{border-top:1px solid #364860;padding:5px;max-height:310px;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.player-round-option{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:8px 10px;border-radius:8px;min-height:46px}
+.player-round-option:nth-child(even){background:#1b2a3d}
+.player-round-option:hover{background:#283b51}
+.player-round-all{cursor:pointer;font-weight:900;color:#e8f1fb;border-bottom:1px solid #384b62;border-radius:5px}
+.player-round-all small{margin-left:auto;color:#9dafc7;font-size:10px;font-weight:650}
+.player-round-option input{flex:none;width:16px;height:16px;accent-color:#ff8e35;cursor:pointer}
+.player-round-choice{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer}
+.player-round-choice>span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.player-round-choice strong{font-size:12px;font-weight:900;color:#f0f4fa}
+.player-round-choice small{font-size:10px;color:#a8bdd2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.player-round-only{border:1px solid #526278;border-radius:7px;padding:6px 10px;flex:none;background:#253349;color:#cbdcf0;font-weight:900;font-size:10px;cursor:pointer}
+.player-round-only:hover,.player-round-only:focus-visible{background:#634027;border-color:#ef9c57;color:#fff}
+.player-round-empty{padding:12px}
+.player-season-context{display:block;margin:5px 0 10px;color:#aebfd6}
+.season-card-actions button:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:670px){.player-round-picker{max-width:100%}.player-round-option{padding:9px 7px}.player-round-choice small{font-size:10px}}
