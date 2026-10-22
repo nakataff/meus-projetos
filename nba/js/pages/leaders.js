@@ -1,6 +1,8 @@
 /* DE LA QUADRA — ranking de atletas gerado a partir dos box scores finalizados. */
-import {$,setupShared,jsonFile,TEAMS,EAST,WEST,name,logo,esc,path,playerLink,getData,modify,toast} from '../app.js?v=13';
+import {$,setupShared,asset,currentDate,dayShift,TEAMS,name,logo,esc,playerLink,getData,modify,toast} from '../app.js?v=13';
 import {openPlayerCardComposer} from '../share-card.js?v=7';
+import {fetchLiveBoxscore} from '../boxscore.js?v=2';
+import {performanceRating} from '../performance-rating.js?v=2';
 setupShared('leaders','Melhores jogadores','Ranking de jogadores da NBA por médias e NOTA DLQ, com filtros de temporada e equipe.');
 const root=$('#pageContent');
 const metrics=[
@@ -21,7 +23,9 @@ const valid=new Set(metrics.map(x=>x[0]));
 let metric=valid.has(query.get('stat'))?query.get('stat'):'pts';
 let phase=query.get('fase')==='preseason'?'preseason':'regular';
 let team=TEAMS[query.get('time')]?query.get('time'):'all';
-let minimum=1,search='',followingOnly=false,limit=30,board=null,loading=true;
+let minimum=1,search='',followingOnly=false,limit=30,board=null;
+let refreshPending=false,lastDataSignature='',recentSyncPending=false,lastRecentScan=0;
+const recentFinals=new Map();
 const n=v=>Number(v)||0,round=v=>Math.round(v*10)/10;
 const avg=(p,key)=>n(p.gp)?n(p[key])/n(p.gp):0;
 function metricValue(p,key=metric){
@@ -41,8 +45,135 @@ function qualifies(p){
  if(metric==='threepct'&&p.threeA<Math.max(2,p.gp*2))return false;
  return metricValue(p)!==null;
 }
+const num=v=>Number.isFinite(Number(v))?Number(v):0;
+const minutes=v=>{
+ const val=String(v??'').replace(/'/g,'').trim();
+ if(!val||val==='—')return 0;
+ if(/^\d+:\d+$/.test(val)){
+  const [m,seconds]=val.split(':').map(Number);
+  return m+seconds/60;
+ }
+ return num(val);
+};
+function shot(value){
+ const match=String(value||'').match(/^(\d+)\s*-\s*(\d+)$/);
+ return match?[Number(match[1]),Number(match[2])]:[0,0];
+}
+function phaseFor(event){
+ if(event.seasonType===1)return 'preseason';
+ if(event.seasonType===2)return 'regular';
+ return null;
+}
+function alreadyCounted(event,phaseName){
+ const ids=board?.countedGameIds?.[phaseName];
+ // Compatibilidade com versões anteriores ao campo countedGameIds.
+ if(!Array.isArray(ids))return event.date<=String(board?.lastGameDate||'');
+ return ids.includes(String(event.id));
+}
+function mergedRows(phaseName=phase){
+ const map=new Map((board?.[phaseName]||[]).map(p=>[String(p.id),{...p}]));
+ for(const record of recentFinals.values()){
+  if(record.phase!==phaseName||alreadyCounted(record.event,phaseName))continue;
+  for(const {athlete,team:code} of record.athletes){
+   const id=String(athlete.id||'');
+   if(!id)continue;
+   const row=map.get(id)||{id,name:athlete.name,team:code,lastDate:'',gp:0,pts:0,reb:0,ast:0,
+    stl:0,blk:0,to:0,min:0,fgm:0,fga:0,threeM:0,threeA:0,ratingSum:0,ratingGames:0};
+   if(record.event.date>=row.lastDate){
+    row.lastDate=record.event.date;row.team=code;row.name=athlete.name;
+   }
+   row.gp+=1;row.min+=minutes(athlete.min);
+   for(const key of ['pts','reb','ast','stl','blk','to'])row[key]+=num(athlete[key]);
+   const [fgm,fga]=shot(athlete.fg),[tm,ta]=shot(athlete.three);
+   row.fgm+=fgm;row.fga+=fga;row.threeM+=tm;row.threeA+=ta;
+   const rating=performanceRating(athlete);
+   if(rating!==null){row.ratingSum+=rating;row.ratingGames++;}
+   map.set(id,row);
+  }
+ }
+ return [...map.values()];
+}
+function overlayCount(phaseName=phase){
+ return [...recentFinals.values()].filter(record=>
+  record.phase===phaseName&&!alreadyCounted(record.event,phaseName)).length;
+}
+async function refreshLeaders(force=false){
+ if(refreshPending||document.hidden||!navigator.onLine)return;
+ refreshPending=true;
+ try{
+  // Não usar jsonFile: ele memoriza permanentemente o primeiro JSON da sessão.
+  const response=await fetch(asset('data/player-leaders/2026-27.json'),{cache:'no-store'});
+  if(!response.ok)throw Error('HTTP '+response.status);
+  const data=await response.json();
+  if(!Array.isArray(data.regular)||!Array.isArray(data.preseason))throw Error('Ranking incompleto');
+  const signature=JSON.stringify([data.lastGameDate,data.countedGameIds,
+   data.regular.length,data.preseason.length,
+   data.regular.reduce((n,r)=>n+r.gp,0),data.preseason.reduce((n,r)=>n+r.gp,0)]);
+  const changed=signature!==lastDataSignature;
+  lastDataSignature=signature;
+  board=data;
+  if(changed||force){
+   if(!$('#leadersResults'))render();
+   else renderResults();
+  }
+  if(changed)syncRecentFinals(true);
+ }catch(error){
+  console.warn('DLQ: falha ao atualizar ranking',error);
+  if(!board){
+   root.innerHTML='<div class="filler"><b>Ranking temporariamente indisponível</b>'+
+   'Não foi possível buscar o arquivo de estatísticas. Tente novamente mais tarde.'+
+   '<p><button class="btn" id="leadersRetry">Tentar novamente</button></p></div>';
+  }
+ }finally{refreshPending=false;}
+}
+async function syncRecentFinals(force=false){
+ if(!board||recentSyncPending||document.hidden||!navigator.onLine)return;
+ if(!force&&Date.now()-lastRecentScan<30000)return;
+ lastRecentScan=Date.now();
+ const today=currentDate(),yesterday=dayShift(today,-1);
+ const available=[...(window.QUADRA_LIVE_GAMES?.values()||[])];
+ const missing=available.filter(event=>{
+  const p=phaseFor(event);
+  return p&&event.status==='final'&&
+   (event.date===today||event.date===yesterday)&&
+   !alreadyCounted(event,p)&&!recentFinals.has(String(event.id));
+ });
+ if(!missing.length)return;
+ recentSyncPending=true;
+ let index=0,changed=false;
+ async function worker(){
+  while(index<missing.length&&!document.hidden){
+   const event=missing[index++],p=phaseFor(event);
+   try{
+    const result=await fetchLiveBoxscore({
+     id:String(event.id),externalId:String(event.id),
+     date:event.date,away:event.away,home:event.home
+    });
+    const players=result?.box?.players;
+    // Não contar um box score incompleto como partida final consolidada.
+    if(!players||[event.away,event.home].some(code=>
+     (players[code]||[]).filter(p=>p.hasStats&&minutes(p.min)>0).length<5))continue;
+    const athletes=[];
+    for(const teamCode of [event.away,event.home]){
+     for(const athlete of players[teamCode]||[]){
+      if(!athlete.id||!athlete.name||minutes(athlete.min)<=0||!athlete.hasStats)continue;
+      athletes.push({athlete,team:teamCode});
+     }
+    }
+    if(!athletes.length)continue;
+    recentFinals.set(String(event.id),{phase:p,event,athletes});
+    changed=true;
+   }catch(e){console.info('DLQ: box score recente ainda não disponível',event.id,e);}
+  }
+ }
+ try{await Promise.all(Array.from({length:Math.min(3,missing.length)},worker));}
+ finally{
+  recentSyncPending=false;
+  if(changed&&board&&$('#leadersResults'))renderResults();
+ }
+}
 function ranked(){
- return (board?.[phase]||[]).filter(qualifies).sort((a,b)=>
+ return mergedRows().filter(qualifies).sort((a,b)=>
   metricValue(b)-metricValue(a)||b.gp-a.gp||a.name.localeCompare(b.name,'pt-BR'));
 }
 function fmt(value){
@@ -126,7 +257,12 @@ function renderResults(){
  const rows=ranked(),shown=rows.slice(0,limit);
  const heading=metricName[metric]||'Melhores jogadores';
  target.innerHTML='<div class="leaders-count"><div><span class="caps">RANKING GERAL • '+esc(phase==='regular'?'TEMPORADA REGULAR':'PRÉ-TEMPORADA')+'</span>'+
- '<h2>Melhores jogadores <span>2026/27</span></h2></div><span>'+rows.length+' atletas • Ordem: '+esc(heading)+'</span></div>'+
+ '<h2>Melhores jogadores <span>2026/27</span></h2></div><div class="leaders-update-info">'+
+ '<span>'+rows.length+' atletas • Ordem: '+esc(heading)+'</span>'+
+ '<span>Consolidado até '+esc(board.lastGameDate?
+  board.lastGameDate.split('-').reverse().join('/'):'sem partidas finalizadas')+
+ (overlayCount()?' • +'+overlayCount()+' jogos finais recentes':'')+'</span>'+
+ '<button type="button" class="btn ghost" id="leadersRefresh">↻ Atualizar</button></div></div>'+
  (rows.length?
   tableHTML(shown)+
   (rows.length>limit?'<div class="center leaders-load"><button class="btn" id="leadersLoadMore" type="button">Ver mais '+Math.min(30,rows.length-limit)+' jogadores ↓</button></div>':''):
@@ -141,23 +277,24 @@ function render(){
  root.innerHTML=toolbar()+'<div id="leadersResults"></div>';renderResults();
 }
 root.innerHTML='<div class="filler">Preparando ranking dos jogadores…</div>';
-jsonFile('data/player-leaders/2026-27.json').then(data=>{
- if(!Array.isArray(data.regular)||!Array.isArray(data.preseason))throw Error('Ranking incompleto');
- board=data;loading=false;render();
-}).catch(err=>{
- console.warn('Ranking DLQ:',err);
- root.innerHTML='<div class="filler"><b>Ranking temporariamente indisponível</b>Os dados serão exibidos quando os box scores forem importados. Tente novamente mais tarde.'+
- '<p><button class="btn" id="leadersRetry">Tentar novamente</button></p></div>';
+refreshLeaders(true);
+window.addEventListener('quadra:live-update',()=>syncRecentFinals());
+document.addEventListener('visibilitychange',()=>{
+ if(!document.hidden){refreshLeaders();syncRecentFinals(true);}
 });
+window.addEventListener('online',()=>{refreshLeaders();syncRecentFinals(true);});
+// O ranking revalida o cache leve sem recarregar a página nem mudar os filtros.
+setInterval(()=>{if(!document.hidden)refreshLeaders();},60000);
 root.addEventListener('click',e=>{
  const stat=e.target.closest('[data-leaders-metric]');
  if(stat){metric=stat.dataset.leadersMetric;limit=30;syncURL();render();return;}
  const phaseBtn=e.target.closest('[data-leaders-phase]');
  if(phaseBtn){phase=phaseBtn.dataset.leadersPhase;limit=30;syncURL();render();return;}
  if(e.target.closest('#leadersLoadMore')){limit+=30;renderResults();return;}
+ if(e.target.closest('#leadersRefresh')){refreshLeaders(true);syncRecentFinals(true);return;}
  const card=e.target.closest('[data-leader-card]');
  if(card){
-  const row=(board?.[phase]||[]).find(p=>p.id===card.dataset.leaderCard);
+  const row=mergedRows().find(p=>p.id===card.dataset.leaderCard);
   if(!row)return;
   openPlayerCardComposer({kind:'season',phase,season:row,player:{id:row.id,name:row.name},
    teamCode:row.team,teamName:name(row.team),teamLogo:logo(row.team),headshot:athleteImage(row.id)});
@@ -167,7 +304,7 @@ root.addEventListener('click',e=>{
  const follow=e.target.closest('[data-leader-follow]');
  if(follow){
   const id=follow.dataset.leaderFollow;
-  const player=(board?.[phase]||[]).find(p=>p.id===id);
+  const player=mergedRows().find(p=>p.id===id);
   if(!player)return;
   const now=!followed(id);
   modify(b=>{
