@@ -102,9 +102,11 @@ def choose_event(old, incoming):
     return incoming
 
 
-def sync_calendar():
+def sync_calendar(include_monthly=True):
+    # Nas execuções noturnas, busca apenas ontem/hoje/amanhã: evita baixar
+    # todos os sete calendários da temporada a cada meia hora.
     total = 0
-    for month in MONTHS:
+    for month in MONTHS if include_monthly else ():
         target = ROOT / "months" / f"{month}.json"
         previous = {str(e["id"]): e for e in read(target, {}).get("events", []) if e.get("id")}
         result = get_json("scoreboard", {"dates": month.replace("-", ""), "limit": 500})
@@ -263,12 +265,20 @@ def sync_final_stats():
         if month not in changed_months:
             changed_months[month] = read(path, {"month": month, "games": {}})
         cache = changed_months[month]
-        if event_id in cache.get("games", {}):
-            continue
+        existing = cache.get("games", {}).get(event_id)
+        if existing:
+            # Reconsultar apenas partidas recentes com box score realmente
+            # incompleto. Nunca substituir um jogo consolidado por um vazio.
+            recent = ev.get("date", "") >= (today - timedelta(days=1)).isoformat()
+            complete = all(len((existing.get("players") or {}).get(code_, [])) >= 5
+                           for code_ in (ev["away"], ev["home"]))
+            if not recent or complete:
+                continue
         raw = get_json("summary", {"event":event_id})
         rows = normalize_boxscore(raw)
-        if not rows:
-            LOGS.append(f"Sem box score para {event_id}; tentar na próxima execução")
+        if not rows or (existing and sum(map(len, rows.values())) <
+                                sum(map(len, (existing.get("players") or {}).values()))):
+            LOGS.append(f"Sem box score completo para {event_id}; mantendo dados atuais")
             continue
         cache.setdefault("games", {})[event_id] = {"id":event_id,"date":ev["date"],"away":ev["away"],"home":ev["home"],"players":rows}
         time.sleep(0.2)
@@ -522,6 +532,7 @@ def sync_player_leaders():
             if event.get("id"):
                 calendar[str(event["id"])] = event
     phases = {"regular": {}, "preseason": {}}
+    counted = {"regular": set(), "preseason": set()}
     seen = set()
     for month in MONTHS:
         boxes = read(ROOT / "stats" / (month + ".json"), {}).get("games", {})
@@ -532,6 +543,9 @@ def sync_player_leaders():
             phase = {"2": "regular", "1": "preseason"}.get(str(event.get("stage")))
             if not phase:
                 continue
+            # IDs realmente contabilizados são necessários para incluir
+            # resultados recém-finalizados no navegador sem duplicar partidas.
+            any_player = False
             for team, athletes in (game.get("players") or {}).items():
                 if team not in CODES:
                     continue
@@ -559,6 +573,7 @@ def sync_player_leaders():
                         row["team"] = team
                         row["name"] = player["name"]
                         row["lastDate"] = date
+                    any_player = True
                     row["gp"] += 1
                     row["min"] += minutes
                     for field in ("pts", "reb", "ast", "stl", "blk", "to"):
@@ -576,6 +591,8 @@ def sync_player_leaders():
                     if rating is not None:
                         row["ratingSum"] += rating
                         row["ratingGames"] += 1
+            if any_player:
+                counted[phase].add(str(game_id))
     for rank in phases.values():
         for row in rank.values():
             row["min"] = round(row["min"], 2)
@@ -591,6 +608,7 @@ def sync_player_leaders():
                              if event.get("status") == "final"), default=None),
         "regular": list(phases["regular"].values()),
         "preseason": list(phases["preseason"].values()),
+        "countedGameIds": {key: sorted(ids) for key, ids in counted.items()},
     })
     LOGS.append("Rankings NBA: %d atletas na fase regular e %d na pré-temporada" %
                 (len(phases["regular"]), len(phases["preseason"])))
@@ -598,11 +616,15 @@ def sync_player_leaders():
 
 def main():
     ROOT.mkdir(parents=True, exist_ok=True)
-    sync_calendar()
+    recent = os.getenv("NBA_SYNC_MODE", "").lower() == "recent"
+    LOGS.append("NBA sync: " + ("jogos recentes" if recent else "completa"))
+    sync_calendar(include_monthly=not recent)
     sync_standings()
-    sync_rosters()
+    if not recent:
+        sync_rosters()
     sync_final_stats()
-    sync_team_summaries()
+    if not recent:
+        sync_team_summaries()
     sync_player_leaders()
     print("\n".join(LOGS))
     # Sem matar o site quando uma fonte externa ficar temporariamente indisponível.
