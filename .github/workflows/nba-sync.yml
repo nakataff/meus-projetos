@@ -38,5 +38,20 @@ jobs:
           git add nba/data/
           if ! git diff --cached --quiet; then
             git commit -m "data(nba): atualizar calendário, elencos e estatísticas"
-            git push
+            # Commits de código podem entrar na main enquanto o sync consulta
+            # a ESPN. Rebase preserva os commits mais novos antes do envio.
+            published=false
+            for attempt in 1 2 3; do
+              git fetch origin main
+              git rebase origin/main
+              if git push origin HEAD:main; then
+                published=true
+                break
+              fi
+              sleep 3
+            done
+            if [ "$published" != true ]; then
+              echo "::error::Não foi possível publicar após 3 tentativas"
+              exit 1
+            fi
           fi
