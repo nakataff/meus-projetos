@@ -99,7 +99,7 @@ function changeRound(round){
  if(selectedRounds.has(round))selectedRounds.delete(round);
  else selectedRounds.add(round);
  // Desmarcar a última rodada selecionada volta a TODAS automaticamente.
- if(selectedRounds.size===games.length)selectedRounds.clear();
+ // Mesmo com um único jogo, permitir a seleção explícita da Rodada 1.
  updateSeasonMetrics();
 }
 function makeSeasonFromGames(games){
