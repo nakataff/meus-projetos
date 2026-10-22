@@ -1618,3 +1618,8 @@ a.fav-info:hover,a.fav-info:focus-visible{border-color:var(--accent);background:
  .court-feed-state.is-live::before,.court-event-overlay.court-event-flash{animation:none}
  #courtBall,#courtActionHalo{transition:none!important}
 }
+
+/* Atualização do ranking — indicador discreto de partidas consolidadas e recentes. */
+.leaders-update-info{display:flex;flex-direction:column;align-items:flex-end;gap:5px;color:#a9bad0;font-size:11px;text-align:right}
+.leaders-update-info .btn{font-size:11px;min-height:31px;padding:5px 10px}
+@media(max-width:520px){.leaders-update-info{align-items:flex-start;text-align:left;gap:3px}.leaders-update-info .btn{margin-top:4px}}
