@@ -124,7 +124,12 @@ async function refreshLeaders(force=false){
    'Não foi possível buscar o arquivo de estatísticas. Tente novamente mais tarde.'+
    '<p><button class="btn" id="leadersRetry">Tentar novamente</button></p></div>';
   }
- }finally{refreshPending=false;}
+ }finally{
+  refreshPending=false;
+  // Mesmo com JSON igual, repetir a busca de jogos finais ausentes: a ESPN
+  // pode ter publicado o box score alguns minutos depois do placar final.
+  if(board)syncRecentFinals();
+ }
 }
 async function syncRecentFinals(force=false){
  if(!board||recentSyncPending||document.hidden||!navigator.onLine)return;
