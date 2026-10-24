@@ -126,3 +126,7 @@ Cada aplicativo fica em uma pasta independente para evitar downloads e dependên
 - `.github/workflows/nba-sync.yml`: consolidação recente a cada meia hora durante o dia inteiro; calendário completo/elencos às 08h e 17h BRT. Cron do GitHub está sujeito a atrasos, por isso a página não depende dele para complementar finais de ontem/hoje.
 - `scripts/sync_nba.py`: tenta novamente box scores incompletos dentro da janela de 21 dias; resumos incompletos não entram nos totais nem na lista de jogos contabilizados. Dados esportivos continuam em JSON/ESPN, sem consultas ou gravações no Firebase/Cloudflare.
 - Verificações: `python -m unittest discover -s scripts/tests` e `NODE_PATH=/caminho/para/jsdom/node_modules node --test nba/test/ranking-auto.test.cjs`.
+
+#### Inclusão assim que o jogo acaba
+
+O evento compartilhado `quadra:live-update` dispara imediatamente a tentativa de incluir um novo FINAL, sem esperar o minuto do ranking ou o cron do GitHub. Enquanto há jogos ao vivo o placar é consultado a cada 15 segundos; não é um WebSocket. Se o resumo da ESPN ainda estiver parcial, o ranking faz até seis tentativas com pausas de 10 segundos depois das respostas; depois retoma a verificação normal. Cada jogo aprovado aparece assim que sua resposta chega, sem esperar outras partidas. Tentativas são por ID, com até três pedidos simultâneos, pausam em abas ocultas/offline e param para jogos já contabilizados. A disponibilidade final continua dependendo da fonte.

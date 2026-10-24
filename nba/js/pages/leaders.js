@@ -32,7 +32,9 @@ let selectedRounds=new Set(
 let lastRoundRefresh=0;
 let minimum=1,search='',followingOnly=false,limit=30,board=null;
 let refreshPending=false,lastDataSignature='',recentSyncPending=false,lastRecentScan=0;
-const recentFinals=new Map();
+const recentFinals=new Map(),finalAttempts=new Map();
+const FINAL_RETRY_MS=10000,FINAL_FAST_ATTEMPTS=6;
+let recentRetryTimer=null;
 const n=v=>Number(v)||0,round=v=>Math.round(v*10)/10;
 const avg=(p,key)=>n(p.gp)?n(p[key])/n(p.gp):0;
 function metricValue(p,key=metric){
@@ -264,31 +266,47 @@ async function refreshLeaders(force=false){
   if(selectedRounds.size&&roundData)loadRoundData();
  }
 }
+function pendingFinals(){
+ const today=currentDate(),yesterday=dayShift(today,-1);
+ return [...(window.QUADRA_LIVE_GAMES?.values()||[])].filter(event=>{
+  const p=phaseFor(event);
+  return p&&event.status==='final'&&(event.date===today||event.date===yesterday)&&
+   !alreadyCounted(event,p)&&!recentFinals.has(String(event.id));
+ });
+}
+function scheduleFinalRetry(){
+ clearTimeout(recentRetryTimer);recentRetryTimer=null;
+ if(!board||document.hidden||!navigator.onLine)return;
+ const pending=pendingFinals(),ids=new Set(pending.map(e=>String(e.id)));
+ for(const id of finalAttempts.keys())if(!ids.has(id))finalAttempts.delete(id);
+ // Tentativas rápidas só dos finais ainda ausentes. Depois de seis falhas,
+ // a verificação normal de um minuto continua recuperando a fonte.
+ const due=pending.map(e=>finalAttempts.get(String(e.id)))
+  .filter(attempt=>!attempt||attempt.count<FINAL_FAST_ATTEMPTS)
+  .map(attempt=>attempt?.next||Date.now());
+ if(due.length)recentRetryTimer=setTimeout(()=>{
+  recentRetryTimer=null;return syncRecentFinals(true);
+ },Math.max(0,Math.min(...due)-Date.now()));
+}
 async function syncRecentFinals(force=false){
  if(!board||recentSyncPending||document.hidden||!navigator.onLine)return;
  if(!force&&Date.now()-lastRecentScan<30000)return;
  lastRecentScan=Date.now();
- const today=currentDate(),yesterday=dayShift(today,-1);
- const available=[...(window.QUADRA_LIVE_GAMES?.values()||[])];
- const missing=available.filter(event=>{
-  const p=phaseFor(event);
-  return p&&event.status==='final'&&
-   (event.date===today||event.date===yesterday)&&
-   !alreadyCounted(event,p)&&!recentFinals.has(String(event.id));
- });
- if(!missing.length)return;
+ const missing=pendingFinals().filter(event=>
+  Date.now()>=(finalAttempts.get(String(event.id))?.next||0));
+ if(!missing.length){scheduleFinalRetry();return;}
  recentSyncPending=true;
- let index=0,changed=false;
+ let index=0;
  async function worker(){
-  while(index<missing.length&&!document.hidden){
-   const event=missing[index++],p=phaseFor(event);
+  while(index<missing.length&&!document.hidden&&navigator.onLine){
+   const event=missing[index++],p=phaseFor(event),id=String(event.id);
+   const attempt={count:(finalAttempts.get(id)?.count||0)+1,next:Infinity};
+   finalAttempts.set(id,attempt);
    try{
     const result=await fetchLiveBoxscore({
-     id:String(event.id),externalId:String(event.id),
-     date:event.date,away:event.away,home:event.home
+     id,externalId:id,date:event.date,away:event.away,home:event.home
     });
     const players=result?.box?.players;
-    // Não contar um box score incompleto como partida final consolidada.
     if(result?.status!=='final'||!players||[event.away,event.home].some(code=>
      (players[code]||[]).filter(p=>p.hasStats&&minutes(p.min)>0).length<5))continue;
     const athletes=[];
@@ -299,16 +317,18 @@ async function syncRecentFinals(force=false){
      }
     }
     if(!athletes.length)continue;
-    recentFinals.set(String(event.id),{phase:p,event,athletes});
-    changed=true;
+    recentFinals.set(id,{phase:p,event,athletes});finalAttempts.delete(id);
+    // Atualiza este resultado assim que chega, sem esperar outros jogos.
+    if(!document.hidden&&$('#leadersResults'))render();
    }catch(e){console.info('DLQ: box score recente ainda não disponível',event.id,e);}
+   finally{
+    if(finalAttempts.has(id))attempt.next=Date.now()+
+     (attempt.count<FINAL_FAST_ATTEMPTS?FINAL_RETRY_MS:60000);
+   }
   }
  }
  try{await Promise.all(Array.from({length:Math.min(3,missing.length)},worker));}
- finally{
-  recentSyncPending=false;
-  if(changed&&board&&$('#leadersResults'))render();
- }
+ finally{recentSyncPending=false;scheduleFinalRetry();}
 }
 function ranked(){
  return roundRows().filter(qualifies).sort((a,b)=>
@@ -448,10 +468,14 @@ function render(){
 }
 root.innerHTML='<div class="filler">Preparando ranking dos jogadores…</div>';
 refreshLeaders(true);
-window.addEventListener('quadra:live-update',()=>syncRecentFinals());
+// Um novo FINAL não espera o intervalo de revalidação do consolidado.
+window.addEventListener('quadra:live-update',()=>syncRecentFinals(true));
 document.addEventListener('visibilitychange',()=>{
- if(!document.hidden){refreshLeaders();syncRecentFinals(true);}
+ if(document.hidden){clearTimeout(recentRetryTimer);recentRetryTimer=null;return;}
+ refreshLeaders();syncRecentFinals(true);
 });
+window.addEventListener('pagehide',()=>{clearTimeout(recentRetryTimer);recentRetryTimer=null;});
+window.addEventListener('offline',()=>{clearTimeout(recentRetryTimer);recentRetryTimer=null;});
 window.addEventListener('online',()=>{refreshLeaders();syncRecentFinals(true);});
 // O ranking revalida o cache leve sem recarregar a página nem mudar os filtros.
 // A consulta compartilhada do placar inclui ontem durante todo o dia nesta página.
