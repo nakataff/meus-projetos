@@ -11,7 +11,7 @@ const root=$('#pageContent');
 setupShared('teams','Perfil do jogador','Médias da temporada, histórico por jogo e desempenho compartilhável.');
 let team=TEAMS[rawTeam]?rawTeam:'',player=null,gameStats=[],selectedMonth='all',selectedGame=highlightGame,
  sort='recent',onlyStarters=false,loading=false,leaguePlayers=[];
-let seasonPhase='regular',selectedRounds=new Set();
+let seasonPhase='regular',historyPhase='regular',selectedRounds=new Set();
 const calendarById=new Map();
 const percentField=value=>value!==undefined&&value!==null&&value!==''?value:'—';
 function getPlayer(){return getData().extras.players?.[pid]||{};}
@@ -155,8 +155,9 @@ function leagueComparison(){
  }).join('')+'</div><p class="small subtle league-compare-note">Médias dos box scores importados nesta temporada (inclusive pré-temporada). Considera atletas com pelo menos 2 jogos. Não representa o ranking oficial da NBA.</p></section>';
 }
 
+function historyGames(){return gameStats.filter(g=>historyPhase==='all'||g.phase===historyPhase);}
 function matchingGames(){
- let rows=gameStats.filter(g=>
+ let rows=historyGames().filter(g=>
   (selectedMonth==='all'||g.date.startsWith(selectedMonth))&&
   (!onlyStarters||g.row.starter)&&(!selectedGame||refGameID(g.event)===selectedGame));
  rows=rows.slice();
@@ -190,11 +191,12 @@ function profileHTML(){
  document.title=player.name+' • DE LA QUADRA';
  const x=getData().extras,p=getPlayer(),franchise=x.franchise?.[team]===pid;
  const all=gameStats.slice().sort((a,b)=>b.date.localeCompare(a.date));
- const months=[...new Set(all.map(g=>g.date.slice(0,7)))];
+ const phaseGames=historyGames().slice().sort((a,b)=>b.date.localeCompare(a.date));
+ const months=[...new Set(phaseGames.map(g=>g.date.slice(0,7)))];
  const selected=all.find(g=>refGameID(g.event)===selectedGame);
  const visible=matchingGames();
  const title=selectedGame?'Partida selecionada':'Temporada 2026/27';
- const options=all.map(g=>'<option value="'+esc(refGameID(g.event))+'"'+(selectedGame===refGameID(g.event)?' selected':'')+'>'+
+ const options=phaseGames.filter(g=>selectedMonth==='all'||g.date.startsWith(selectedMonth)).map(g=>'<option value="'+esc(refGameID(g.event))+'"'+(selectedGame===refGameID(g.event)?' selected':'')+'>'+
  esc(shortDate(g.date)+' • '+name(g.opponent))+'</option>').join('');
  root.innerHTML=
  '<section class="team-hero player-profile-hero">'+
@@ -217,7 +219,11 @@ function profileHTML(){
  metrics(roundSelection())+'</div></section>'+leagueComparison()+
  '<section class="section"><div class="section-title"><h2>Histórico por partida</h2>'+
  '<span class="small subtle">'+visible.length+' partidas no filtro</span></div>'+
- '<div class="player-game-filters"><label>Mês<select class="control" id="playerMonth"><option value="all">Todos</option>'+
+ '<div class="player-game-filters"><label>Fase<select class="control" id="playerHistoryPhase">'+
+ '<option value="regular"'+(historyPhase==='regular'?' selected':'')+'>Temporada regular</option>'+
+ '<option value="preseason"'+(historyPhase==='preseason'?' selected':'')+'>Pré-temporada</option>'+
+ '<option value="all"'+(historyPhase==='all'?' selected':'')+'>Todas as fases</option></select></label>'+
+ '<label>Mês<select class="control" id="playerMonth"><option value="all">Todos</option>'+
  months.map(m=>'<option value="'+m+'"'+(selectedMonth===m?' selected':'')+'>'+
  esc(new Date(m+'-15T12:00:00Z').toLocaleDateString('pt-BR',{timeZone:'UTC',month:'long',year:'numeric'}))+'</option>').join('')+'</select></label>'+
  '<label>Jogo<select class="control" id="playerGame"><option value="">Todas as partidas</option>'+options+'</select></label>'+
@@ -254,6 +260,14 @@ function setSelectedGame(id){
 }
 root.addEventListener('input',e=>{if(e.target.id==='rateProfile')$('#currentRating').textContent=e.target.value;});
 root.addEventListener('change',e=>{
+ if(e.target.id==='playerHistoryPhase'){
+  historyPhase=['regular','preseason','all'].includes(e.target.value)?e.target.value:'regular';
+  const games=historyGames();
+  if(selectedMonth!=='all'&&!games.some(g=>g.date.startsWith(selectedMonth)))selectedMonth='all';
+  if(selectedGame&&!games.some(g=>refGameID(g.event)===selectedGame))setSelectedGame('');
+  else profileHTML();
+  return;
+ }
  if(e.target.id==='seasonCardPhase'){
   seasonPhase=e.target.value==='preseason'?'preseason':'regular';
   selectedRounds.clear();
@@ -267,7 +281,7 @@ root.addEventListener('change',e=>{
  }
  if(e.target.id==='playerMonth'){
   selectedMonth=e.target.value;
-  if(selectedGame&&!gameStats.some(g=>refGameID(g.event)===selectedGame &&
+  if(selectedGame&&!historyGames().some(g=>refGameID(g.event)===selectedGame &&
     (selectedMonth==='all'||g.date.startsWith(selectedMonth))))setSelectedGame('');
   else profileHTML();
  }
@@ -380,6 +394,10 @@ async function boot(){
    const stage=Number(g.event.stage||calendarById.get(refGameID(g.event)));
    g.phase=stage===2?'regular':stage===1?'preseason':null;
   }
+  // Um link para uma partida específica preserva a fase daquele jogo.
+  // Perfis abertos sem jogo começam sempre na temporada regular.
+  const linked=gameStats.find(g=>refGameID(g.event)===highlightGame);
+  if(linked?.phase)historyPhase=linked.phase;
   if(!player){
    const known=gameStats.find(g=>g.row?.name)?.row;
    player=known?{

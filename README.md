@@ -130,3 +130,5 @@ Cada aplicativo fica em uma pasta independente para evitar downloads e dependên
 #### Inclusão assim que o jogo acaba
 
 O evento compartilhado `quadra:live-update` dispara imediatamente a tentativa de incluir um novo FINAL, sem esperar o minuto do ranking ou o cron do GitHub. Enquanto há jogos ao vivo o placar é consultado a cada 15 segundos; não é um WebSocket. Se o resumo da ESPN ainda estiver parcial, o ranking faz até seis tentativas com pausas de 10 segundos depois das respostas; depois retoma a verificação normal. Cada jogo aprovado aparece assim que sua resposta chega, sem esperar outras partidas. Tentativas são por ID, com até três pedidos simultâneos, pausam em abas ocultas/offline e param para jogos já contabilizados. A disponibilidade final continua dependendo da fonte.
+
+No perfil do jogador, o Histórico por partida tem filtro próprio de fase (temporada regular como padrão, pré-temporada ou todas). Os seletores de mês e jogo acompanham essa fase; não altera a seleção independente das médias. Links para uma partida específica abrem o histórico na fase correspondente. Filtra os JSONs já carregados, sem consultas adicionais.

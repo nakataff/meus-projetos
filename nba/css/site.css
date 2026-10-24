@@ -698,7 +698,7 @@ footer{border-top:1px solid var(--border);color:#8293ab;font-size:12px;padding:2
 .player-season-metric{background:#172435;border:1px solid #35465d;border-radius:11px;padding:15px 13px;display:flex;flex-direction:column;gap:8px}
 .player-season-metric span{font-size:10px;font-weight:800;color:#9eb1c5}
 .player-season-metric strong{font-size:25px;color:#f4f8ff;font-weight:950;font-variant-numeric:tabular-nums}
-.player-game-filters{display:grid;grid-template-columns:minmax(110px,.8fr) minmax(170px,1.5fr) minmax(110px,.8fr) auto;gap:8px;align-items:end;margin:12px 0 16px}
+.player-game-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;align-items:end;margin:12px 0 16px}
 .player-game-filters label{display:flex;flex-direction:column;gap:6px;font-size:11px;color:#b1c0d2;font-weight:800}
 .player-game-filters .control{width:100%;min-width:0}
 .player-game-filters .player-starter-toggle{display:flex;flex-direction:row;align-items:center;justify-content:flex-end;gap:6px;padding:0 0 10px}
