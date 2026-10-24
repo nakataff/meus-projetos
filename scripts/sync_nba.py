@@ -248,6 +248,22 @@ def normalize_boxscore(payload):
             rows[short] = list({p["id"]:p for p in players}.values())
     return rows
 
+def complete_boxscore(players, event):
+    """Somente duas equipes com atletas que efetivamente entraram em quadra."""
+    for team, score_key in ((event["away"], "scoreAway"), (event["home"], "scoreHome")):
+        athletes = [p for p in (players or {}).get(team, [])
+                    if p.get("id") and p.get("name") and _minutes(p.get("min")) > 0]
+        if len(athletes) < 5:
+            return False
+        if event.get(score_key) is not None:
+            try:
+                if sum(int(p.get("pts") or 0) for p in athletes) != int(event[score_key]):
+                    return False
+            except (TypeError, ValueError):
+                return False
+    return True
+
+
 def sync_final_stats():
     today = NOW.astimezone(BR).date()
     # Recupera até 20 dias de histórico e preserva o cache já importado.
@@ -269,14 +285,15 @@ def sync_final_stats():
         if existing:
             # Reconsultar apenas partidas recentes com box score realmente
             # incompleto. Nunca substituir um jogo consolidado por um vazio.
-            recent = ev.get("date", "") >= (today - timedelta(days=1)).isoformat()
-            complete = all(len((existing.get("players") or {}).get(code_, [])) >= 5
-                           for code_ in (ev["away"], ev["home"]))
-            if not recent or complete:
+            if complete_boxscore(existing.get("players"), ev):
                 continue
         raw = get_json("summary", {"event":event_id})
+        status = (((raw or {}).get("header") or {}).get("competitions") or [{}])[0].get("status", {}).get("type", {})
+        if not (status.get("completed") or status.get("state") == "post"):
+            LOGS.append(f"Resumo {event_id} ainda não finalizado; tentando no próximo sync")
+            continue
         rows = normalize_boxscore(raw)
-        if not rows or (existing and sum(map(len, rows.values())) <
+        if not complete_boxscore(rows, ev) or (existing and sum(map(len, rows.values())) <
                                 sum(map(len, (existing.get("players") or {}).values()))):
             LOGS.append(f"Sem box score completo para {event_id}; mantendo dados atuais")
             continue
@@ -544,7 +561,7 @@ def sync_player_leaders():
             if not event or event.get("status") != "final":
                 continue
             phase = {"2": "regular", "1": "preseason"}.get(str(event.get("stage")))
-            if not phase:
+            if not phase or not complete_boxscore(game.get("players"), event):
                 continue
             # IDs realmente contabilizados são necessários para incluir
             # resultados recém-finalizados no navegador sem duplicar partidas.
@@ -632,8 +649,8 @@ def sync_player_leaders():
         "season": "2026-27",
         "source": "Box scores finais ESPN (não oficial)",
         "description": "Médias por partida disputada; NOTA DLQ é a média da fórmula própria aplicada jogo a jogo. Rankings parciais, sujeitos a atualizações.",
-        "lastGameDate": max((event.get("date", "") for event in calendar.values()
-                             if event.get("status") == "final"), default=None),
+        "lastGameDate": max((calendar[gid].get("date", "")
+                             for ids in counted.values() for gid in ids), default=None),
         "regular": list(phases["regular"].values()),
         "preseason": list(phases["preseason"].values()),
         "countedGameIds": {key: sorted(ids) for key, ids in counted.items()},

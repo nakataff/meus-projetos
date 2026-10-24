@@ -240,9 +240,9 @@ async function refreshLeaders(force=false){
   if(!response.ok)throw Error('HTTP '+response.status);
   const data=await response.json();
   if(!Array.isArray(data.regular)||!Array.isArray(data.preseason))throw Error('Ranking incompleto');
-  const signature=JSON.stringify([data.lastGameDate,data.countedGameIds,
-   data.regular.length,data.preseason.length,
-   data.regular.reduce((n,r)=>n+r.gp,0),data.preseason.reduce((n,r)=>n+r.gp,0)]);
+  // Correções de pontos/rebotes/notas também mudam a tabela, mesmo
+  // quando IDs e quantidade de jogos continuam iguais.
+  const signature=JSON.stringify(data);
   const changed=signature!==lastDataSignature;
   lastDataSignature=signature;
   board=data;
@@ -289,7 +289,7 @@ async function syncRecentFinals(force=false){
     });
     const players=result?.box?.players;
     // Não contar um box score incompleto como partida final consolidada.
-    if(!players||[event.away,event.home].some(code=>
+    if(result?.status!=='final'||!players||[event.away,event.home].some(code=>
      (players[code]||[]).filter(p=>p.hasStats&&minutes(p.min)>0).length<5))continue;
     const athletes=[];
     for(const teamCode of [event.away,event.home]){
@@ -307,7 +307,7 @@ async function syncRecentFinals(force=false){
  try{await Promise.all(Array.from({length:Math.min(3,missing.length)},worker));}
  finally{
   recentSyncPending=false;
-  if(changed&&board&&$('#leadersResults'))renderResults();
+  if(changed&&board&&$('#leadersResults'))render();
  }
 }
 function ranked(){
@@ -403,6 +403,9 @@ function toolbar(){
  '<label class="leaders-following-toggle"><input id="leadersFollowing" type="checkbox"'+(followingOnly?' checked':'')+'> Só jogadores que sigo</label></div></div>';
 }
 
+function latestGameDate(){
+ return mergedRows().reduce((date,row)=>String(row.lastDate||'')>date?String(row.lastDate):date,'');
+}
 function renderResults(){
  const target=$('#leadersResults');if(!target||!board)return;
  const rows=ranked(),shown=rows.slice(0,limit);
@@ -412,8 +415,8 @@ function renderResults(){
  '<span>'+rows.length+' atletas • Ordem: '+esc(heading)+
  ' • '+(valueMode==='total'?'Soma total':'Média por jogo')+
  (selectedRounds.size?' • Rodadas '+[...selectedRounds].sort((a,b)=>a-b).join(', '):' • Todas as rodadas')+'</span>'+
- '<span>Consolidado até '+esc(board.lastGameDate?
-  board.lastGameDate.split('-').reverse().join('/'):'sem partidas finalizadas')+
+ '<span>Dados até '+esc(latestGameDate()?
+  latestGameDate().split('-').reverse().join('/'):'sem partidas finalizadas')+
  (overlayCount()?' • +'+overlayCount()+' jogos finais recentes':'')+'</span>'+
  '<button type="button" class="btn ghost" id="leadersRefresh">↻ Atualizar</button></div></div>'+
  (selectedRounds.size&&!roundData?
@@ -451,6 +454,7 @@ document.addEventListener('visibilitychange',()=>{
 });
 window.addEventListener('online',()=>{refreshLeaders();syncRecentFinals(true);});
 // O ranking revalida o cache leve sem recarregar a página nem mudar os filtros.
+// A consulta compartilhada do placar inclui ontem durante todo o dia nesta página.
 setInterval(()=>{if(!document.hidden)refreshLeaders();},60000);
 root.addEventListener('click',e=>{
  const stat=e.target.closest('[data-leaders-metric]');

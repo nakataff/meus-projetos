@@ -67,7 +67,9 @@ async function update(){
   // Consultar também a noite anterior enquanto ainda há NBA em andamento.
   const yesterday=dayShift(today,-1);
   const previousLive=[...liveMap.values()].some(g=>g.date===yesterday&&g.status==='live');
-  const days=(hour<8||previousLive)?[yesterday,today]:[today];
+  // O ranking precisa dos finais de ontem mesmo à tarde, enquanto o
+  // consolidado do GitHub ainda pode estar atrasado. Não depende do horário.
+  const days=(document.body.dataset.page==='leaders'||hour<8||previousLive)?[yesterday,today]:[today];
   const results=await Promise.allSettled(days.map(fetchDay));
   const fulfilled=results.filter(r=>r.status==='fulfilled').flatMap(r=>r.value);
   if(!results.some(r=>r.status==='fulfilled'))return;

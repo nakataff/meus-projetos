@@ -66,7 +66,7 @@ Na página da NBA você pode:
 
 ### Como são atualizados os dados — custo zero
 
-A rotina [`.github/workflows/nba-sync.yml`](./.github/workflows/nba-sync.yml) executa [`scripts/sync_nba.py`](./scripts/sync_nba.py) automaticamente quatro vezes ao dia e também ao atualizar o script.
+A rotina [`.github/workflows/nba-sync.yml`](./.github/workflows/nba-sync.yml) executa [`scripts/sync_nba.py`](./scripts/sync_nba.py) automaticamente a cada meia hora para jogos recentes, com duas sincronizações completas por dia, e também ao atualizar o script.
 
 Se quiser atualizar manualmente:
 1. Entre na aba [**Actions**](https://github.com/nakataff/meus-projetos/actions/workflows/nba-sync.yml).
@@ -117,3 +117,12 @@ Cada aplicativo fica em uma pasta independente para evitar downloads e dependên
 - Um filtro explícito separa **Temporada regular** de **Pré-temporada**. Nunca somar fases diferentes na mesma média. Os dados coletivos derivados de box scores só usam jogos para os quais há estatísticas individuais disponíveis, sempre exibindo o número da amostra.
 - A rotina scripts/sync_nba.py gera arquivos por equipe em nba/data/team-stats/CODIGO.json com valores acumulados e quinteto recente, atualizados pelo GitHub Actions. Isso evita baixar os arquivos mensais de box score (grandes) ao abrir uma franquia.
 - Os cards da página Equipes também mostram a campanha atual (V/D). Se ainda não há partidas regulares da franquia, a interface avisa e permite consultar os números de pré-temporada.
+
+### Ranking de jogadores: atualização automática após as partidas
+
+- `nba/js/live.js`: na página Jogadores consulta hoje e ontem durante todo o dia, inclusive após as 8h de Brasília. Isso recupera os finais da noite anterior mesmo quando o GitHub Actions ainda não consolidou a rodada. Mantém o ritmo compartilhado de 15 segundos com jogo ao vivo e 2 minutos sem jogo ao vivo; pausa em abas ocultas.
+- `nba/js/pages/leaders.js`: revalida o ranking compacto a cada minuto na aba visível; consulta box scores apenas dos finais ausentes, com até três pedidos simultâneos e sem contar jogos duplicados. Exige status final no resumo e pelo menos cinco participantes de cada equipe. Recupera falhas em novas tentativas e preserva os filtros. Os menus de rodadas também atualizam quando chega um novo jogo. Correções estatísticas são detectadas mesmo sem mudar o número de partidas.
+- A data “Dados até” vem das partidas efetivamente incluídas na fase selecionada. Não usa uma data final do calendário que ainda esteja sem box score.
+- `.github/workflows/nba-sync.yml`: consolidação recente a cada meia hora durante o dia inteiro; calendário completo/elencos às 08h e 17h BRT. Cron do GitHub está sujeito a atrasos, por isso a página não depende dele para complementar finais de ontem/hoje.
+- `scripts/sync_nba.py`: tenta novamente box scores incompletos dentro da janela de 21 dias; resumos incompletos não entram nos totais nem na lista de jogos contabilizados. Dados esportivos continuam em JSON/ESPN, sem consultas ou gravações no Firebase/Cloudflare.
+- Verificações: `python -m unittest discover -s scripts/tests` e `NODE_PATH=/caminho/para/jsdom/node_modules node --test nba/test/ranking-auto.test.cjs`.

@@ -6,10 +6,11 @@ on:
       - 'scripts/sync_nba.py'
       - '.github/workflows/nba-sync.yml'
   schedule:
-    # 21h–06h BRT: reforçar partidas noturnas e finais sem processar elencos.
-    - cron: '17,47 0-8 * * *'
-    # Sincronização completa de manhã/tarde e antes da rodada.
-    - cron: '17 11,17,23 * * *'
+    # Cache recente a cada meia hora, inclusive após a rodada e de manhã.
+    # GitHub pode atrasar o cron; a página também recupera finais diretamente.
+    - cron: '17,47 * * * *'
+    # Elencos e calendário completo apenas duas vezes ao dia (08h e 17h BRT).
+    - cron: '23 11,20 * * *'
 permissions:
   contents: write
 concurrency:
@@ -26,9 +27,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Testar consolidação dos resultados
+        run: python -m unittest discover -s scripts/tests -p 'test_*.py'
       - name: Importar calendário, elencos e resultados finais
         env:
-          NBA_SYNC_MODE: ${{ github.event_name == 'schedule' && github.event.schedule == '17,47 0-8 * * *' && 'recent' || 'full' }}
+          NBA_SYNC_MODE: ${{ github.event_name == 'schedule' && github.event.schedule == '17,47 * * * *' && 'recent' || 'full' }}
         run: python scripts/sync_nba.py
       - name: Publicar somente dados modificados
         run: |
