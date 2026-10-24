@@ -140,6 +140,7 @@ function positionFor(play,game){
 }
 export function mountCourtTracker({element,game,getStatus,onSummary}){
  if(!element||!game)throw Error('Quadra 2D exige elemento e partida');
+ const ownerDocument=element.ownerDocument;
  const id=eventId(game);
  element.innerHTML=courtHTML(game);
  const $=selector=>element.querySelector(selector);
@@ -162,6 +163,7 @@ export function mountCourtTracker({element,game,getStatus,onSummary}){
   if(!play&&current.status==='final')refs.period.textContent='FINAL';
  }
  function fullscreenState(){
+  if(state.destroyed)return;
   const active=document.fullscreenElement===refs.viewport||state.fallback;
   refs.fullscreen.textContent=active?'✕ Sair da tela cheia':'⛶ Tela cheia';
   refs.fullscreen.setAttribute('aria-pressed',String(active));
@@ -171,7 +173,7 @@ export function mountCourtTracker({element,game,getStatus,onSummary}){
  async function toggleFullscreen(){
   if(state.fallback){fallbackFullscreen(false);return;}
   if(document.fullscreenElement===refs.viewport){try{await document.exitFullscreen();}catch{}fullscreenState();return;}
-  if(refs.viewport.requestFullscreen){try{await refs.viewport.requestFullscreen();if(state.destroyed){if(document.fullscreenElement===refs.viewport)await document.exitFullscreen?.();return;}fullscreenState();return;}catch{}}
+  if(refs.viewport.requestFullscreen){try{await refs.viewport.requestFullscreen();if(state.destroyed){if(ownerDocument.fullscreenElement===refs.viewport)await ownerDocument.exitFullscreen?.();return;}fullscreenState();return;}catch{}}
   if(!state.destroyed)fallbackFullscreen(true);
  }
  function fullscreenKey(e){if(e.key==='Escape'&&state.fallback){e.preventDefault();fallbackFullscreen(false);}}
@@ -330,6 +332,7 @@ export function mountCourtTracker({element,game,getStatus,onSummary}){
   refs.timeline.innerHTML='<div class="court-no-plays">Partida sem identificador ESPN válido.</div>';
  }else poll();
  return {destroy(){
+  if(state.destroyed)return;
   state.destroyed=true;fallbackFullscreen(false);
   if(document.fullscreenElement===refs.viewport)document.exitFullscreen?.().catch(()=>{});
   clearTimeout(state.timer);clearTimeout(state.playTimer);

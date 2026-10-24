@@ -464,7 +464,7 @@ async function startCourt(){
  if(!element)return;
  const session=++courtSession;
  try{
-  const mod=await import('../court-live.js?v=20261024-compare-v1');
+  const mod=await import('../court-live.js?v=20261024-compare-v2');
   if(session!==courtSession||tab!=='quadra'||!element.isConnected)return;
   courtController=mod.mountCourtTracker({element,game,getStatus:gameStatus,onSummary:payload=>{
    if(tab!=='quadra'||!game)return;
