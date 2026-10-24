@@ -1,3 +1,4 @@
+import {FRANCHISE_PLAYERS,isFranchise} from '../../data/franchises.js?v=20261024-franchise-v1';
 import {$,setupShared,loadGames,MONTHS,getData,modify,groupGames,esc,path,backup,restore,handleWishes,note,TEAMS,teamLink,playerLink,gameLink,logo,modal,closeModal,setSettings,toast} from '../app.js?v=13';
 setupShared('personal','Meu perfil','Sua jornada na NBA: avaliações, jogos assistidos, jogadores favoritos e conquistas.');
 const root=$('#pageContent');
@@ -71,7 +72,7 @@ function prefs(s){
 function favoriteSections(s){
  const extra=s.bundle.extras;
  const loved=Object.entries(extra.players||{}).filter(([,p])=>p?.favorite).slice(0,8);
- const franchises=Object.entries(extra.franchise||{}).filter(([code,id])=>TEAMS[code]&&id).slice(0,8);
+ const franchises=Object.entries(FRANCHISE_PLAYERS).filter(([code])=>!s.bundle.settings.fav||code===s.bundle.settings.fav).slice(0,8).flatMap(([code,players])=>players.map(p=>[code,p.id,p]));
  const full=Object.entries(extra.lineups||{}).filter(([code,ids])=>TEAMS[code]&&Array.isArray(ids)&&ids.length===5);
  function person(id,p,team){
   const info=p||extra.players?.[id]||{},label=info.name||'Jogador #'+id;
@@ -80,8 +81,8 @@ function favoriteSections(s){
  }
  return '<div class="grid two section"><section class="card"><h2>Jogadores que sigo ♡</h2><p class="small subtle">Abra o perfil para comparar estatísticas com a liga.</p>'+
  (loved.length?loved.map(([id,p])=>person(id,p,p.team)).join(''):'<div class="filler">Siga jogadores nos perfis dos atletas para acompanhá-los aqui.</div>')+'</section>'+
- '<section class="card"><h2>Franchise players ★</h2><p class="small subtle">Quem você escolheu para liderar cada franquia</p>'+
- (franchises.length?franchises.map(([code,id])=>person(id,extra.players?.[id],code)).join(''):'<div class="filler">Escolha um franchise player nas páginas das equipes.</div>')+'</section></div>'+
+ '<section class="card"><h2>Franchise players ★</h2><p class="small subtle">Destaques automáticos do elenco • até dois por equipe</p>'+
+ (franchises.length?franchises.map(([code,id,p])=>person(id,p,code)).join(''):'<div class="filler">Nenhum destaque disponível neste elenco.</div>')+'</section></div>'+
  (full.length?'<section class="card section"><h2>Meus quintetos completos</h2><p class="small subtle">Escalações pessoais que você montou</p>'+
  full.map(([code,ids])=>'<div class="profile-rank-item"><div class="rank-body"><a href="'+teamLink(code)+'">'+esc(TEAMS[code][0])+'</a><span class="small subtle">'+ids.map(id=>esc(extra.players?.[id]?.name||'#'+id)).join(', ')+'</span></div><span class="tag finished">5/5</span></div>').join('')+'</section>':'');
 }

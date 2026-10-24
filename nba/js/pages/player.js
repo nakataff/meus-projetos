@@ -1,3 +1,4 @@
+import {FRANCHISE_PLAYERS,isFranchise} from '../../data/franchises.js?v=20261024-franchise-v1';
 /* Perfil de atleta QUADRA — temporada, jogos, ficha compartilhável. */
 import {$,setupShared,qs,TEAMS,name,logo,esc,fetchRoster,fetchBox,fetchMonth,MONTHS,
  currentDate,getData,modify,teamLink,gameLink,shortDate,toast,path} from '../app.js?v=13';
@@ -189,7 +190,7 @@ function matchDetail(g){
 function profileHTML(){
  if(!player){root.innerHTML='<div class="filler"><b>Jogador não encontrado</b>Acesse o elenco da equipe para abrir o perfil.</div>';return;}
  document.title=player.name+' • DE LA QUADRA';
- const x=getData().extras,p=getPlayer(),franchise=x.franchise?.[team]===pid;
+ const x=getData().extras,p=getPlayer(),franchise=isFranchise(team,pid);
  const all=gameStats.slice().sort((a,b)=>b.date.localeCompare(a.date));
  const phaseGames=historyGames().slice().sort((a,b)=>b.date.localeCompare(a.date));
  const months=[...new Set(phaseGames.map(g=>g.date.slice(0,7)))];
@@ -204,7 +205,7 @@ function profileHTML(){
  '<div><div class="eyebrow">'+esc(name(team))+' • '+esc(player.position||'NBA')+'</div>'+
  '<h2>'+esc(player.name)+'</h2><p>#'+esc(player.number||'—')+' • Temporada 2026/27</p>'+
  '<div class="controls"><a href="'+teamLink(team)+'" class="btn ghost">← Elenco</a>'+
- (franchise?'<span class="tag accent">★ Meu franchise player</span>':'')+
+ (franchise?'<span class="tag accent">★ Franchise player</span>':'')+
  '<button type="button" id="followPlayer" class="btn '+(p.favorite?'accent':'ghost')+'" aria-pressed="'+!!p.favorite+'">'+(p.favorite?'♥ Seguindo':'♡ Seguir jogador')+'</button></div></div></section>'+
  (selected?matchDetail(selected):selectedGame?
   '<div class="info">Este jogo ainda não possui estatísticas individuais disponíveis. Os resultados aparecerão quando a fonte publicar o box score.</div>':'')+
@@ -244,7 +245,7 @@ function profileHTML(){
  '<form id="playerProfile"><div class="field"><label>Minha nota: <span id="currentRating">'+esc(p.rating||0)+'</span>/10</label>'+
  '<input class="rate-input" type="range" id="rateProfile" min="0" max="10" step="0.5" value="'+esc(p.rating||0)+'"></div>'+
  '<div class="controls"><label><input type="checkbox" id="favoritePlayer"'+(p.favorite?' checked':'')+'> Seguir jogador</label>'+
- '<label><input type="checkbox" id="franchisePlayer"'+(franchise?' checked':'')+'> Meu franchise player</label></div>'+
+ '</div>'+
  '<button type="submit" class="btn accent">Salvar avaliação ✓</button></form></section>';
 }
 function setSelectedGame(id){
@@ -291,12 +292,10 @@ root.addEventListener('change',e=>{
 });
 root.addEventListener('submit',e=>{
  if(e.target.id!=='playerProfile')return;e.preventDefault();
- const rated=+$('#rateProfile').value,fav=$('#favoritePlayer').checked,star=$('#franchisePlayer').checked;
+ const rated=+$('#rateProfile').value,fav=$('#favoritePlayer').checked;
  modify(b=>{
   const old=b.extras.players[pid]||{};
   b.extras.players[pid]={...old,name:player.name,team,rating:rated,favorite:fav};
-  if(star)b.extras.franchise[team]=pid;
-  else if(b.extras.franchise[team]===pid)delete b.extras.franchise[team];
   b.extras.updatedAt=new Date().toISOString();
  });
  toast('Avaliação salva');profileHTML();

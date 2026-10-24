@@ -10,8 +10,8 @@ function mountCloudControl(){
   if(slot && cloudBar.parentElement!==slot)slot.appendChild(cloudBar);
 }
 window.addEventListener('quadra:profile-render',()=>ui());
-const message = document.getElementById('qcloud-state');
-const actions = document.getElementById('qcloud-actions');
+const message = cloudBar.querySelector('#qcloud-state');
+const actions = cloudBar.querySelector('#qcloud-actions');
 const helpUrl = 'https://github.com/nakataff/meus-projetos/blob/main/nba/firebase/SETUP.md';
 const appSeason = 'quadra-nba-2026-27';
 const lastUserKey = 'quadra_cloud_user_v1';
@@ -222,7 +222,7 @@ function schedule(){
 }
 async function login(){
   try{await sdk.signInWithPopup(auth,new sdk.GoogleAuthProvider());}
-  catch(e){console.warn('Login Google',e);setStatus('Não foi possível entrar: '+(e.code||'verifique pop-ups e domínio autorizado'));}
+  catch(e){console.warn('Login Google',e);setStatus(e.code==='auth/unauthorized-domain'?'Este domínio precisa ser autorizado no Firebase Authentication: '+location.hostname:e.code==='auth/popup-blocked'?'O navegador bloqueou a janela do Google. Permita pop-ups para este site e tente novamente.':e.code==='auth/popup-closed-by-user'?'A janela do Google foi fechada antes de concluir o login.':'Não foi possível entrar: '+(e.code||'verifique sua conexão')); }
 }
 async function logout(){
   try{

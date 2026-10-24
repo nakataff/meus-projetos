@@ -673,6 +673,8 @@ def main():
     sync_player_leaders()
     from build_nba_search import build_search_index
     build_search_index()
+    from build_nba_franchises import build_franchises
+    build_franchises()
     print("\n".join(LOGS))
     # Sem matar o site quando uma fonte externa ficar temporariamente indisponível.
     return 0

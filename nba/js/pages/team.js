@@ -1,3 +1,4 @@
+import {FRANCHISE_PLAYERS,isFranchise} from '../../data/franchises.js?v=20261024-franchise-v1';
 /* QUADRA — perfil leve de franquia com médias coletivas e por atleta. */
 import {$,setupShared,TEAMS,EAST,WEST,name,logo,esc,qs,fetchRoster,loadGames,MONTHS,
  currentDate,shortDate,teamLink,playerLink,path,jsonFile,getData,setSettings,
@@ -174,7 +175,7 @@ function playerRanking(){
  '<p class="team-stats-footnote">Médias por jogo disputado pelo atleta nesta franquia e fase, não por minuto. Inclui jogadores que participaram de jogos mesmo que não estejam mais no elenco atual. Percentuais calculados por arremessos convertidos/tentados.</p></section>';
 }
 function playerRow(p){
- const saved=getData().extras,star=saved.franchise?.[code]===String(p.id),
+ const saved=getData().extras,star=isFranchise(code,p.id),
  own=(saved.lineups?.[code]||[]).includes(String(p.id));
  const recent=Boolean(section()?.lastLineup?.players?.some(x=>String(x.id)===String(p.id)));
  const badges=(star?'<span class="tag accent">★ Franchise</span>':'')+
@@ -188,11 +189,11 @@ function playerRow(p){
 }
 function ratingForm(player){
  const b=getData(),x=b.extras,own=(x.lineups?.[code]||[]).includes(String(player.id)),
-  star=x.franchise?.[code]===String(player.id),info=x.players?.[player.id]||{};
+  star=isFranchise(code,player.id),info=x.players?.[player.id]||{};
  modal('<h2>'+esc(player.name)+'</h2><p class="subtle">'+esc(name(code))+' • '+esc(player.position||'Jogador')+'</p>'+
  '<form id="playerForm"><div class="field"><label>Minha nota na temporada <span id="playerScore">'+esc(info.rating||'—')+
  '</span>/10</label><input type="range" id="playerRating" min="0" max="10" step="0.5" value="'+(Number(info.rating)||0)+'" class="rate-input"></div>'+
- '<div class="field"><label><input id="isFranchise" type="checkbox" '+(star?'checked':'')+'> Meu franchise player</label></div>'+
+ (star?'<p class="small subtle">★ Franchise player da equipe</p>':'')+
  '<div class="field"><label><input id="isStarter" type="checkbox" '+(own?'checked':'')+'> Meu quinteto titular (5 jogadores)</label></div>'+
  '<div class="field"><label><input id="isFavorite" type="checkbox" '+(info.favorite?'checked':'')+' > Seguir jogador</label></div>'+
  '<div class="modal-footer"><button type="submit" class="btn accent">Salvar avaliação</button></div></form>');
@@ -205,8 +206,6 @@ function ratingForm(player){
   modify(bundle=>{
    bundle.extras.players[player.id]={...info,name:player.name,team:code,rating:Number($('#playerRating').value),favorite:$('#isFavorite').checked};
    bundle.extras.lineups[code]=line;
-   if($('#isFranchise').checked)bundle.extras.franchise[code]=String(player.id);
-   else if(bundle.extras.franchise[code]===String(player.id))delete bundle.extras.franchise[code];
    bundle.extras.updatedAt=new Date().toISOString();
   });
   closeModal();draw();toast('Jogador avaliado!');
