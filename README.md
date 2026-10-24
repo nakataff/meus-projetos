@@ -151,3 +151,7 @@ Em Jogadores, fase, rodada e média/total são independentes dos filtros da pág
 `nba/js/comparison-fields.js` centraliza 11 estatísticas e a formatação; tela, prévia e PNG usam as mesmas chaves. É possível escolher uma ou mais estatísticas, presets Essenciais/Todas e visual em lista ou blocos. O gerador de card permite ajustar novamente o visual, as estatísticas e o formato antes de copiar/compartilhar/salvar. O renderer distribui de 1 a 11 métricas no espaço seguro de cada formato, inclusive o story com áreas reservadas. Não há novas gravações nem consultas de usuários.
 
 No seletor do comparador, os atletas são ordenados por pontos decrescentes dentro de cada equipe, com pontos (ou média PTS/J) visíveis na opção. Valores indisponíveis ficam ao fim e empates usam o nome. O botão Recarregar dados aparece apenas após falha ao obter as rodadas; a regra CSS de `hidden` prevalece sobre o display de botões compartilhados.
+
+### Busca e navegação NBA
+
+A lupa compartilhada abre a busca por equipes, jogadores, partidas e atalhos. `nba/data/search.json` é um índice compacto gerado dos JSON existentes por `scripts/build_nba_search.py`, também chamado ao final da sincronização NBA. O índice só é solicitado na primeira abertura da busca; as letras são filtradas localmente com debounce, sem consultas ao banco. O menu superior tem quatro atalhos e a barra inferior recolhível salva apenas a preferência local.

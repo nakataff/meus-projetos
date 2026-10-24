@@ -1,5 +1,7 @@
 /* QUADRA — só carrega o controlador da página que foi aberta. */
 import {toast} from './app.js?v=13';
+try{const {mountNavigation}=await import('./navigation.js?v=20261024-search-shell-v1');mountNavigation();}
+catch(e){console.info('Busca indisponível',e);}
 const page=document.body.dataset.page;
 const allowed=new Set(['home','games','teams','leaders','team','player','game','personal','standings']);
 if(!allowed.has(page))throw Error('Página DE LA QUADRA desconhecida: '+page);

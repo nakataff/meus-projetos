@@ -8,28 +8,24 @@
 <link rel="icon" type="image/webp" href="../assets/dlq.webp">
 <link rel="apple-touch-icon" href="../assets/dlq.webp">
 <link rel="stylesheet" href="../css/site.css?v=30">
+<link rel="stylesheet" href="../css/navigation.css?v=20261024-search-shell-v1">
 <title>Perfil • DE LA QUADRA</title>
 </head>
 <body data-page="personal">
 <div class="wrap">
-<header class="top">
-  <a class="brand" href="../" title="Voltar ao início do DE LA QUADRA"><img src="../assets/de%20la%20quadra.webp" width="180" height="60" alt="DE LA QUADRA"></a>
-  <nav class="mainnav" aria-label="Navegação principal">
-    <a class="navlink" data-nav="home" href="../">Início</a>
-    <a class="navlink" data-nav="games" href="../jogos/">Jogos</a>
-    <a class="navlink" data-nav="standings" href="../classificacao/">Classificação</a>
-    <a class="navlink" data-nav="teams" href="../equipes/">Equipes</a>
-     <a class="navlink" data-nav="leaders" href="../melhores/">Jogadores</a>
-    <a class="navlink" data-nav="personal" href="../perfil/">Perfil</a>
-  </nav>
+<header class="top dlq-top">
+<a class="brand" href=".././" aria-label="DE LA QUADRA — início"><img src="../assets/de%20la%20quadra.webp" width="180" height="60" alt="DE LA QUADRA"></a>
+<button type="button" class="dlq-search-open" aria-label="Buscar jogadores, equipes e partidas" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><span>Buscar no DE LA QUADRA</span><kbd>⌘ K</kbd></button>
+<nav class="mainnav" aria-label="Navegação principal"><a class="navlink" data-nav="games" href="../jogos/">Jogos</a><a class="navlink" data-nav="standings" href="../classificacao/">Classificação</a><a class="navlink" data-nav="teams" href="../equipes/">Equipes</a><a class="navlink" data-nav="leaders" href="../melhores/">Jogadores</a></nav>
 </header>
 <section class="hero" aria-label="Apresentação da página"><div><span class="eyebrow">NBA 2026 / 2027</span><h1>Perfil</h1><p>Carregando…</p></div></section>
 <main id="pageContent" role="main"><div class="filler">Carregando DE LA QUADRA…</div></main>
 <footer>DE LA QUADRA • NBA 2026/27 · Dados sujeitos a atualização · <a href="../perfil/">Meu perfil</a></footer>
 </div>
+<nav class="dlq-dock" aria-label="Atalhos pessoais"><button type="button" class="dlq-dock-toggle" aria-label="Recolher barra inferior" aria-expanded="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></button><a class="dlq-dock-home" data-nav="home" href=".././" aria-label="Início"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v11h-6v-7H9v7H3z"/></svg><span>Início</span></a><a class="dlq-dock-profile" data-nav="personal" href="../perfil/" aria-label="Meu perfil"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg><span>Perfil</span></a></nav>
 <div id="modalRoot"></div>
 <script src="../js/broadcasts.js?v=1"></script>
 <script src="../firebase-config.js?v=2"></script>
-<script type="module" src="../js/entry.js?v=20261024-final-fast-v1"></script>
+<script type="module" src="../js/entry.js?v=20261024-search-shell-v1"></script>
 </body>
 </html>
