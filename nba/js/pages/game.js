@@ -1,6 +1,7 @@
 import {$,setupShared,qs,esc,name,logo,tlogo,effectiveGame,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,note,getData,setNote,setExtraGroup,platform,broadcastLinks,shortDate,currentDate,toast,modal,closeModal,eventBox,fetchRoster,livePeriodLabel} from '../app.js?v=13';
 import {fetchLiveBoxscore,projectStartingFive,normalizeSummary} from '../boxscore.js?v=2';
-import {openPlayerCardComposer} from '../share-card.js?v=8';
+import {openPlayerCardComposer} from '../share-card.js?v=20261024-compare-v1';
+import {mountPlayerActions,openPlayerComparison} from '../player-actions.js?v=20261024-compare-v1';
 import {performanceRating,ratingLabel,topPerformance,RATING_EXPLANATION} from '../performance-rating.js?v=2';
 const id=qs('id')||'',hint=qs('data')||'',root=$('#pageContent');
 setupShared('games','Centro da partida','Escalações, estatísticas e seu diário pessoal de basquete.');
@@ -200,7 +201,7 @@ function playerStats(code,mixed=false){
   '" class="boxscore-rating" title="Avaliar '+esc(p.name)+'" aria-label="Dar nota para '+esc(p.name)+'">'+
   (rating!==undefined?'★ '+esc(rating):'☆')+'</button>'+
   '<button type="button" class="boxscore-mvp'+(mvp?' chosen':'')+'" data-mvp="'+esc(id)+'" title="'+(mvp?'Meu MVP':'Escolher MVP')+
-  '" aria-label="'+(mvp?'MVP selecionado':'Escolher '+esc(p.name)+' como MVP')+'">'+(mvp?'★':'MVP')+'</button></td></tr>';
+  '" aria-label="'+(mvp?'MVP selecionado':'Escolher '+esc(p.name)+' como MVP')+'">'+(mvp?'★':'MVP')+'</button><button type="button" class="boxscore-rating" data-player-options aria-label="Opções de '+esc(p.name)+'" title="Opções do jogador">⋯</button></td></tr>';
  }).join('');
  return '<div class="boxscore-scroll"><table class="boxscore-table '+(statsDetail?'expanded':'')+'"><thead><tr><th scope="col">Jogador</th>'+
  cols.map(key=>statHeader(statFields.find(f=>f.key===key))).join('')+
@@ -452,7 +453,7 @@ function overviewHtml(current,statsReady){
   'Dê sua nota, escolha o MVP e guarde suas observações.')+'</span></div>'+
  '<button type="button" class="btn accent" data-open-tab="avaliar">'+(saved.watched?'Ver minha avaliação':'Avaliar partida')+' →</button></div>';
 }
-function tabs(){return '<nav class="tabs">'+[['resumo','Resumo'],['quadra','🏀 Quadra 2D'],['quintetos','Escalações'],['stats','Estatísticas'],['avaliar','Minha avaliação']].map(([key,label])=>'<button class="tab '+(tab===key?'active':'')+'" data-tab="'+key+'">'+label+'</button>').join('')+'</nav>';}
+function tabs(){return '<nav class="tabs">'+[['resumo','Resumo'],['quadra','🏀 Quadra 2D'],['quintetos','Escalações'],['stats','Estatísticas'],['avaliar','Minha avaliação']].map(([key,label])=>'<button class="tab '+(tab===key?'active':'')+'" data-tab="'+key+'">'+label+'</button>').join('')+'<button type="button" class="tab comparison-tab" data-open-comparison'+(comparisonPlayers().length<2?' disabled':'')+'>⇄ Comparar jogadores</button></nav>';}
 function stopCourt(){
  ++courtSession;
  if(courtController){courtController.destroy();courtController=null;}
@@ -463,7 +464,7 @@ async function startCourt(){
  if(!element)return;
  const session=++courtSession;
  try{
-  const mod=await import('../court-live.js?v=1');
+  const mod=await import('../court-live.js?v=20261024-compare-v1');
   if(session!==courtSession||tab!=='quadra'||!element.isConnected)return;
   courtController=mod.mountCourtTracker({element,game,getStatus:gameStatus,onSummary:payload=>{
    if(tab!=='quadra'||!game)return;
@@ -556,6 +557,7 @@ function updateScoreboardWithoutResettingForm(){
  if(next)root.firstElementChild.replaceWith(next);
  updateSourceNoticeOnly();
  animateScoreChanges(gameStatus());
+ courtController?.syncScore?.();
 }
 function syncOpenPlayerPerformance(){
  const dialog=document.querySelector('#modalRoot .performance-dialog[data-player-id]');
@@ -629,7 +631,9 @@ function openPlayerPerformance(pid,code){
   '<div class="performance-actions">'+
   '<button type="button" class="btn accent" id="playerShareImage">▣ Gerar card da partida</button>'+
   
+  '<button type="button" class="btn ghost" id="playerCompareFromDetail">⇄ Comparar jogador</button>'+
   '<a class="btn ghost" href="'+esc(url)+'">Perfil completo →</a></div></div>');
+ document.getElementById('playerCompareFromDetail').onclick=()=>gameComparison(code+':'+pid);
  const generateButton=document.getElementById('playerShareImage');
  generateButton.onclick=()=>{
   const latest=(box?.players?.[code]||[]).find(x=>String(x.id)===String(pid))||p;
@@ -650,7 +654,32 @@ function ratePlayer(pid,code){
  $('#rateValue').oninput=()=>$('#scorePlayer').textContent=$('#rateValue').value;
  $('#ratePlayer').onsubmit=e=>{e.preventDefault();setExtraGroup('gameRatings',game.id+':'+pid,Number($('#rateValue').value));closeModal();draw();toast('Nota do jogador salva');};
 }
+function comparisonPlayers(){
+ if(!game)return [];
+ const shotPercent=value=>{const m=String(value||'').match(/^(\d+)\s*-\s*(\d+)$/);return m&&+m[2]?100*(+m[1])/(+m[2]):null;};
+ return [game.away,game.home].flatMap(code=>(box?.players?.[code]||[])
+  .filter(p=>p.id&&p.name&&(p.hasStats===true||p.pts!==null&&p.pts!==undefined)).map(p=>({
+   key:code+':'+p.id,id:String(p.id),name:p.name,teamCode:code,teamName:name(code),teamLogo:logo(code),
+   headshot:rosters[code]?.find(r=>String(r.id)===String(p.id))?.headshot||'https://a.espncdn.com/i/headshots/nba/players/full/'+encodeURIComponent(p.id)+'.png',
+   profileUrl:playerPerformanceUrl(p.id,code),raw:p,
+   stats:{...Object.fromEntries(['pts','reb','ast','stl','blk','to','min','rating'].map(k=>[k,statValue(p,k)])),threeM:statValue(p,'three'),fgpct:shotPercent(p.fg),threepct:shotPercent(p.three)}
+  })));
+}
+function gameComparison(firstKey=''){
+ if(!game)return;const current=gameStatus();
+ openPlayerComparison({getPlayers:comparisonPlayers,firstKey,context:{mode:'game',title:name(game.away)+' × '+name(game.home),subtitle:shortDate(game.date)+(current.scoreAway!=null&&current.scoreHome!=null?' · '+current.scoreAway+'–'+current.scoreHome:'')+(current.status==='live'?' · Parciais no momento da seleção':'')}});
+}
+function makeIndividualGameCard(candidate){
+ const p=comparisonPlayers().find(v=>v.key===candidate.key)||candidate,now=gameStatus();
+ openPlayerCardComposer({kind:'game',player:p.raw,teamName:p.teamName,teamCode:p.teamCode,teamLogo:p.teamLogo,headshot:p.headshot,
+  gameLabel:name(game.away)+' x '+name(game.home),date:shortDate(game.date),score:now.scoreAway!=null&&now.scoreHome!=null?now.scoreAway+' - '+now.scoreHome:'',opponent:name(p.teamCode===game.away?game.home:game.away),opponentLogo:logo(p.teamCode===game.away?game.home:game.away),rating:ratingLabel(performanceRating(p.raw))});
+}
+const playerActions=mountPlayerActions({root,selector:'[data-player-detail],[data-lineup-player]',
+ resolve:row=>comparisonPlayers().find(p=>p.id===String(row.dataset.playerDetail||row.dataset.lineupPlayer)&&p.teamCode===(row.dataset.playerTeam||row.dataset.lineupTeam)),
+ onCompare:p=>gameComparison(p.key),onCard:makeIndividualGameCard,onDetails:p=>openPlayerPerformance(p.id,p.teamCode)});
+window.addEventListener('pagehide',()=>playerActions.destroy());
 root.addEventListener('click',e=>{
+ if(e.target.closest('[data-open-comparison]')){gameComparison();return;}
  if(e.target.closest('[data-rating-info]')){
   modal('<h2>Como funciona a Nota DLQ?</h2><p>'+esc(RATING_EXPLANATION)+
    '</p><p class="info">A nota é calculada automaticamente (1,0–10,0) e não é a sua avaliação pessoal. É experimental e usa apenas dados disponíveis. Nos jogos ao vivo ela muda com o box score.</p>');

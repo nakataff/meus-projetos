@@ -77,6 +77,7 @@ function matchLabel(o){
  return (o.date||'')+(o.gameLabel?' • '+o.gameLabel:'');
 }
 export async function buildPlayerCard(options={}){
+ if(options.kind==='comparison'){const {buildComparisonCard}=await import('./comparison-card.js?v=20261024-compare-v1');return buildComparisonCard(options);}
  const format=PLAYER_CARD_FORMATS[options.format]||PLAYER_CARD_FORMATS.landscape;
  const {width:W,height:H}=format,mode=options.format||'landscape',stat=summarize(options);
  const canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;
@@ -155,7 +156,7 @@ export async function buildPlayerCard(options={}){
 }
 function filename(options){
  const who=String(options.player?.name||'jogador').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9-]+/gi,'-');
- return 'DLQ-'+who+'-'+(options.kind==='season'?'medias':'partida')+'-'+(options.format||'landscape')+'.png';
+ return 'DLQ-'+who+'-'+(options.kind==='comparison'?'comparacao':options.kind==='season'?'medias':'partida')+'-'+(options.format||'landscape')+'.png';
 }
 async function performAction(blob,options,mode){
  const safeName=filename(options),file=new File([blob],safeName,{type:'image/png'});
@@ -185,10 +186,11 @@ export async function exportPlayerImage(options={}){
 }
 export function openPlayerCardComposer(options={}){
  let selected='square',activeBlob=null,activeUrl=null,iteration=0;
- modal('<div class="dlq-card-maker"><h2>Gerar card do jogador</h2>'+
+ const formats=options.kind==='comparison'?{...PLAYER_CARD_FORMATS,portrait:{width:1080,height:1350,label:'Feed 4:5 • 1080 × 1350'}}:PLAYER_CARD_FORMATS;
+ modal('<div class="dlq-card-maker"><h2>'+ (options.kind==='comparison'?'Card da comparação':'Gerar card do jogador')+'</h2>'+
   '<p class="small subtle">Escolha o formato, confira a imagem e copie ou compartilhe sem precisar salvar o PNG.</p>'+
   '<div class="dlq-card-formats"><label for="dlqCardFormat">Formato</label>'+
-  '<select class="control" id="dlqCardFormat">'+Object.entries(PLAYER_CARD_FORMATS).map(([key,f])=>
+  '<select class="control" id="dlqCardFormat">'+Object.entries(formats).map(([key,f])=>
    '<option value="'+key+'"'+(selected===key?' selected':'')+'>'+f.label+'</option>').join('')+'</select></div>'+
   '<div class="dlq-card-preview" id="dlqCardPreview" role="status">Preparando imagem…</div>'+
   '<div class="dlq-card-actions">'+

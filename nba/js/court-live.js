@@ -64,8 +64,8 @@ function courtHTML(game){
  '<p>Representação visual dos lances registrados, não da movimentação real dos jogadores.</p></div>'+
  '<div class="court-panel-actions"><span id="courtFeedState" class="court-feed-state">Conectando…</span>'+
  '<button type="button" class="btn ghost" id="courtRefresh">↻ Atualizar</button></div></div>'+
- '<div class="court-board"><div class="court-board-teams"><span class="court-team-away">'+away+
- '</span><span id="courtPeriod">AGUARDANDO LANCES</span><span class="court-team-home">'+home+'</span></div>'+
+ '<div class="court-viewport"><div class="court-board"><div class="court-board-teams"><span class="court-team-away"><span>'+away+'</span><strong id="courtAwayScore" aria-label="Pontos de '+away+'">—</strong>'+
+ '</span><span id="courtPeriod">AGUARDANDO LANCES</span><span class="court-team-home"><strong id="courtHomeScore" aria-label="Pontos de '+home+'">—</strong><span>'+home+'</span></span></div>'+
  '<svg class="court-svg" viewBox="0 0 940 500" role="img" aria-label="Quadra estilizada vista de cima. Movimento ilustrativo conforme o tipo de lance." xmlns="http://www.w3.org/2000/svg">'+
  '<defs><linearGradient id="courtWood" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#bc8950"/><stop offset="1" stop-color="#a87541"/></linearGradient></defs>'+
  '<rect x="5" y="5" width="930" height="490" rx="12" fill="url(#courtWood)" stroke="#e9cea8" stroke-width="8"/>'+
@@ -84,6 +84,7 @@ function courtHTML(game){
  '<path id="courtBallSeam" d="M454 250h32 M470 234v32" stroke="#683b1d" stroke-width="2" fill="none"/>'+
  '</svg>'+
  '<div class="court-event-overlay" id="courtEventOverlay"><strong>Preparando quadra…</strong><span>Os lances aparecerão aqui</span></div></div>'+
+ '<button type="button" class="court-fullscreen-toggle" id="courtFullscreen" aria-pressed="false" aria-label="Abrir quadra em tela cheia">⛶ Tela cheia</button></div>'+
  '<div class="court-latest"><div><span class="caps">ÚLTIMO LANCE</span><strong id="courtLatestTitle">Aguardando dados</strong>'+
  '<span id="courtLatestMeta">Quadra pronta para acompanhar</span></div>'+
  '<span id="courtLatestBadge" class="court-event-badge">—</span></div>'+
@@ -143,24 +144,48 @@ export function mountCourtTracker({element,game,getStatus,onSummary}){
  element.innerHTML=courtHTML(game);
  const $=selector=>element.querySelector(selector);
  const state={destroyed:false,pending:null,timer:null,playTimer:null,plays:[],known:new Set(),
-   queue:[],processing:false,initial:true,limit:MAX_LOG,lastSeen:null,status:getStatus()?.status||'scheduled',failures:0};
+   queue:[],processing:false,initial:true,limit:MAX_LOG,lastSeen:null,status:getStatus()?.status||'scheduled',failures:0,replay:null,fallback:false};
  const refs={feed:$('#courtFeedState'),period:$('#courtPeriod'),ball:$('#courtBall'),
    seam:$('#courtBallSeam'),halo:$('#courtActionHalo'),trail:$('#courtPassTrail'),
    latest:$('#courtLatestTitle'),meta:$('#courtLatestMeta'),badge:$('#courtLatestBadge'),
    overlay:$('#courtEventOverlay'),timeline:$('#courtTimeline'),count:$('#courtLogCount'),
-   more:$('#courtLoadMore')};
+   more:$('#courtLoadMore'),awayScore:$('#courtAwayScore'),homeScore:$('#courtHomeScore'),viewport:$('.court-viewport'),fullscreen:$('#courtFullscreen')};
  function statusText(message,kind=''){
   refs.feed.className='court-feed-state '+(kind?'is-'+kind:'');
   refs.feed.textContent=message;
  }
- function showPlay(play,animate=true){
+ function syncScore(){
+  const current=getStatus()||game,play=state.replay;
+  const away=numeric(play?.scoreAway)??numeric(current.scoreAway),home=numeric(play?.scoreHome)??numeric(current.scoreHome);
+  refs.awayScore.textContent=away===null?'—':String(away);
+  refs.homeScore.textContent=home===null?'—':String(home);
+  if(!play&&current.status==='final')refs.period.textContent='FINAL';
+ }
+ function fullscreenState(){
+  const active=document.fullscreenElement===refs.viewport||state.fallback;
+  refs.fullscreen.textContent=active?'✕ Sair da tela cheia':'⛶ Tela cheia';
+  refs.fullscreen.setAttribute('aria-pressed',String(active));
+  refs.fullscreen.setAttribute('aria-label',active?'Sair da tela cheia':'Abrir quadra em tela cheia');
+ }
+ function fallbackFullscreen(active){state.fallback=active;refs.viewport.classList.toggle('court-is-fullscreen',active);document.body.classList.toggle('court-fullscreen-open',active);fullscreenState();}
+ async function toggleFullscreen(){
+  if(state.fallback){fallbackFullscreen(false);return;}
+  if(document.fullscreenElement===refs.viewport){try{await document.exitFullscreen();}catch{}fullscreenState();return;}
+  if(refs.viewport.requestFullscreen){try{await refs.viewport.requestFullscreen();if(state.destroyed){if(document.fullscreenElement===refs.viewport)await document.exitFullscreen?.();return;}fullscreenState();return;}catch{}}
+  if(!state.destroyed)fallbackFullscreen(true);
+ }
+ function fullscreenKey(e){if(e.key==='Escape'&&state.fallback){e.preventDefault();fallbackFullscreen(false);}}
+ function showPlay(play,animate=true,replay=false){
   if(state.destroyed||!element.isConnected)return;
+  state.replay=replay?play:null;
+  syncScore();
   const x=positionFor(play,game);
   const oldX=Number(refs.ball.getAttribute('cx'))||470;
   const oldY=Number(refs.ball.getAttribute('cy'))||250;
   const placeX=play.kind==='period'||play.kind==='timeout'?470:x.x;
   const placeY=play.kind==='period'||play.kind==='timeout'?250:x.y;
-  refs.period.textContent=play.period?(play.period>4?'PRORROGAÇÃO':play.period+'º QUARTO')+' • '+(play.clock||'—'):'LANCE RECENTE';
+  refs.period.textContent=(replay?'REPLAY · ':'')+(play.period?(play.period>4?'PRORROGAÇÃO':play.period+'º QUARTO')+' • '+(play.clock||'—'):'LANCE RECENTE');
+  if(!replay&&getStatus()?.status==='final')refs.period.textContent='FINAL';
   refs.latest.textContent=play.text;
   refs.meta.textContent=(play.team?play.team+' • ':'')+(play.period?play.period+'º período • ':'')+(play.clock||'');
   refs.badge.textContent=labelFor(play);
@@ -248,6 +273,7 @@ export function mountCourtTracker({element,game,getStatus,onSummary}){
    if(state.destroyed)return;
    state.failures=0;
    if(typeof onSummary==='function')onSummary(payload);
+   syncScore();
    const plays=normalizeCourtPlays(payload,game);
    ingest(plays);
    state.status=getStatus()?.status||current;
@@ -282,11 +308,12 @@ export function mountCourtTracker({element,game,getStatus,onSummary}){
   const item=e.target.closest('[data-court-index]');
   if(item){
    const p=state.plays[Number(item.dataset.courtIndex)];
-   if(p)showPlay(p,true);return;
+   if(p)showPlay(p,true,true);return;
   }
   if(e.target.closest('#courtLoadMore')){state.limit+=24;updateLog();return;}
+  if(e.target.closest('#courtFullscreen')){toggleFullscreen();return;}
   if(e.target.closest('#courtLiveReturn')){
-   state.queue=[];if(state.plays.length)showPlay(state.plays.at(-1),true);return;
+   state.replay=null;syncScore();state.queue=[];if(state.plays.length)showPlay(state.plays.at(-1),true);return;
   }
   if(e.target.closest('#courtRefresh')){refresh();return;}
  }
@@ -294,16 +321,23 @@ export function mountCourtTracker({element,game,getStatus,onSummary}){
  function online(){refresh();}
  element.addEventListener('click',onClick);
  document.addEventListener('visibilitychange',visible);
+ document.addEventListener('fullscreenchange',fullscreenState);
+ document.addEventListener('keydown',fullscreenKey);
+ syncScore();
  window.addEventListener('online',online);
  if(!/^\d{7,15}$/.test(id)){
   statusText('IDENTIFICADOR INVÁLIDO','error');
   refs.timeline.innerHTML='<div class="court-no-plays">Partida sem identificador ESPN válido.</div>';
  }else poll();
  return {destroy(){
-  state.destroyed=true;clearTimeout(state.timer);clearTimeout(state.playTimer);
+  state.destroyed=true;fallbackFullscreen(false);
+  if(document.fullscreenElement===refs.viewport)document.exitFullscreen?.().catch(()=>{});
+  clearTimeout(state.timer);clearTimeout(state.playTimer);
   state.pending?.abort();state.queue=[];
   element.removeEventListener('click',onClick);
   document.removeEventListener('visibilitychange',visible);
+  document.removeEventListener('fullscreenchange',fullscreenState);
+  document.removeEventListener('keydown',fullscreenKey);
   window.removeEventListener('online',online);
- },refresh};
+ },refresh,syncScore};
 }

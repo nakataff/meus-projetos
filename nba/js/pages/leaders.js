@@ -1,6 +1,7 @@
 /* DE LA QUADRA — ranking de atletas gerado a partir dos box scores finalizados. */
 import {$,setupShared,asset,currentDate,dayShift,TEAMS,name,logo,esc,playerLink,getData,modify,toast} from '../app.js?v=13';
-import {openPlayerCardComposer} from '../share-card.js?v=8';
+import {openPlayerCardComposer} from '../share-card.js?v=20261024-compare-v1';
+import {mountPlayerActions,openPlayerComparison} from '../player-actions.js?v=20261024-compare-v1';
 import {fetchLiveBoxscore} from '../boxscore.js?v=2';
 import {performanceRating} from '../performance-rating.js?v=2';
 setupShared('leaders','Melhores jogadores','Ranking de jogadores da NBA por médias e NOTA DLQ, com filtros de temporada e equipe.');
@@ -377,7 +378,7 @@ function rowHTML(p,i){
    '<a href="'+esc(playerLink(p.id,p.team))+'" title="Ver perfil de '+esc(p.name)+'"><b>'+esc(p.name)+'</b></a>'+
    '<span class="leaders-table-club"><img src="'+esc(logo(p.team))+'" alt="" loading="lazy">'+esc(p.team)+' • '+p.gp+' '+(p.gp===1?'jogo':'jogos')+'</span>'+
    '<div class="leaders-row-actions"><button type="button" data-leader-follow="'+esc(p.id)+'" class="leaders-row-action'+(followed(p.id)?' is-following':'')+'" title="'+(followed(p.id)?'Deixar de seguir':'Seguir jogador')+'" aria-label="'+(followed(p.id)?'Deixar de seguir ':'Seguir ')+esc(p.name)+'" aria-pressed="'+followed(p.id)+'">'+(followed(p.id)?'♥':'♡')+'</button>'+
-   '<button type="button" class="leaders-row-action" data-leader-card="'+esc(p.id)+'" title="Gerar card das médias" aria-label="Gerar card das médias de '+esc(p.name)+'">▣</button></div>'+
+   '<button type="button" class="leaders-row-action" data-leader-card="'+esc(p.id)+'" title="Gerar card das médias" aria-label="Gerar card das médias de '+esc(p.name)+'">▣</button><button type="button" class="leaders-row-action" data-player-options aria-label="Opções de '+esc(p.name)+'" title="Opções do jogador">⋯</button></div>'+
   '</div></div>';
  const fields=['pts','reb','ast','stl','blk','rating'].map(key=>{
   const val=metricValue(p,key);
@@ -386,7 +387,7 @@ function rowHTML(p,i){
     (key==='rating'?'<span class="leaders-rating-badge '+ratingClass(val)+'">'+cellMetric(p,key)+'</span>':
     '<span>'+cellMetric(p,key)+'</span>')+'</span>';
  }).join('');
- return '<div class="leaders-table-row" role="row">'+
+ return '<div class="leaders-table-row" role="row" tabindex="0" data-leader-id="'+esc(p.id)+'">'+
   '<div role="cell" class="leaders-table-player-cell">'+info+'</div>'+fields+'</div>';
 }
 function tableHTML(rows){
@@ -420,7 +421,7 @@ function toolbar(){
  filterOptions('teams')+
  '<label>Mínimo de jogos<select class="control" id="leadersMinimum">'+[1,3,5,10,20].map(v=>
   '<option value="'+v+'"'+(minimum===v?' selected':'')+'>'+v+' '+(v===1?'jogo':'jogos')+'</option>').join('')+'</select></label>'+
- '<label class="leaders-following-toggle"><input id="leadersFollowing" type="checkbox"'+(followingOnly?' checked':'')+'> Só jogadores que sigo</label></div></div>';
+ '<label class="leaders-following-toggle"><input id="leadersFollowing" type="checkbox"'+(followingOnly?' checked':'')+'> Só jogadores que sigo</label><button type="button" class="btn ghost" data-open-comparison>⇄ Comparar jogadores</button></div></div>';
 }
 
 function latestGameDate(){
@@ -480,7 +481,23 @@ window.addEventListener('online',()=>{refreshLeaders();syncRecentFinals(true);})
 // O ranking revalida o cache leve sem recarregar a página nem mudar os filtros.
 // A consulta compartilhada do placar inclui ontem durante todo o dia nesta página.
 setInterval(()=>{if(!document.hidden)refreshLeaders();},60000);
+function leaderComparisonPlayers(){
+ return roundRows().filter(p=>p.gp>0).map(p=>({key:p.team+':'+p.id,id:String(p.id),name:p.name,teamCode:p.team,teamName:name(p.team),teamLogo:logo(p.team),headshot:athleteImage(p.id),profileUrl:playerLink(p.id,p.team),gp:p.gp,raw:p,followed:followed(p.id),stats:Object.fromEntries(['pts','reb','ast','stl','blk','threeM','to','rating','min','fgpct','threepct'].map(k=>[k,metricValue(p,k)]))}));
+}
+function compareLeaders(firstKey=''){
+ if(selectedRounds.size&&!roundData)return toast('Aguarde o carregamento das rodadas.');
+ openPlayerComparison({getPlayers:leaderComparisonPlayers,firstKey,context:{mode:valueMode,title:(phase==='regular'?'Temporada regular':'Pré-temporada')+' 2026/27',subtitle:(selectedRounds.size?'Rodadas '+[...selectedRounds].sort((a,b)=>a-b).join(', '):'Todas as rodadas')+' · '+(valueMode==='total'?'Soma total':'Médias por jogo')}});
+}
+function leaderIndividualCard(candidate){
+ const row=roundRows().find(p=>String(p.id)===candidate.id);if(!row)return;
+ openPlayerCardComposer({kind:'season',phase,season:row,roundsLabel:selectedRounds.size?'RODADAS '+[...selectedRounds].sort((a,b)=>a-b).join(', '):'',player:{id:row.id,name:row.name},teamCode:row.team,teamName:name(row.team),teamLogo:logo(row.team),headshot:athleteImage(row.id)});
+}
+const playerActions=mountPlayerActions({root,selector:'[data-leader-id]',resolve:row=>leaderComparisonPlayers().find(p=>p.id===row.dataset.leaderId),onCompare:p=>compareLeaders(p.key),onCard:leaderIndividualCard,onFollow:p=>{
+ const now=!followed(p.id);modify(b=>{b.extras.players[p.id]={...(b.extras.players[p.id]||{}),favorite:now,name:p.name,team:p.teamCode};b.extras.updatedAt=new Date().toISOString();});renderResults();toast(now?'Agora você segue '+p.name:'Você deixou de seguir '+p.name);
+}});
+window.addEventListener('pagehide',()=>playerActions.destroy());
 root.addEventListener('click',e=>{
+ if(e.target.closest('[data-open-comparison]')){compareLeaders();return;}
  const stat=e.target.closest('[data-leaders-metric]');
  if(stat){metric=stat.dataset.leadersMetric;limit=30;syncURL();render();return;}
  const phaseBtn=e.target.closest('[data-leaders-phase]');
