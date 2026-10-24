@@ -9,6 +9,8 @@ let selectedDate=/^\d{4}-\d{2}-\d{2}$/.test(requested||'') && !Number.isNaN(Date
 let followToday=!requested;
 let view=qs('view')==='upcoming'||(qs('tv')==='br'&&!qs('data'))?'upcoming':qs('view')==='season'?'season':'day';
 let mode=qs('tv')==='br'?'br':'all',order='asc',limit=60;
+const broadcastOptions=[['ESPN','ESPN / Disney+'],['PRIME','Prime Video'],['LEAGUE','NBA League Pass'],['OTHER','Sem transmissão informada']];
+const selectedBroadcasts=new Set();
 let games=[],loadedMonths=new Set(),requestCounter=0,ready=false,busy=false;
 const validMonth=date=>MONTHS.includes(date.slice(0,7));
 const monthsFor=(date)=>{
@@ -53,8 +55,11 @@ function toolbar(){
  '<option value="unknown">Sem TV BR</option><option value="wish">Quero assistir</option>'+
  '<option value="watched">Assistidos</option><option value="rated">Avaliados</option></select></label>'+
  '<details class="agenda-more-filters" id="advancedGameFilters"><summary>⚙ Filtros <span aria-hidden="true">⌄</span></summary>'+
- '<div class="agenda-filter-panel"><label>Buscar equipe<input id="searchGames" class="control" type="search" placeholder="Nome ou sigla…"></label>'+
- '<label>Equipe<select id="teamGames" class="control"><option value="">Todas as equipes</option>'+teams+'</select></label>'+
+ '<div class="agenda-filter-panel"><label>Equipe<select id="teamGames" class="control"><option value="">Todas as equipes</option>'+teams+'</select></label>'+
+ '<div class="agenda-broadcast-field"><span>Onde assistir</span><details class="agenda-broadcast-picker"><summary><span id="broadcastFilterLabel">Todas as transmissões</span><span aria-hidden="true">⌄</span></summary>'+
+ '<fieldset><legend class="sr-only">Filtrar locais de transmissão</legend><label><input type="checkbox" data-broadcast="ALL" checked> Todas as transmissões</label>'+
+ broadcastOptions.map(([key,label])=>'<label><input type="checkbox" data-broadcast="'+key+'"> '+label+'</label>').join('')+
+ '<small>Marque uma ou mais opções</small></fieldset></details></div>'+
  '<label>Fase<select id="stageGames" class="control"><option value="">Todas as fases</option>'+
  '<option value="Temporada regular">Temporada regular</option><option value="Pré-temporada">Pré-temporada</option>'+
  '<option value="Copa NBA">Copa NBA</option><option value="Playoffs">Playoffs</option></select></label>'+
@@ -125,7 +130,6 @@ function updateActive(){
  if(sort)sort.value=order;
 }
 function matchFilter(g){
- const search=($('#searchGames')?.value||'').toLowerCase().trim();
  const team=$('#teamGames')?.value||'';
  const stage=$('#stageGames')?.value||'';
  const n=note(g.id);
@@ -133,7 +137,8 @@ function matchFilter(g){
  if(view==='upcoming'&&g.date<today&&!overnightGame(g))return false;
  if(team&&g.away!==team&&g.home!==team)return false;
  if(stage&&g.stage!==stage)return false;
- if(search&&![g.away,g.home,TEAMS[g.away]?.[0],TEAMS[g.home]?.[0]].join(' ').toLowerCase().includes(search))return false;
+ const platforms=g.platforms||[];
+ if(selectedBroadcasts.size&&![...selectedBroadcasts].some(p=>p==='OTHER'?!platforms.some(x=>['ESPN','PRIME','LEAGUE'].includes(x)):platforms.includes(p)))return false;
  if(mode==='br'&&!(g.platforms||[]).some(p=>p==='PRIME'||p==='ESPN'))return false;
  if(mode==='unknown'&&(g.platforms||[]).some(p=>p==='PRIME'||p==='ESPN'))return false;
  if(mode==='wish'&&(!n.wish||n.watched))return false;
@@ -195,10 +200,15 @@ root.addEventListener('click',e=>{
  if(e.target.closest('#goToday')){setDay(today,true);return;}
  if(e.target.closest('#loadMore')){limit+=60;render();return;}
 });
-root.addEventListener('input',e=>{
- if(e.target.id==='searchGames'){limit=60;render();}
-});
 root.addEventListener('change',e=>{
+ if(e.target.matches('[data-broadcast]')){
+  const key=e.target.dataset.broadcast;
+  if(key==='ALL')selectedBroadcasts.clear();
+  else if(e.target.checked)selectedBroadcasts.add(key);else selectedBroadcasts.delete(key);
+  root.querySelectorAll('[data-broadcast]').forEach(box=>{box.checked=box.dataset.broadcast==='ALL'?!selectedBroadcasts.size:selectedBroadcasts.has(box.dataset.broadcast);});
+  $('#broadcastFilterLabel').textContent=!selectedBroadcasts.size?'Todas as transmissões':selectedBroadcasts.size===1?broadcastOptions.find(([id])=>selectedBroadcasts.has(id))[1]:selectedBroadcasts.size+' locais selecionados';
+  limit=60;render();return;
+ }
  if(e.target.id==='agendaView'){
   view=e.target.value;order='asc';limit=60;
   renderNav();syncURL();reload();return;

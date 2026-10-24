@@ -1720,3 +1720,14 @@ a.fav-info:hover,a.fav-info:focus-visible{border-color:var(--accent);background:
  .leaders-select-menu{width:100%;max-width:none}
 }
 @media(prefers-reduced-motion:reduce){.leaders-select-chevron{transition:none}}
+
+/* Agenda: one team selector and local multi-select for broadcasts. */
+.agenda-broadcast-field>span{display:block;font-size:10px;font-weight:850;color:#b6c6da;margin-bottom:6px}
+.agenda-broadcast-picker{min-width:0}
+.agenda-more-filters .agenda-broadcast-picker>summary{display:flex;justify-content:space-between;gap:8px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;min-height:40px;font-size:12px;background:#0c1420;color:var(--txt);list-style:none}
+.agenda-broadcast-picker>summary>span:first-child{min-width:0;overflow-wrap:anywhere}
+.agenda-broadcast-picker fieldset{margin:6px 0 0;padding:8px;border:1px solid var(--border);border-radius:10px;background:#0c1420;min-width:0}
+.agenda-filter-panel .agenda-broadcast-picker label{display:flex;flex-direction:row;align-items:center;gap:8px;padding:7px 3px;font-size:12px;color:var(--txt);font-weight:500;cursor:pointer}
+.agenda-broadcast-picker input{accent-color:var(--accent);width:16px;height:16px;flex:none;margin:0}
+.agenda-broadcast-picker small{display:block;font-size:10px;color:var(--muted);padding:5px 3px}
+.agenda-broadcast-picker legend{font-size:10px;color:var(--muted)}
