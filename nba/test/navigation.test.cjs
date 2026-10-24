@@ -15,6 +15,6 @@ test('global search loads one lazy index, filters locally and remembers compact 
  await type('BOS LAL');assert($('.dlq-search-result').href.includes('id=11'));assert.equal(requests,1);
  $('.dlq-search-head button').click();$('.dlq-search-open').click();await type('lakers');assert.equal(requests,1);assert($('.dlq-search-results').textContent.includes('Los Angeles Lakers'));
  $('.dlq-dock-toggle').click();assert($('.dlq-dock').classList.contains('is-collapsed'));assert.equal(w.localStorage.getItem('dlq-dock-collapsed'),'1');assert.equal($('.dlq-dock-toggle').getAttribute('aria-expanded'),'false');
- const nav=[...w.document.querySelectorAll('.mainnav a')].map(a=>a.textContent);assert.deepEqual(nav,['Jogos','Classificação','Equipes','Jogadores']);
+ const nav=[...w.document.querySelectorAll('.mainnav a:not(.dlq-desktop-link)')].map(a=>a.textContent);assert.deepEqual(nav,['Jogos','Classificação','Equipes','Jogadores']);
  }finally{w.close();}
 });

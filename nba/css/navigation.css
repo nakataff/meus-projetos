@@ -14,3 +14,18 @@ body{padding-bottom:calc(66px + env(safe-area-inset-bottom,0px))}
 .dlq-search-dialog::backdrop{background:#000a}.dlq-search-head{display:flex;gap:10px;align-items:center;padding:14px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--panel);z-index:1}.dlq-search-head input{width:100%;min-width:0;border:0;background:transparent;color:var(--txt);font-size:16px;outline-offset:4px}.dlq-search-head button{border:1px solid var(--border);background:var(--panel2);border-radius:8px;color:var(--muted);padding:7px 10px}.dlq-search-results{padding:8px 12px}.dlq-search-results h3{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);margin:14px 8px 5px}.dlq-search-result{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:10px;font-size:13px}.dlq-search-result:hover,.dlq-search-result:focus{background:var(--panel2)}.dlq-search-result img{width:30px;height:30px;object-fit:contain}.dlq-search-result span{display:block;min-width:0}.dlq-search-result b{display:block;overflow-wrap:anywhere}.dlq-search-result small{font-size:11px;color:var(--muted)}.dlq-search-note{color:var(--muted);font-size:12px;padding:12px}.dlq-search-dialog [hidden]{display:none!important}
 @media(min-width:1000px){.dlq-top.top{grid-template-columns:auto 1fr minmax(180px,300px);min-height:80px}.dlq-top .mainnav{grid-column:2;grid-row:1}.dlq-search-open{grid-column:3;grid-row:1}}
 @media(max-width:520px){.dlq-top.top{gap:7px 12px;padding:9px 0;min-height:0;grid-template-columns:1fr auto}.dlq-top.top>.brand img{width:135px;max-height:42px}.dlq-search-open{width:38px;height:36px;padding:8px;justify-content:center}.dlq-search-open span,.dlq-search-open kbd{display:none}.dlq-top .navlink{font-size:12px;padding:7px 2px;letter-spacing:-.02em}.dlq-search-dialog{margin-top:12px;max-height:85dvh}}
+
+/* Personal shortcuts stay in the header on desktop; dock is mobile only. */
+.dlq-top .dlq-desktop-link{display:none}
+@media(min-width:771px){
+ body{padding-bottom:0}
+ .dlq-dock{display:none}
+ .dlq-top .dlq-desktop-link{display:block}
+ .dlq-top .mainnav{grid-template-columns:repeat(6,minmax(0,1fr));max-width:800px}
+}
+@media(min-width:1000px) and (max-width:1199px){
+ .dlq-top.top{grid-template-columns:160px minmax(0,1fr) 42px;gap:16px}
+ .dlq-search-open{width:42px;justify-content:center;padding:10px}
+ .dlq-search-open span,.dlq-search-open kbd{display:none}
+}
+@media(min-width:1200px){.dlq-top.top{grid-template-columns:160px minmax(0,1fr) 230px;gap:18px}}
