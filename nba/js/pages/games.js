@@ -10,7 +10,8 @@ let followToday=!requested;
 let view=qs('view')==='upcoming'||(qs('tv')==='br'&&!qs('data'))?'upcoming':qs('view')==='season'?'season':'day';
 let mode=qs('tv')==='br'?'br':'all',order='asc',limit=60;
 const broadcastOptions=[['ESPN','ESPN / Disney+'],['PRIME','Prime Video'],['LEAGUE','NBA League Pass'],['OTHER','Sem transmissão informada']];
-const selectedBroadcasts=new Set();
+const selectedTeams=new Set();
+const normalizeTeam=value=>String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 let games=[],loadedMonths=new Set(),requestCounter=0,ready=false,busy=false;
 const validMonth=date=>MONTHS.includes(date.slice(0,7));
 const monthsFor=(date)=>{
@@ -45,7 +46,7 @@ function dateNav(){
 }
 function toolbar(){
  const teams=Object.entries(TEAMS).sort((a,b)=>a[1][0].localeCompare(b[1][0]))
-  .map(([code,t])=>'<option value="'+code+'">'+esc(t[0])+'</option>').join('');
+  .map(([code,t])=>'<label data-team-option="'+code+'"><input type="checkbox" data-agenda-team="'+code+'"> '+esc(t[0])+' <small>'+code+'</small></label>').join('');
  return '<div id="dayNavigation">'+(view==='day'?dateNav():'')+'</div>'+
  '<div class="agenda-compact-toolbar">'+
  '<label class="agenda-select"><span>Período</span><select class="control" id="agendaView">'+
@@ -55,11 +56,10 @@ function toolbar(){
  '<option value="unknown">Sem TV BR</option><option value="wish">Quero assistir</option>'+
  '<option value="watched">Assistidos</option><option value="rated">Avaliados</option></select></label>'+
  '<details class="agenda-more-filters" id="advancedGameFilters"><summary>⚙ Filtros <span aria-hidden="true">⌄</span></summary>'+
- '<div class="agenda-filter-panel"><label>Equipe<select id="teamGames" class="control"><option value="">Todas as equipes</option>'+teams+'</select></label>'+
- '<div class="agenda-broadcast-field"><span>Onde assistir</span><details class="agenda-broadcast-picker"><summary><span id="broadcastFilterLabel">Todas as transmissões</span><span aria-hidden="true">⌄</span></summary>'+
- '<fieldset><legend class="sr-only">Filtrar locais de transmissão</legend><label><input type="checkbox" data-broadcast="ALL" checked> Todas as transmissões</label>'+
- broadcastOptions.map(([key,label])=>'<label><input type="checkbox" data-broadcast="'+key+'"> '+label+'</label>').join('')+
- '<small>Marque uma ou mais opções</small></fieldset></details></div>'+
+ '<div class="agenda-filter-panel"><div class="agenda-team-field"><span>Equipe</span><details class="agenda-team-picker" id="teamGames"><summary><span id="teamFilterLabel">Todas as equipes</span><span aria-hidden="true">⌄</span></summary>'+
+ '<div class="agenda-team-menu"><label class="agenda-team-search">Buscar equipe<input id="agendaTeamSearch" type="search" class="control" placeholder="Nome ou sigla…" autocomplete="off"></label>'+
+ '<fieldset><legend>Selecionar equipes</legend><label><input type="checkbox" data-agenda-team="ALL" checked> Todas as equipes</label>'+teams+'</fieldset><p id="agendaTeamEmpty" hidden>Nenhuma equipe encontrada.</p></div></details></div>'+
+ '<label>Onde assistir<select id="broadcastGames" class="control"><option value="">Todas as transmissões</option>'+broadcastOptions.map(([key,label])=>'<option value="'+key+'">'+label+'</option>').join('')+'</select></label>'+
  '<label>Fase<select id="stageGames" class="control"><option value="">Todas as fases</option>'+
  '<option value="Temporada regular">Temporada regular</option><option value="Pré-temporada">Pré-temporada</option>'+
  '<option value="Copa NBA">Copa NBA</option><option value="Playoffs">Playoffs</option></select></label>'+
@@ -130,15 +130,15 @@ function updateActive(){
  if(sort)sort.value=order;
 }
 function matchFilter(g){
- const team=$('#teamGames')?.value||'';
+ const broadcast=$('#broadcastGames')?.value||'';
  const stage=$('#stageGames')?.value||'';
  const n=note(g.id);
  if(view==='day'&&g.date!==selectedDate&&!(selectedDate===today&&overnightGame(g)))return false;
  if(view==='upcoming'&&g.date<today&&!overnightGame(g))return false;
- if(team&&g.away!==team&&g.home!==team)return false;
+ if(selectedTeams.size&&!selectedTeams.has(g.away)&&!selectedTeams.has(g.home))return false;
  if(stage&&g.stage!==stage)return false;
  const platforms=g.platforms||[];
- if(selectedBroadcasts.size&&![...selectedBroadcasts].some(p=>p==='OTHER'?!platforms.some(x=>['ESPN','PRIME','LEAGUE'].includes(x)):platforms.includes(p)))return false;
+ if(broadcast&&(broadcast==='OTHER'?platforms.some(x=>['ESPN','PRIME','LEAGUE'].includes(x)):!platforms.includes(broadcast)))return false;
  if(mode==='br'&&!(g.platforms||[]).some(p=>p==='PRIME'||p==='ESPN'))return false;
  if(mode==='unknown'&&(g.platforms||[]).some(p=>p==='PRIME'||p==='ESPN'))return false;
  if(mode==='wish'&&(!n.wish||n.watched))return false;
@@ -147,7 +147,7 @@ function matchFilter(g){
  return true;
 }
 function emptyMessage(){
- const later=games.find(g=>g.date>selectedDate&&(!$('#teamGames')?.value||g.away===$('#teamGames').value||g.home===$('#teamGames').value));
+ const later=games.find(g=>g.date>selectedDate&&(!selectedTeams.size||selectedTeams.has(g.away)||selectedTeams.has(g.home)));
  const earlier=[...games].reverse().find(g=>g.date<selectedDate);
  let html='<div class="filler"><b>Nenhum jogo encontrado '+(view==='day'?'para '+esc(fullDay(selectedDate)):'com esses filtros')+'.</b>'+
  (view==='day'?'Você pode avançar ou voltar um dia, ou escolher uma data no calendário.':'Ajuste os filtros ou escolha outro período.')+'</div>';
@@ -201,12 +201,12 @@ root.addEventListener('click',e=>{
  if(e.target.closest('#loadMore')){limit+=60;render();return;}
 });
 root.addEventListener('change',e=>{
- if(e.target.matches('[data-broadcast]')){
-  const key=e.target.dataset.broadcast;
-  if(key==='ALL')selectedBroadcasts.clear();
-  else if(e.target.checked)selectedBroadcasts.add(key);else selectedBroadcasts.delete(key);
-  root.querySelectorAll('[data-broadcast]').forEach(box=>{box.checked=box.dataset.broadcast==='ALL'?!selectedBroadcasts.size:selectedBroadcasts.has(box.dataset.broadcast);});
-  $('#broadcastFilterLabel').textContent=!selectedBroadcasts.size?'Todas as transmissões':selectedBroadcasts.size===1?broadcastOptions.find(([id])=>selectedBroadcasts.has(id))[1]:selectedBroadcasts.size+' locais selecionados';
+ if(e.target.matches('[data-agenda-team]')){
+  const key=e.target.dataset.agendaTeam;
+  if(key==='ALL')selectedTeams.clear();
+  else if(e.target.checked)selectedTeams.add(key);else selectedTeams.delete(key);
+  root.querySelectorAll('[data-agenda-team]').forEach(box=>{box.checked=box.dataset.agendaTeam==='ALL'?!selectedTeams.size:selectedTeams.has(box.dataset.agendaTeam);});
+  $('#teamFilterLabel').textContent=!selectedTeams.size?'Todas as equipes':selectedTeams.size===1?TEAMS[[...selectedTeams][0]][0]:selectedTeams.size+' equipes selecionadas';
   limit=60;render();return;
  }
  if(e.target.id==='agendaView'){
@@ -220,7 +220,7 @@ root.addEventListener('change',e=>{
   renderNav();syncURL();reload();return;
  }
  if(e.target.id==='sortGames'){order=e.target.value;render();return;}
- if(['teamGames','stageGames'].includes(e.target.id)){limit=60;render();}
+ if(['broadcastGames','stageGames'].includes(e.target.id)){limit=60;render();}
 });
 
 function refreshForClock(){
@@ -236,3 +236,17 @@ function refreshForClock(){
 }
 window.addEventListener('quadra:refresh',refreshForClock);
 window.addEventListener('quadra:live-update',refreshForClock);
+
+// Search only the 30 local team labels; it never changes the match filter itself.
+root.addEventListener('input',e=>{
+ if(e.target.id!=='agendaTeamSearch')return;
+ const query=normalizeTeam(e.target.value);let visible=0;
+ root.querySelectorAll('[data-team-option]').forEach(row=>{
+  const code=row.dataset.teamOption;
+  row.hidden=!normalizeTeam(TEAMS[code][0]+' '+code).includes(query);
+  if(!row.hidden)visible++;
+ });
+ $('#agendaTeamEmpty').hidden=visible>0;
+});
+document.addEventListener('click',e=>{const picker=$('#teamGames');if(picker&&!picker.contains(e.target))picker.open=false;});
+root.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#teamGames')?.open){$('#teamGames').open=false;$('#teamGames summary').focus();e.stopPropagation();}});
