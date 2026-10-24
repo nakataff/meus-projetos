@@ -1,7 +1,7 @@
 /* DE LA QUADRA — ranking de atletas gerado a partir dos box scores finalizados. */
 import {$,setupShared,asset,currentDate,dayShift,TEAMS,name,logo,esc,playerLink,getData,modify,toast} from '../app.js?v=13';
 import {openPlayerCardComposer} from '../share-card.js?v=20261024-comparison-options-v1';
-import {mountPlayerActions,openPlayerComparison} from '../player-actions.js?v=20261024-comparison-options-v1';
+import {mountPlayerActions,openPlayerComparison} from '../player-actions.js?v=20261024-roster-points-v1';
 import {fetchLiveBoxscore} from '../boxscore.js?v=2';
 import {performanceRating} from '../performance-rating.js?v=2';
 setupShared('leaders','Melhores jogadores','Ranking de jogadores da NBA por médias e NOTA DLQ, com filtros de temporada e equipe.');

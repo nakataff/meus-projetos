@@ -7,3 +7,11 @@
 @media(max-width:650px){.comparison-scope{grid-template-columns:1fr 1fr}.comparison-scope>label:last-child{grid-column:1/-1}.comparison-selected{gap:38px}.comparison-selected-player{display:flex;flex-direction:column;gap:7px;padding:11px 7px;text-align:center}.comparison-selected-player>img{width:76px;height:70px}.comparison-selected-player>span:not(.comparison-change){justify-items:center}.comparison-selected-player strong{font-size:14px}.comparison-selected-player small{justify-content:center;font-size:10px}.comparison-change{font-size:10px}#comparisonRoster{grid-template-columns:1fr;max-height:380px}.comparison-roster-team h4{position:static}.comparison-field-checks{grid-template-columns:1fr 1fr}.comparison-stat-blocks{gap:7px}.comparison-stats.comparison-stat-blocks>div{padding:10px 5px}.comparison-stat-blocks strong{font-size:22px}}
 
 .comparison-stat-blocks>div:last-child:nth-child(odd){grid-column:1/-1}
+
+/* Honor native hidden state even when shared .btn rules set display. */
+.dlq-comparison [hidden]{display:none!important}
+.comparison-retry{font-size:12px;padding:7px 10px;margin:0 0 12px}
+.comparison-sort-note{margin:12px 0 0;font-size:11px}
+.comparison-roster-team button>.comparison-roster-score{display:grid;gap:4px;text-align:right;flex:none}
+.comparison-roster-score b{font-size:12px;color:#e6effb;font-variant-numeric:tabular-nums}
+.comparison-roster-score small{font-size:10px;color:#ffbd86}
