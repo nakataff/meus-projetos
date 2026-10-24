@@ -1,16 +1,16 @@
 /* QUADRA — perfil leve de franquia com médias coletivas e por atleta. */
 import {$,setupShared,TEAMS,EAST,WEST,name,logo,esc,qs,fetchRoster,loadGames,MONTHS,
  currentDate,shortDate,teamLink,playerLink,path,jsonFile,getData,setSettings,
- modify,modal,closeModal,toast,groupGames,handleWishes} from '../app.js?v=13';
+ modify,modal,closeModal,toast,groupGames,handleWishes,effectiveGame} from '../app.js?v=13';
 
 const code=(qs('id')||'BOS').toUpperCase(),root=$('#pageContent'),valid=!!TEAMS[code];
 setupShared('teams',valid?name(code):'Equipe não encontrada',
- 'Campanha, estatísticas coletivas e individuais, elenco e próximos jogos.');
+ 'Campanha, estatísticas coletivas e individuais, elenco, resultados recentes e próximos jogos.');
 const groups={...EAST,...WEST};
 const division=Object.keys(groups).find(d=>groups[d].includes(code))||'';
 const conf=Object.values(EAST).some(list=>list.includes(code))?'Leste':'Oeste';
 let roster=[],teamStats=null,standings=null,games=[],active='resumo',
- phase='regular',sortBy='pts',sortAsc=false,statError='',rosterReady=false,gamesLoaded=false;
+ phase='regular',sortBy='pts',sortAsc=false,statError='',rosterReady=false,gamesLoaded=false,gamesError=false,gamesPromise=null,recentLimit=10;
 
 const n=x=>Number.isFinite(Number(x))?Number(x):0;
 const fmt=x=>Number.isFinite(x)?x.toFixed(1).replace('.',','):'—';
@@ -112,6 +112,20 @@ function recentLineup(){
  ' • '+(p.pts??'—')+' PTS • '+(p.reb??'—')+' REB • '+(p.ast??'—')+' AST</small></span></a>').join('')+'</div>'+
  '<p class="small subtle">Escalação da última partida com quinteto identificado — não representa previsão oficial do próximo jogo.</p></div>';
 }
+function teamGames(){
+ return games.filter(g=>g.away===code||g.home===code).map(effectiveGame);
+}
+function recentResults(limit=3){
+ const recent=teamGames().filter(g=>g.status==='final').sort((a,b)=>
+  (b.date+' '+(b.time||'')).localeCompare(a.date+' '+(a.time||'')));
+ return '<section class="section"><div class="section-title"><h2>Resultados recentes</h2>'+
+  (active==='resumo'?'<button type="button" class="btn ghost" data-tab="jogos">Ver jogos da equipe →</button>':'')+'</div>'+
+  (!gamesLoaded?'<div class="filler">Carregando resultados…</div>':gamesError?
+   '<div class="filler">Não foi possível carregar as partidas. <button type="button" class="btn ghost" data-retry-games>Recarregar jogos</button></div>':
+   recent.length?groupGames(recent.slice(0,limit))+
+    (active==='jogos'&&recent.length>limit?'<button type="button" class="btn ghost" data-more-results>Ver mais resultados</button>':''):
+   '<div class="filler">Nenhuma partida encerrada nos meses recentes.</div>')+'</section>';
+}
 function overview(){
  return phaseControl()+teamWarning()+(section()?.games?
   '<section class="section"><div class="section-title"><h2>Números da equipe</h2>'+
@@ -120,10 +134,11 @@ function overview(){
   '<p class="team-stats-footnote">Pontos, campanha e saldo: jogos finalizados nesta fase. Rebotes, assistências e aproveitamento de arremessos: apenas '+section().boxGames+
   ' jogos com box score importado. Dados sujeitos à disponibilidade da fonte.</p></section>'+
   leaderSummary():'')+
+ recentResults()+
  '<section class="section"><div class="section-title"><h2>Quinteto mais recente</h2>'+
  '<button type="button" class="btn ghost" data-tab="titulares">Ver escalações →</button></div>'+recentLineup()+'</section>'+
  '<section class="team-quick-links"><button type="button" class="btn" data-tab="estatisticas">Ranking dos jogadores →</button>'+
- '<button type="button" class="btn ghost" data-tab="jogos">Próximos jogos →</button></section>';
+ '<button type="button" class="btn ghost" data-tab="jogos">Resultados e próximos jogos →</button></section>';
 }
 const columns=[
  {id:'pts',name:'PTS',label:'Pontos/jogo'},
@@ -233,10 +248,11 @@ function draw(){
   (line.length?line.map(id=>roster.find(p=>String(p.id)===String(id))).filter(Boolean).map(playerRow).join(''):
    '<div class="filler">Use Avaliar na aba Elenco para escolher seus cinco jogadores.</div>')+'</section>';
  }else if(active==='jogos'){
-  const upcoming=games.filter(g=>(g.away===code||g.home===code)&&g.date>=currentDate()).slice(0,8);
+  const upcoming=teamGames().filter(g=>g.status!=='final'&&g.date>=currentDate()).slice(0,8);
+  content+=recentResults(recentLimit);
   content+='<section class="section"><div class="section-title"><h2>Próximos jogos</h2>'+
   '<a class="btn" href="'+path('jogos/')+'">Agenda completa →</a></div>'+
-  (gamesLoaded?groupGames(upcoming):'<div class="filler">Carregando próximos confrontos…</div>')+'</section>';
+  (gamesError?'':gamesLoaded?groupGames(upcoming):'<div class="filler">Carregando próximos confrontos…</div>')+'</section>';
  }else if(active==='notas'){
   const saved=getData().extras;
   const rated=roster.filter(p=>Number(saved.players?.[p.id]?.rating)>0)
@@ -247,15 +263,22 @@ function draw(){
  }
  root.innerHTML=content;
 }
-async function loadExtras(){
- if(!valid)return;
+function loadExtras(){
+ if(!valid)return Promise.resolve();
+ if(gamesPromise)return gamesPromise;
  const today=currentDate(),index=Math.max(0,MONTHS.indexOf(today.slice(0,7)));
- const required=MONTHS.slice(index,index+2);
- gamesLoaded=false;
- try{games=await loadGames(required);}catch(e){console.info('QUADRA: jogos do time indisponíveis',e);games=[]}
- gamesLoaded=true;if(active==='jogos')draw();
+ // Only the previous, current and next monthly files; reuse the shared JSON cache.
+ const required=MONTHS.slice(Math.max(0,index-1),index+2);
+ gamesLoaded=false;gamesError=false;
+ gamesPromise=(async()=>{
+  try{games=await loadGames(required);}catch(e){console.info('QUADRA: jogos do time indisponíveis',e);gamesError=true;}
+  finally{gamesLoaded=true;gamesPromise=null;if(active==='jogos'||active==='resumo')draw();}
+ })();
+ return gamesPromise;
 }
 root.addEventListener('click',e=>{
+ if(e.target.closest('[data-retry-games]')){loadExtras();draw();return;}
+ if(e.target.closest('[data-more-results]')){recentLimit+=10;draw();return;}
  const tab=e.target.closest('[data-tab]');
  if(tab){active=tab.dataset.tab;draw();if(active==='jogos'&&!gamesLoaded)loadExtras();return;}
  const changePhase=e.target.closest('[data-phase]');
@@ -280,6 +303,6 @@ if(valid){
   if(results[0].status==='fulfilled')teamStats=results[0].value;else statError=String(results[0].reason);
   standings=results[1].status==='fulfilled'?results[1].value:null;
   roster=results[2].status==='fulfilled'?results[2].value:[];
-  rosterReady=true;draw();
+  rosterReady=true;draw();loadExtras();
  });
 }else draw();
