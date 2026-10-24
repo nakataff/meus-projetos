@@ -1,7 +1,7 @@
 import {$,setupShared,qs,esc,name,logo,tlogo,effectiveGame,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,note,getData,setNote,setExtraGroup,platform,broadcastLinks,shortDate,currentDate,toast,modal,closeModal,eventBox,fetchRoster,livePeriodLabel} from '../app.js?v=13';
 import {fetchLiveBoxscore,projectStartingFive,normalizeSummary} from '../boxscore.js?v=2';
-import {openPlayerCardComposer} from '../share-card.js?v=20261024-compare-v1';
-import {mountPlayerActions,openPlayerComparison} from '../player-actions.js?v=20261024-compare-v1';
+import {openPlayerCardComposer} from '../share-card.js?v=20261024-comparison-options-v1';
+import {mountPlayerActions,openPlayerComparison} from '../player-actions.js?v=20261024-comparison-options-v1';
 import {performanceRating,ratingLabel,topPerformance,RATING_EXPLANATION} from '../performance-rating.js?v=2';
 const id=qs('id')||'',hint=qs('data')||'',root=$('#pageContent');
 setupShared('games','Centro da partida','Escalações, estatísticas e seu diário pessoal de basquete.');
@@ -659,7 +659,7 @@ function comparisonPlayers(){
  const shotPercent=value=>{const m=String(value||'').match(/^(\d+)\s*-\s*(\d+)$/);return m&&+m[2]?100*(+m[1])/(+m[2]):null;};
  return [game.away,game.home].flatMap(code=>(box?.players?.[code]||[])
   .filter(p=>p.id&&p.name&&(p.hasStats===true||p.pts!==null&&p.pts!==undefined)).map(p=>({
-   key:code+':'+p.id,id:String(p.id),name:p.name,teamCode:code,teamName:name(code),teamLogo:logo(code),
+   key:code+':'+p.id,id:String(p.id),name:p.name,position:p.starter?'Titular':'Reserva',teamCode:code,teamName:name(code),teamLogo:logo(code),
    headshot:rosters[code]?.find(r=>String(r.id)===String(p.id))?.headshot||'https://a.espncdn.com/i/headshots/nba/players/full/'+encodeURIComponent(p.id)+'.png',
    profileUrl:playerPerformanceUrl(p.id,code),raw:p,
    stats:{...Object.fromEntries(['pts','reb','ast','stl','blk','to','min','rating'].map(k=>[k,statValue(p,k)])),threeM:statValue(p,'three'),fgpct:shotPercent(p.fg),threepct:shotPercent(p.three)}

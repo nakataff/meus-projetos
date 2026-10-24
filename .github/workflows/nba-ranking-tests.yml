@@ -8,6 +8,7 @@ on:
       - 'nba/js/court-live.js'
       - 'nba/js/player-actions.js'
       - 'nba/js/comparison-card.js'
+      - 'nba/js/comparison-fields.js'
       - 'nba/js/share-card.js'
       - 'nba/css/player-tools.css'
       - 'nba/js/entry.js'
@@ -23,6 +24,7 @@ on:
       - 'nba/js/court-live.js'
       - 'nba/js/player-actions.js'
       - 'nba/js/comparison-card.js'
+      - 'nba/js/comparison-fields.js'
       - 'nba/js/share-card.js'
       - 'nba/css/player-tools.css'
       - 'nba/test/**'
@@ -49,4 +51,4 @@ jobs:
       - name: Test final boxscore import and data preservation
         run: python -m unittest discover -s scripts/tests -v
       - name: Check shared browser scripts
-        run: node --check nba/js/live.js && node --check nba/js/pages/leaders.js && node --check nba/js/entry.js && node --check nba/js/pages/game.js && node --check nba/js/court-live.js && node --check nba/js/player-actions.js && node --check nba/js/comparison-card.js && node --check nba/js/share-card.js
+        run: node --check nba/js/live.js && node --check nba/js/pages/leaders.js && node --check nba/js/entry.js && node --check nba/js/pages/game.js && node --check nba/js/court-live.js && node --check nba/js/player-actions.js && node --check nba/js/comparison-card.js && node --check nba/js/comparison-fields.js && node --check nba/js/share-card.js

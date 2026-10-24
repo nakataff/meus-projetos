@@ -1,52 +1,67 @@
-/* Shared comparison and contextual actions. Uses only the data already on screen. */
+/* Shared comparison and contextual actions. Uses only loaded data and lazy round summaries. */
 import {modal,esc,toast} from './app.js?v=13';
-import {openPlayerCardComposer} from './share-card.js?v=20261024-compare-v1';
-export const COMPARISON_FIELDS=Object.freeze([
- {key:'pts',label:'Pontos'},{key:'reb',label:'Rebotes'},{key:'ast',label:'Assistências'},
- {key:'stl',label:'Roubos'},{key:'blk',label:'Tocos'},{key:'threeM',label:'Bolas de 3'},
- {key:'to',label:'Turnovers',lower:true},{key:'rating',label:'Nota DLQ'},
- {key:'min',label:'Minutos'},{key:'fgpct',label:'Aproveitamento FG',percent:true},
- {key:'threepct',label:'Aproveitamento 3PT',percent:true}
-]);
-export function comparisonValue(value,field,mode='game'){
- if(value===null||value===undefined||value===''||!Number.isFinite(Number(value)))return '—';
- const decimals=mode==='average'||field.key==='rating'||field.percent||field.key==='min';
- return Number(value).toLocaleString('pt-BR',{minimumFractionDigits:decimals?1:0,maximumFractionDigits:decimals?1:0})+(field.percent?'%':'');
-}
-export function openPlayerComparison({getPlayers,context,firstKey='',secondKey=''}){
- // Snapshot: a live update never silently changes the image being reviewed.
- const players=getPlayers().filter(p=>p?.key&&p.name),byKey=new Map(players.map(p=>[p.key,p]));
- if(players.length<2)return toast('A comparação precisa de dois jogadores com dados nesta seleção.');
+import {openPlayerCardComposer} from './share-card.js?v=20261024-comparison-options-v1';
+import {COMPARISON_FIELDS,DEFAULT_CARD_FIELDS,normalizeComparisonFields,comparisonValue} from './comparison-fields.js?v=20261024-comparison-options-v1';
+export function openPlayerComparison({getPlayers,context,firstKey='',secondKey='',seasonOptions=null,initialSelection=null}){
+ const selection=initialSelection?{...initialSelection,rounds:[...(initialSelection.rounds||[])]}:null;
+ let players=getPlayers(selection).filter(p=>p?.key&&p.name),byKey=new Map(players.map(p=>[p.key,p]));
+ if(players.length<2)return toast('A comparação precisa de dois jogadores nesta fase.');
  let left=byKey.has(firstKey)?firstKey:players[0].key;
- let right=byKey.has(secondKey)&&secondKey!==left?secondKey:players.find(p=>p.key!==left).key;
- const label=p=>p.name+' · '+p.teamCode;
- modal('<div class="dlq-comparison"><span class="caps">COMPARADOR DE JOGADORES</span><h2>Frente a frente</h2>'+
-  '<p class="small subtle">'+esc(context.title)+' · '+esc(context.subtitle||'')+'</p>'+
-  '<div class="comparison-pickers"><label>Jogador 1<select id="compareLeft" class="control"></select></label>'+
-  '<button type="button" class="btn ghost" id="compareSwap" aria-label="Inverter jogadores">⇄</button>'+
-  '<label>Jogador 2<select id="compareRight" class="control"></select></label></div>'+
-  '<div id="comparisonResult" aria-live="polite"></div><div class="comparison-footer">'+
-  '<span class="small subtle">Dados desta seleção. A Nota DLQ é calculada pelo site.</span>'+
-  '<button type="button" class="btn accent" id="compareMakeCard">▣ Gerar card da comparação</button></div></div>');
- const root=document.querySelector('.dlq-comparison'),a=root.querySelector('#compareLeft'),b=root.querySelector('#compareRight');
- function render(){
-  for(const [select,selected,other] of [[a,left,right],[b,right,left]]){
-   select.innerHTML=players.map(p=>'<option value="'+esc(p.key)+'"'+(p.key===selected?' selected':'')+(p.key===other?' disabled':'')+'>'+esc(label(p))+'</option>').join('');
-  }
-  const p=byKey.get(left),q=byKey.get(right);
-  root.querySelector('#comparisonResult').innerHTML='<div class="comparison-players">'+[p,q].map(v=>
-   '<div><img src="'+esc(v.headshot||v.teamLogo)+'" alt="" referrerpolicy="no-referrer" onerror="this.hidden=true"><strong>'+esc(v.name)+'</strong><span><img src="'+esc(v.teamLogo)+'" alt="">'+esc(v.teamName||v.teamCode)+(v.gp?' · '+v.gp+' jogos':'')+'</span></div>').join('')+'</div>'+
-   '<div class="comparison-stats">'+COMPARISON_FIELDS.map(f=>{
-    const x=p.stats[f.key],y=q.stats[f.key],valid=x!=null&&y!=null&&Number.isFinite(Number(x))&&Number.isFinite(Number(y));
-    const winner=valid&&Number(x)!==Number(y)?(f.lower?Number(x)<Number(y):Number(x)>Number(y))?0:1:-1;
-    return '<div><strong class="'+(winner===0?'comparison-best':'')+'">'+esc(comparisonValue(x,f,context.mode))+'</strong><span>'+esc(f.label)+'</span><strong class="'+(winner===1?'comparison-best':'')+'">'+esc(comparisonValue(y,f,context.mode))+'</strong></div>';
-   }).join('')+'</div>';
+ let right=byKey.has(secondKey)&&secondKey!==left?secondKey:
+  (players.find(p=>p.key!==left&&context.mode==='game'&&p.teamCode!==byKey.get(left).teamCode)||players.find(p=>p.key!==left)).key;
+ let fields=[...DEFAULT_CARD_FIELDS],presentation='list',pickSide='',loading=false,scopeError=false,rosterLimit=60,iteration=0;
+ const option=(value,label,selected)=>'<option value="'+esc(value)+'"'+(selected?' selected':'')+'>'+esc(label)+'</option>';
+ function currentContext(){if(!selection)return {...context};return {mode:selection.mode,title:(selection.phase==='preseason'?'Pré-temporada':'Temporada regular')+' 2026/27',subtitle:(selection.rounds.length?'Rodada'+(selection.rounds.length>1?'s ':' ')+selection.rounds.join(', '):'Todas as rodadas')+' · '+(selection.mode==='average'?'Médias por jogo':'Soma total')};}
+ modal('<div class="dlq-comparison"><span class="caps">COMPARADOR DE JOGADORES</span><h2>Frente a frente</h2><p class="small subtle" id="comparisonContext"></p>'+
+  (selection?'<div class="comparison-scope"><label>Fase<select id="comparisonPhase" class="control">'+option('regular','Temporada regular',selection.phase==='regular')+option('preseason','Pré-temporada',selection.phase==='preseason')+'</select></label><label>Rodada<select id="comparisonRound" class="control"></select></label><label>Calcular por<select id="comparisonMode" class="control">'+option('average','Média por jogo',selection.mode==='average')+option('total','Soma total',selection.mode==='total')+'</select></label></div><p class="small subtle comparison-round-note">Rodada N = N-ésima partida de cada atleta na fase. Quem não jogou aparece sem dados.</p>':'')+
+  '<div class="comparison-selected" id="comparisonSelected"></div>'+
+  '<section class="comparison-picker" id="comparisonPicker" hidden><div class="section-title"><h3 id="comparisonPickerTitle">Escolher jogador</h3><button type="button" class="btn ghost" id="comparisonPickerClose">Fechar</button></div><label class="comparison-search">Buscar por nome ou equipe<input class="control" type="search" id="comparisonSearch" placeholder="Digite o nome do jogador…" autocomplete="off"></label><div id="comparisonRoster"></div></section>'+
+  '<details class="comparison-display-options"><summary>Personalizar estatísticas e visual</summary><div class="comparison-view-options" role="group" aria-label="Visual da comparação"><button type="button" class="btn ghost" data-comparison-view="list" aria-pressed="true">☷ Lista</button><button type="button" class="btn ghost" data-comparison-view="blocks" aria-pressed="false">▦ Blocos</button></div><div class="comparison-field-presets"><span class="small subtle">Estatísticas na tela e no card</span><button type="button" class="btn ghost" data-field-preset="essential">Essenciais</button><button type="button" class="btn ghost" data-field-preset="all">Todas</button></div><div class="comparison-field-checks">'+COMPARISON_FIELDS.map(f=>'<label><input type="checkbox" data-comparison-field="'+f.key+'"'+(fields.includes(f.key)?' checked':'')+'>'+esc(f.label)+'</label>').join('')+'</div></details>'+
+  '<p class="small subtle" id="comparisonStatus" role="status"></p><button type="button" class="btn ghost" id="comparisonRetry" hidden>Tentar novamente</button><div id="comparisonResult" aria-live="polite"></div><div class="comparison-footer"><span class="small subtle">A imagem usa este recorte e estas estatísticas. Você pode ajustar o visual antes de salvar.</span><button type="button" class="btn accent" id="compareMakeCard">▣ Gerar card da comparação</button></div></div>');
+ const root=document.querySelector('.dlq-comparison'),$=s=>root.querySelector(s),picker=$('#comparisonPicker'),search=$('#comparisonSearch'),status=$('#comparisonStatus');
+ const normalize=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR').trim();
+ function renderRoster(){
+  const query=normalize(search.value),other=pickSide==='left'?right:left,selected=pickSide==='left'?left:right;
+  const filtered=players.filter(p=>normalize(p.name+' '+p.teamCode+' '+p.teamName).includes(query));
+  const shown=filtered.slice(0,rosterLimit),teams=[...new Set(shown.map(p=>p.teamCode))].sort();
+  $('#comparisonRoster').innerHTML=teams.length?teams.map(code=>{const roster=shown.filter(p=>p.teamCode===code),sample=roster[0];return '<section class="comparison-roster-team"><h4><img src="'+esc(sample.teamLogo)+'" alt="">'+esc(sample.teamName||code)+'<small>'+roster.length+'</small></h4><div>'+roster.map(p=>'<button type="button" data-compare-pick="'+esc(p.key)+'" aria-pressed="'+(p.key===selected)+'"'+(p.key===other?' disabled':'')+'><img src="'+esc(p.headshot||p.teamLogo)+'" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.hidden=true"><span><strong>'+esc(p.name)+'</strong><small>'+esc(p.position||p.teamCode)+(p.gp!==undefined?' · '+p.gp+' jogos':'')+'</small></span><span aria-hidden="true">'+(p.key===other?'Em uso':p.key===selected?'✓':'＋')+'</span></button>').join('')+'</div></section>';}).join('')+(filtered.length>rosterLimit?'<p class="small subtle">'+shown.length+' de '+filtered.length+' jogadores. Use a busca para encontrar pelo nome.</p><button type="button" class="btn ghost" data-compare-more>Ver mais jogadores</button>':''):'<p class="filler">Nenhum jogador com esse nome nesta fase.</p>';
  }
- a.onchange=()=>{if(a.value!==right){left=a.value;render();}};
- b.onchange=()=>{if(b.value!==left){right=b.value;render();}};
- root.querySelector('#compareSwap').onclick=()=>{[left,right]=[right,left];render();};
- root.querySelector('#compareMakeCard').onclick=()=>openPlayerCardComposer({kind:'comparison',players:[byKey.get(left),byKey.get(right)],context,player:{name:byKey.get(left).name+' vs '+byKey.get(right).name}});
- render();a.focus();
+ function openPicker(side){pickSide=side;rosterLimit=60;picker.hidden=false;$('#comparisonPickerTitle').textContent='Escolher jogador '+(side==='left'?'1':'2');search.value='';renderRoster();search.focus();}
+ function renderSelection(){
+  const p=byKey.get(left),q=byKey.get(right);
+  $('#comparisonSelected').innerHTML=[['left',p],['right',q]].map(([side,v],i)=>'<button type="button" class="comparison-selected-player" data-compare-side="'+side+'" aria-label="Trocar jogador '+(i+1)+': '+esc(v?.name||'Escolher')+'">'+(v?'<img src="'+esc(v.headshot||v.teamLogo)+'" alt="" referrerpolicy="no-referrer" onerror="this.hidden=true"><span><small>JOGADOR '+(i+1)+'</small><strong>'+esc(v.name)+'</strong><small><img src="'+esc(v.teamLogo)+'" alt="">'+esc(v.teamName||v.teamCode)+(v.gp!==undefined?' · '+v.gp+' jogos':'')+'</small></span>':'Escolher jogador')+'<span class="comparison-change">Trocar ⌄</span></button>').join('')+'<button type="button" class="btn ghost comparison-swap" id="compareSwap" aria-label="Inverter jogadores">⇄</button>';
+ }
+ function renderRounds(){if(!selection)return;const max=seasonOptions.getRoundMax(selection.phase);$('#comparisonRound').innerHTML=option('','Todas as rodadas',!selection.rounds.length)+(selection.rounds.length>1?option('custom','Rodadas '+selection.rounds.join(', '),true):'')+Array.from({length:max},(_,i)=>option(String(i+1),'Rodada '+(i+1),selection.rounds.length===1&&selection.rounds[0]===i+1)).join('');}
+ function render(){
+  renderSelection();if(pickSide&&!picker.hidden)renderRoster();$('#comparisonContext').textContent=[currentContext().title,currentContext().subtitle].filter(Boolean).join(' · ');
+  const p=byKey.get(left),q=byKey.get(right);$('#compareMakeCard').disabled=loading||scopeError||!p||!q;
+  if(scopeError){$('#comparisonResult').innerHTML='';return;}
+  if(!p||!q){$('#comparisonResult').innerHTML='<div class="filler">Não há dois jogadores disponíveis nesta fase.</div>';return;}
+  const mode=currentContext().mode;
+  $('#comparisonResult').innerHTML=(p.gp===0||q.gp===0?'<p class="info">'+[p,q].filter(v=>v.gp===0).map(v=>esc(v.name)).join(' e ')+' sem partida no recorte selecionado.</p>':'')+
+   '<div class="comparison-stats'+(presentation==='blocks'?' comparison-stat-blocks':'')+'">'+fields.map(key=>{const f=COMPARISON_FIELDS.find(f=>f.key===key),x=p.stats[key],y=q.stats[key],valid=x!=null&&y!=null&&Number.isFinite(Number(x))&&Number.isFinite(Number(y)),winner=valid&&Number(x)!==Number(y)?(f.lower?Number(x)<Number(y):Number(x)>Number(y))?0:1:-1;return '<div data-comparison-stat="'+key+'"><strong class="'+(winner===0?'comparison-best':'')+'">'+esc(comparisonValue(x,f,mode))+'</strong><span>'+esc(f.label)+'</span><strong class="'+(winner===1?'comparison-best':'')+'">'+esc(comparisonValue(y,f,mode))+'</strong></div>';}).join('')+'</div>';
+ }
+ async function refreshScope(){
+  const token=++iteration;loading=true;scopeError=false;$('#comparisonRetry').hidden=true;status.textContent=selection?.rounds.length?'Carregando dados das rodadas…':'Atualizando seleção…';$('#compareMakeCard').disabled=true;
+  try{if(selection?.rounds.length)await seasonOptions.ensureRounds();if(token!==iteration||!root.isConnected)return;
+   players=getPlayers(selection).filter(p=>p?.key&&p.name);byKey=new Map(players.map(p=>[p.key,p]));
+   if(!byKey.has(left))left=players[0]?.key||'';if(!byKey.has(right)||right===left)right=players.find(p=>p.key!==left)?.key||'';
+   status.textContent='';loading=false;renderRounds();render();if(pickSide)renderRoster();
+  }catch(error){if(token===iteration&&root.isConnected){loading=false;scopeError=true;$('#comparisonRetry').hidden=false;status.textContent=error.message+' Altere a rodada para tentar novamente.';$('#comparisonResult').innerHTML='';}}
+ }
+ root.addEventListener('click',e=>{if(e.target.closest('#comparisonRetry')){refreshScope();return;}if(e.target.closest('[data-compare-more]')){rosterLimit+=60;renderRoster();return;}const side=e.target.closest('[data-compare-side]');if(side){openPicker(side.dataset.compareSide);return;}const pick=e.target.closest('[data-compare-pick]');if(pick&&!pick.disabled){if(pick.dataset.comparePick===(pickSide==='left'?right:left))return;if(pickSide==='left')left=pick.dataset.comparePick;else right=pick.dataset.comparePick;picker.hidden=true;pickSide='';render();return;}if(e.target.closest('#comparisonPickerClose')){picker.hidden=true;pickSide='';return;}if(e.target.closest('#compareSwap')){[left,right]=[right,left];render();return;}
+  const view=e.target.closest('[data-comparison-view]');if(view){presentation=view.dataset.comparisonView;root.querySelectorAll('[data-comparison-view]').forEach(b=>b.setAttribute('aria-pressed',String(b===view)));render();}
+  const preset=e.target.closest('[data-field-preset]');if(preset){fields=preset.dataset.fieldPreset==='all'?COMPARISON_FIELDS.map(f=>f.key):[...DEFAULT_CARD_FIELDS];root.querySelectorAll('[data-comparison-field]').forEach(c=>c.checked=fields.includes(c.dataset.comparisonField));render();}
+ });
+ root.addEventListener('change',e=>{const field=e.target.closest('[data-comparison-field]');if(field){const chosen=[...root.querySelectorAll('[data-comparison-field]:checked')].map(c=>c.dataset.comparisonField);if(!chosen.length){field.checked=true;status.textContent='Escolha pelo menos uma estatística.';return;}fields=normalizeComparisonFields(chosen);status.textContent='';render();return;}
+  if(!selection)return;
+  if(e.target.id==='comparisonPhase'){selection.phase=e.target.value;selection.rounds=[];refreshScope();}
+  if(e.target.id==='comparisonRound'){selection.rounds=e.target.value==='custom'?selection.rounds:e.target.value?[Number(e.target.value)]:[];refreshScope();}
+  if(e.target.id==='comparisonMode'){selection.mode=e.target.value;refreshScope();}
+ });
+ search.addEventListener('input',()=>{rosterLimit=60;renderRoster();});
+ $('#compareMakeCard').onclick=()=>{const p=byKey.get(left),q=byKey.get(right);if(loading||scopeError||!p||!q)return;openPlayerCardComposer({kind:'comparison',players:[p,q],context:currentContext(),selectedFields:[...fields],presentation,player:{name:p.name+' vs '+q.name}});};
+ renderRounds();render();
 }
 
 export function mountPlayerActions({root,selector,resolve,onCompare,onCard,onFollow,onDetails}){

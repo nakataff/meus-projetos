@@ -1,7 +1,7 @@
 /* DE LA QUADRA — ranking de atletas gerado a partir dos box scores finalizados. */
 import {$,setupShared,asset,currentDate,dayShift,TEAMS,name,logo,esc,playerLink,getData,modify,toast} from '../app.js?v=13';
-import {openPlayerCardComposer} from '../share-card.js?v=20261024-compare-v1';
-import {mountPlayerActions,openPlayerComparison} from '../player-actions.js?v=20261024-compare-v1';
+import {openPlayerCardComposer} from '../share-card.js?v=20261024-comparison-options-v1';
+import {mountPlayerActions,openPlayerComparison} from '../player-actions.js?v=20261024-comparison-options-v1';
 import {fetchLiveBoxscore} from '../boxscore.js?v=2';
 import {performanceRating} from '../performance-rating.js?v=2';
 setupShared('leaders','Melhores jogadores','Ranking de jogadores da NBA por médias e NOTA DLQ, com filtros de temporada e equipe.');
@@ -38,11 +38,11 @@ const FINAL_RETRY_MS=10000,FINAL_FAST_ATTEMPTS=6;
 let recentRetryTimer=null;
 const n=v=>Number(v)||0,round=v=>Math.round(v*10)/10;
 const avg=(p,key)=>n(p.gp)?n(p[key])/n(p.gp):0;
-function metricValue(p,key=metric){
+function metricValue(p,key=metric,mode=valueMode){
  if(key==='rating')return p.ratingGames?n(p.ratingSum)/p.ratingGames:null;
  if(key==='fgpct')return p.fga?100*n(p.fgm)/p.fga:null;
  if(key==='threepct')return p.threeA?100*n(p.threeM)/p.threeA:null;
- return valueMode==='total'?n(p[key]):avg(p,key);
+ return mode==='total'?n(p[key]):avg(p,key);
 }
 function qualifies(p){
  if(!p.gp||p.gp<minimum)return false;
@@ -165,27 +165,27 @@ function addRoundRow(map,base,row){
   current.ratingSum+=Number(rating)||0;current.ratingGames++;
  }
 }
-function roundRows(){
- if(!selectedRounds.size)return mergedRows();
+function roundRows(forPhase=phase,rounds=selectedRounds){
+ if(!rounds.size)return mergedRows(forPhase);
  if(!roundData)return [];
- const base=new Map(mergedRows().map(p=>[String(p.id),p]));
- const output=new Map(),all=roundData[phase]||[];
+ const base=new Map(mergedRows(forPhase).map(p=>[String(p.id),p]));
+ const output=new Map(),all=roundData[forPhase]||[];
  const counts=new Map();
  for(const tuple of all){
   const pid=String(tuple[0]);
   counts.set(pid,Math.max(counts.get(pid)||0,Number(tuple[1])||0));
-  if(selectedRounds.has(Number(tuple[1])))addRoundRow(output,base,tuple);
+  if(rounds.has(Number(tuple[1])))addRoundRow(output,base,tuple);
  }
  // Complementar os jogos recém-encerrados que ainda não foram para o JSON.
- const counted=new Set(roundData.countedGameIds?.[phase]||[]);
- const latest=[...recentFinals.values()].filter(r=>r.phase===phase&&!counted.has(String(r.event.id)))
+ const counted=new Set(roundData.countedGameIds?.[forPhase]||[]);
+ const latest=[...recentFinals.values()].filter(r=>r.phase===forPhase&&!counted.has(String(r.event.id)))
   .sort((a,b)=>String(a.event.date||'').localeCompare(String(b.event.date||''))||
    String(a.event.id).localeCompare(String(b.event.id)));
  for(const record of latest){
   for(const {athlete,team:teamCode} of record.athletes){
    const id=String(athlete.id);
    const gameNo=(counts.get(id)||0)+1;counts.set(id,gameNo);
-   if(!selectedRounds.has(gameNo))continue;
+   if(!rounds.has(gameNo))continue;
    const [fgm,fga]=shot(athlete.fg),[thm,tha]=shot(athlete.three);
    const rating=performanceRating(athlete);
    addRoundRow(output,base,[id,gameNo,record.event.id,teamCode,
@@ -195,8 +195,8 @@ function roundRows(){
  }
  return [...output.values()];
 }
-async function loadRoundData(force=false){
- if(!selectedRounds.size)return;
+async function loadRoundData(force=false,needed=false){
+ if(!selectedRounds.size&&!needed)return;
  if(roundPromise)return roundPromise;
  if(roundData&&!force&&Date.now()-lastRoundRefresh<60000)return;
  roundError='';
@@ -481,12 +481,17 @@ window.addEventListener('online',()=>{refreshLeaders();syncRecentFinals(true);})
 // O ranking revalida o cache leve sem recarregar a página nem mudar os filtros.
 // A consulta compartilhada do placar inclui ontem durante todo o dia nesta página.
 setInterval(()=>{if(!document.hidden)refreshLeaders();},60000);
-function leaderComparisonPlayers(){
- return roundRows().filter(p=>p.gp>0).map(p=>({key:p.team+':'+p.id,id:String(p.id),name:p.name,teamCode:p.team,teamName:name(p.team),teamLogo:logo(p.team),headshot:athleteImage(p.id),profileUrl:playerLink(p.id,p.team),gp:p.gp,raw:p,followed:followed(p.id),stats:Object.fromEntries(['pts','reb','ast','stl','blk','threeM','to','rating','min','fgpct','threepct'].map(k=>[k,metricValue(p,k)]))}));
+function leaderComparisonPlayers(selection=null){
+ const chosen=selection||{phase,rounds:[...selectedRounds],mode:valueMode};
+ const selected=new Map(roundRows(chosen.phase,new Set(chosen.rounds)).map(p=>[String(p.id),p]));
+ return mergedRows(chosen.phase).filter(p=>p.gp>0).map(base=>{
+  const p=selected.get(String(base.id));
+  return {key:base.team+':'+base.id,id:String(base.id),name:base.name,teamCode:base.team,teamName:name(base.team),teamLogo:logo(base.team),headshot:athleteImage(base.id),profileUrl:playerLink(base.id,base.team),gp:p?.gp||0,raw:p||base,followed:followed(base.id),stats:Object.fromEntries(['pts','reb','ast','stl','blk','threeM','to','rating','min','fgpct','threepct'].map(k=>[k,p?metricValue(p,k,chosen.mode):null]))};
+ });
 }
 function compareLeaders(firstKey=''){
  if(selectedRounds.size&&!roundData)return toast('Aguarde o carregamento das rodadas.');
- openPlayerComparison({getPlayers:leaderComparisonPlayers,firstKey,context:{mode:valueMode,title:(phase==='regular'?'Temporada regular':'Pré-temporada')+' 2026/27',subtitle:(selectedRounds.size?'Rodadas '+[...selectedRounds].sort((a,b)=>a-b).join(', '):'Todas as rodadas')+' · '+(valueMode==='total'?'Soma total':'Médias por jogo')}});
+ openPlayerComparison({getPlayers:leaderComparisonPlayers,firstKey,initialSelection:{phase,rounds:[...selectedRounds],mode:valueMode},seasonOptions:{getRoundMax:phaseName=>mergedRows(phaseName).reduce((max,p)=>Math.max(max,p.gp||0),0),ensureRounds:async()=>{await loadRoundData(false,true);if(!roundData)throw Error(roundError||'Não foi possível carregar as rodadas.');}},context:{mode:valueMode,title:(phase==='regular'?'Temporada regular':'Pré-temporada')+' 2026/27',subtitle:(selectedRounds.size?'Rodadas '+[...selectedRounds].sort((a,b)=>a-b).join(', '):'Todas as rodadas')+' · '+(valueMode==='total'?'Soma total':'Médias por jogo')}});
 }
 function leaderIndividualCard(candidate){
  const row=roundRows().find(p=>String(p.id)===candidate.id);if(!row)return;

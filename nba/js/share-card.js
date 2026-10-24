@@ -2,6 +2,7 @@
  * Geradas localmente: prévia, cópia, compartilhamento nativo ou PNG opcional.
  */
 import {modal,closeModal,toast} from './app.js?v=13';
+import {COMPARISON_FIELDS,normalizeComparisonFields} from './comparison-fields.js?v=20261024-comparison-options-v1';
 import {performanceRating,ratingLabel} from './performance-rating.js?v=2';
 const COLOR={base:'#0c1421',panel:'#1f3046',line:'#3c526c',orange:'#ff9d4d',white:'#f5f7fd',muted:'#afbed3'};
 export const PLAYER_CARD_FORMATS=Object.freeze({
@@ -77,7 +78,7 @@ function matchLabel(o){
  return (o.date||'')+(o.gameLabel?' • '+o.gameLabel:'');
 }
 export async function buildPlayerCard(options={}){
- if(options.kind==='comparison'){const {buildComparisonCard}=await import('./comparison-card.js?v=20261024-compare-v1');return buildComparisonCard(options);}
+ if(options.kind==='comparison'){const {buildComparisonCard}=await import('./comparison-card.js?v=20261024-comparison-options-v1');return buildComparisonCard(options);}
  const format=PLAYER_CARD_FORMATS[options.format]||PLAYER_CARD_FORMATS.landscape;
  const {width:W,height:H}=format,mode=options.format||'landscape',stat=summarize(options);
  const canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;
@@ -186,12 +187,14 @@ export async function exportPlayerImage(options={}){
 }
 export function openPlayerCardComposer(options={}){
  let selected='square',activeBlob=null,activeUrl=null,iteration=0;
+ let selectedFields=normalizeComparisonFields(options.selectedFields),presentation=options.presentation==='blocks'?'blocks':'list';
  const formats=options.kind==='comparison'?{...PLAYER_CARD_FORMATS,portrait:{width:1080,height:1350,label:'Feed 4:5 • 1080 × 1350'}}:PLAYER_CARD_FORMATS;
  modal('<div class="dlq-card-maker"><h2>'+ (options.kind==='comparison'?'Card da comparação':'Gerar card do jogador')+'</h2>'+
   '<p class="small subtle">Escolha o formato, confira a imagem e copie ou compartilhe sem precisar salvar o PNG.</p>'+
   '<div class="dlq-card-formats"><label for="dlqCardFormat">Formato</label>'+
   '<select class="control" id="dlqCardFormat">'+Object.entries(formats).map(([key,f])=>
    '<option value="'+key+'"'+(selected===key?' selected':'')+'>'+f.label+'</option>').join('')+'</select></div>'+
+  (options.kind==='comparison'?'<fieldset class="comparison-card-settings"><legend>Personalizar card</legend><label>Visual<select id="dlqComparisonView" class="control"><option value="list"'+(presentation==='list'?' selected':'')+'>Lista comparativa</option><option value="blocks"'+(presentation==='blocks'?' selected':'')+'>Blocos</option></select></label><div class="comparison-field-checks">'+COMPARISON_FIELDS.map(f=>'<label><input type="checkbox" data-card-field="'+f.key+'"'+(selectedFields.includes(f.key)?' checked':'')+'>'+f.label+'</label>').join('')+'</div></fieldset>':'')+
   '<div class="dlq-card-preview" id="dlqCardPreview" role="status">Preparando imagem…</div>'+
   '<div class="dlq-card-actions">'+
   '<button class="btn accent" type="button" id="dlqCopyImage" disabled>Copiar imagem</button>'+
@@ -206,7 +209,7 @@ export function openPlayerCardComposer(options={}){
  const observer=new MutationObserver(()=>{if(!root.isConnected){iteration++;clear();observer.disconnect();}});
  observer.observe(document.querySelector('#modalRoot'),{childList:true,subtree:true});
  async function refresh(){
-  const token=++iteration,opts={...options,format:selected};
+  const token=++iteration,opts={...options,format:selected,selectedFields:[...selectedFields],presentation};
   buttons.forEach(b=>b.disabled=true);
   preview.textContent='Preparando imagem…';
   try{
@@ -219,6 +222,8 @@ export function openPlayerCardComposer(options={}){
   }catch(e){if(token===iteration){preview.textContent='Não foi possível gerar a imagem: '+e.message;}}
  }
  root.querySelector('#dlqCardFormat').onchange=e=>{selected=e.target.value;refresh();};
+ root.querySelector('#dlqComparisonView')?.addEventListener('change',e=>{presentation=e.target.value;refresh();});
+ root.addEventListener('change',e=>{if(!e.target.matches('[data-card-field]'))return;const chosen=[...root.querySelectorAll('[data-card-field]:checked')].map(c=>c.dataset.cardField);if(!chosen.length){e.target.checked=true;toast('Escolha pelo menos uma estatística.');return;}selectedFields=normalizeComparisonFields(chosen);refresh();});
  buttons.forEach((button,i)=>{
   button.onclick=async()=>{
    if(!activeBlob)return;
