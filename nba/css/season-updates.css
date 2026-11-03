@@ -1,7 +1,7 @@
 /* Acréscimos ao ranking e página de recordes da NBA. */
 .leaders-rank-table .leaders-table-header,.leaders-rank-table .leaders-table-row{
  grid-template-columns:minmax(190px,1fr) repeat(var(--stat-columns,7),minmax(58px,70px));
- min-width:calc(190px + var(--stat-columns,7)*58px);
+ min-width:660px;
 }
 .records-tools{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:8px 0 24px}
 .records-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:15px 0 32px}
