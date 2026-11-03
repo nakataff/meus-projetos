@@ -1,0 +1,42 @@
+/* Acréscimos ao ranking e página de recordes da NBA. */
+.leaders-rank-table .leaders-table-header,.leaders-rank-table .leaders-table-row{
+ grid-template-columns:minmax(190px,1fr) repeat(var(--stat-columns,7),minmax(58px,70px));
+ min-width:calc(190px + var(--stat-columns,7)*58px);
+}
+.records-tools{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:8px 0 24px}
+.records-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:15px 0 32px}
+.records-tile{min-width:0;display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:7px;padding:17px;background:#131e2b;border:1px solid #304257;border-radius:14px}
+.records-tile:hover,.records-tile:focus-visible{border-color:#e98b49;background:#1d2b3b}
+.records-tile.is-active{border-color:#ff9b58;background:#39281e}
+.records-tile>span:first-child{text-transform:uppercase;font-size:11px;font-weight:900;color:#bdcbe0;letter-spacing:.04em}
+.records-tile b{font-size:30px;line-height:1.15;color:#fff;font-variant-numeric:tabular-nums}
+.records-tile b small{font-size:12px;color:#ffb67c}
+.records-tile-name{font-size:12px;color:#a3b6cb;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;max-width:100%}
+.records-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin:22px 0 15px}
+.records-heading h2{font-size:clamp(22px,3vw,32px);margin:4px 0}
+.records-list{border:1px solid #33475b;background:#111923;border-radius:14px;overflow:hidden}
+.records-entry{display:grid;grid-template-columns:38px minmax(160px,1fr) 95px minmax(190px,1fr);align-items:center;gap:12px;padding:12px 15px;border-bottom:1px solid #2c3d50}
+.records-entry:nth-child(even){background:#162234}
+.records-entry:last-child{border-bottom:0}
+.records-place{font-weight:900;color:#9fb5cc;font-size:13px}
+.records-player{min-width:0;display:flex;align-items:center;gap:10px}
+.records-player>img{width:45px;height:48px;object-fit:cover;object-position:top;border-radius:50%;background:#293d53}
+.records-player>span{min-width:0;display:flex;flex-direction:column;gap:4px}
+.records-player strong{font-size:13px}
+.records-player a:hover{color:#ffb67c}
+.records-player small{display:flex;align-items:center;gap:5px;color:#9fb2c7;font-size:11px}
+.records-player small img{width:18px;height:18px;object-fit:contain}
+.records-value{text-align:center}
+.records-value strong{display:block;font-size:24px;color:#ffba85;line-height:1.2;font-variant-numeric:tabular-nums}
+.records-value small{font-size:11px;color:#b6c8dc;font-weight:800}
+.records-game{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;color:#acbfd3;font-size:11px;text-align:right}
+.records-game a{display:inline-flex;white-space:nowrap;color:#ffb679;font-weight:850}
+@media(max-width:760px){
+ .records-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .records-tile{padding:12px}
+ .records-tile b{font-size:24px}
+ .records-entry{grid-template-columns:26px minmax(0,1fr) 72px;gap:8px;padding:12px 9px}
+ .records-game{grid-column:2/4;justify-content:flex-start;text-align:left}
+ .records-value strong{font-size:21px}
+}
+@media(max-width:420px){.records-grid{grid-template-columns:1fr 1fr}.records-tile>span:first-child{font-size:10px}.records-tile b{font-size:20px}}
