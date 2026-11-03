@@ -41,7 +41,7 @@ test('minutos aparecem na tabela, terceira bola selecionada tem coluna e metade 
  const b=await leaders(),{w}=b;
  try{
   assert.equal(b.$('#leadersMinimum').value,'half');
-  assert.equal(b.$('[data-leaders-metric="min"]').textContent,'MIN');
+  assert.equal(b.$('.leaders-table-header [data-leaders-metric="min"]').textContent,'MIN');
   assert.equal(b.$('.leaders-table-row .leaders-table-stat:last-child').textContent,'25,0');
   b.$('[data-leaders-metric="threeM"]').click();
   assert.equal(b.$('.leaders-table-row .leaders-table-stat:last-child').textContent,'2,0');
