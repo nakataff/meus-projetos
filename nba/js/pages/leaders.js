@@ -255,7 +255,7 @@ async function refreshLeaders(force=false){
   lastDataSignature=signature;
   board=data;
   if(changed||force)render();
-  if(changed&&selectedRounds.size)loadRoundData(true);
+  if(changed&&(selectedRounds.size||minimum==='half'))loadRoundData(true);
   if(changed)syncRecentFinals(true);
  }catch(error){
   console.warn('DLQ: falha ao atualizar ranking',error);
