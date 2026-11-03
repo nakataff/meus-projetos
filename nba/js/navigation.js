@@ -26,7 +26,7 @@ export function mountNavigation(){
  dialog.innerHTML='<div class="dlq-search-head"><input type="search" placeholder="Jogador, equipe ou partida…" aria-label="Pesquisar no site" autocomplete="off" spellcheck="false"><button type="button" aria-label="Fechar busca">Fechar</button></div><div class="dlq-search-results" aria-live="polite"></div>';
  document.body.append(dialog);
  const input=dialog.querySelector('input'),results=dialog.querySelector('.dlq-search-results');
- const sections=[['Início',''],['Jogos','jogos/'],['Classificação','classificacao/'],['Equipes','equipes/'],['Jogadores','melhores/'],['Meu perfil','perfil/']];
+ const sections=[['Início',''],['Jogos','jogos/'],['Classificação','classificacao/'],['Equipes','equipes/'],['Jogadores','melhores/'],['Recordes','recordes/'],['Meu perfil','perfil/']];
  const base=[...sections.map(([label,url])=>({kind:'Páginas',label,detail:'Atalho',href:path(url),search:normalize(label)})),...Object.keys(TEAMS).map(team=>({kind:'Equipes',label:name(team),detail:team,image:logo(team),href:teamLink(team),search:normalize(team+' '+name(team))}))];
  let loaded=[],state='idle',timer;
  const note=text=>{const p=document.createElement('p');p.className='dlq-search-note';p.textContent=text;results.append(p);};
