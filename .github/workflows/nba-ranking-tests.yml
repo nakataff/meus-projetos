@@ -4,6 +4,9 @@ on:
     paths:
       - 'nba/js/live.js'
       - 'nba/js/pages/leaders.js'
+      - 'nba/js/pages/records.js'
+      - 'nba/js/season-stats.mjs'
+      - 'nba/css/season-updates.css'
       - 'nba/js/pages/game.js'
       - 'nba/js/court-live.js'
       - 'nba/js/player-actions.js'
@@ -51,4 +54,4 @@ jobs:
       - name: Test final boxscore import and data preservation
         run: python -m unittest discover -s scripts/tests -v
       - name: Check shared browser scripts
-        run: node --check nba/js/live.js && node --check nba/js/pages/leaders.js && node --check nba/js/entry.js && node --check nba/js/pages/game.js && node --check nba/js/court-live.js && node --check nba/js/player-actions.js && node --check nba/js/comparison-card.js && node --check nba/js/comparison-fields.js && node --check nba/js/share-card.js
+        run: node --check nba/js/live.js && node --check nba/js/pages/leaders.js && node --check nba/js/pages/records.js && node --check nba/js/season-stats.mjs && node --check nba/js/entry.js && node --check nba/js/pages/game.js && node --check nba/js/court-live.js && node --check nba/js/player-actions.js && node --check nba/js/comparison-card.js && node --check nba/js/comparison-fields.js && node --check nba/js/share-card.js
