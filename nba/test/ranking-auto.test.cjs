@@ -24,6 +24,7 @@ async function leaders({overlay=false,summaryStatus='final'}={}){
  Object.assign(w,{$:s=>w.document.querySelector(s),setupShared:()=>{},asset:s=>s,currentDate:()=> '2026-10-24',dayShift:shift,TEAMS:{BOS:[],LAL:[]},name:c=>c,logo:c=>c+'.webp',esc:v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),playerLink:(id,team)=>'?id='+id+'&team='+team,getData:()=>({extras:{players:{}}}),modify:()=>{},toast:()=>{},openPlayerCardComposer:()=>{},mountPlayerActions:()=>({destroy(){}}),openPlayerComparison:()=>{},performanceRating:()=>8,fetchLiveBoxscore:async g=>{boxes.push(g.id);return summary(boxStatus);}});
  w.QUADRA_LIVE_GAMES=new Map(overlay?[[final.id,clone(final)]]:[]);w.setInterval=(fn,delay)=>{intervals.push({fn,delay});return intervals.length;};
  w.fetch=async url=>{requests.push(url);if(fail)throw Error('offline');return {ok:true,json:async()=>url.includes('player-rounds')?{regular:[['1',1,'base','BOS',10,5,3,1,0,1,25,4,10,2,4,7]],preseason:[],countedGameIds:{regular:['base'],preseason:[]}}:clone(data)};};
+ vm.runInContext(read('js/season-stats.mjs').replace(/^export /gm,''),d.getInternalVMContext());
  vm.runInContext(read('js/pages/leaders.js').replace(/^import[^\n]*\n/gm,''),d.getInternalVMContext());await settle(()=>w.document.querySelector('.leaders-table-row'));
  const flush=async()=>{intervals[0].fn();await new Promise(r=>setTimeout(r,15));};
  return {...b,requests,boxes,intervals,flush,timers,advance:ms=>{clock+=ms;},runRetry:async()=>{const [id,t]=[...timers].sort((a,b)=>a[1].at-b[1].at)[0];timers.delete(id);clock=Math.max(clock,t.at);await t.fn();},$:s=>w.document.querySelector(s),setData:v=>{data=v;},setFail:v=>{fail=v;},setBoxStatus:v=>{boxStatus=v;},eval:s=>vm.runInContext(s,d.getInternalVMContext())};
@@ -35,3 +36,17 @@ test('round filters include a new final exactly once and preserve the selected m
 
 test('a newly final game bypasses the recent-scan throttle and publishes without waiting for a minute',async()=>{const b=await leaders(),{w}=b;try{assert.equal(b.boxes.length,0);w.QUADRA_LIVE_GAMES.set(final.id,clone(final));w.dispatchEvent(new w.Event('quadra:live-update'));await settle(()=>b.boxes.length===1);await settle(()=>b.$('.leaders-table-club').textContent.includes('2 jogos'));assert.equal(b.timers.size,0);for(let i=0;i<5;i++)w.dispatchEvent(new w.Event('quadra:live-update'));await new Promise(r=>setTimeout(r,10));assert.equal(b.boxes.length,1);}finally{w.close();}});
 test('late final stats get bounded ten-second retries, pause while hidden and resume without duplication',async()=>{const b=await leaders({overlay:true,summaryStatus:'live'}),{w}=b;try{await settle(()=>b.timers.size===1);assert.equal(b.boxes.length,1);Object.defineProperty(w.document,'hidden',{value:true,configurable:true});w.document.dispatchEvent(new w.Event('visibilitychange'));assert.equal(b.timers.size,0);b.advance(10000);Object.defineProperty(w.document,'hidden',{value:false,configurable:true});w.document.dispatchEvent(new w.Event('visibilitychange'));await settle(()=>b.boxes.length===2&&b.timers.size===1);for(let i=0;i<4;i++)await b.runRetry();assert.equal(b.boxes.length,6);assert.equal(b.timers.size,0);assert.equal(b.eval('recentFinals.size'),0);w.dispatchEvent(new w.Event('quadra:live-update'));await new Promise(r=>setTimeout(r,5));assert.equal(b.boxes.length,6);b.advance(60000);b.setBoxStatus('final');await b.flush();await settle(()=>b.eval('recentFinals.size')===1);assert.equal(b.boxes.length,7);assert.equal(b.timers.size,0);}finally{w.close();}});
+
+test('minutos aparecem na tabela, terceira bola selecionada tem coluna e metade é o padrão',async()=>{
+ const b=await leaders(),{w}=b;
+ try{
+  assert.equal(b.$('#leadersMinimum').value,'half');
+  assert.equal(b.$('[data-leaders-metric="min"]').textContent,'MIN');
+  assert.equal(b.$('.leaders-table-row .leaders-table-stat:last-child').textContent,'25,0');
+  b.$('[data-leaders-metric="threeM"]').click();
+  assert.equal(b.$('.leaders-table-row .leaders-table-stat:last-child').textContent,'2,0');
+  b.$('#leadersMinimum').value='1';
+  b.$('#leadersMinimum').dispatchEvent(new w.Event('change',{bubbles:true}));
+  assert.equal(b.eval('minimum'),'1');
+ }finally{w.close();}
+});
