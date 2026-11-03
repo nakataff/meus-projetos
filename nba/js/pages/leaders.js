@@ -4,6 +4,7 @@ import {openPlayerCardComposer} from '../share-card.js?v=20261024-comparison-opt
 import {mountPlayerActions,openPlayerComparison} from '../player-actions.js?v=20261024-roster-points-v1';
 import {fetchLiveBoxscore} from '../boxscore.js?v=2';
 import {performanceRating} from '../performance-rating.js?v=2';
+import {teamGamesFromRounds,requiredHalf} from '../season-stats.mjs?v=20261103-records-v1';
 setupShared('leaders','Melhores jogadores','Ranking de jogadores da NBA por médias e NOTA DLQ, com filtros de temporada e equipe.');
 const root=$('#pageContent');
 const metrics=[
@@ -31,7 +32,7 @@ let selectedRounds=new Set(
  (query.get('rodadas')||'').split(',').filter(x=>/^\d+$/.test(x)&&Number(x)>0&&Number(x)<=82).map(Number)
 ),roundData=null,roundPromise=null,roundError='',openFilter='';
 let lastRoundRefresh=0;
-let minimum=1,search='',followingOnly=false,limit=30,board=null;
+let minimum=['1','3','5','10','20'].includes(query.get('min'))?query.get('min'):'half',search='',followingOnly=false,limit=30,board=null;
 let refreshPending=false,lastDataSignature='',recentSyncPending=false,lastRecentScan=0;
 const recentFinals=new Map(),finalAttempts=new Map();
 const FINAL_RETRY_MS=10000,FINAL_FAST_ATTEMPTS=6;
@@ -44,8 +45,12 @@ function metricValue(p,key=metric,mode=valueMode){
  if(key==='threepct')return p.threeA?100*n(p.threeM)/p.threeA:null;
  return mode==='total'?n(p[key]):avg(p,key);
 }
-function qualifies(p){
- if(!p.gp||p.gp<minimum)return false;
+function qualifies(p,fullById,teamGames){
+ if(!p.gp)return false;
+ if(minimum==='half'){
+  const season=fullById.get(String(p.id))||p;
+  if(!roundData||season.gp<requiredHalf(teamGames[season.team]))return false;
+ }else if(p.gp<Number(minimum))return false;
  if(selectedTeams.size&&!selectedTeams.has(p.team))return false;
  if(search&&!String(p.name).toLocaleLowerCase('pt-BR').includes(search))return false;
  if(followingOnly&&!getData().extras.players?.[p.id]?.favorite)return false;
@@ -196,7 +201,7 @@ function roundRows(forPhase=phase,rounds=selectedRounds){
  return [...output.values()];
 }
 async function loadRoundData(force=false,needed=false){
- if(!selectedRounds.size&&!needed)return;
+ if(!selectedRounds.size&&minimum!=='half'&&!needed)return;
  if(roundPromise)return roundPromise;
  if(roundData&&!force&&Date.now()-lastRoundRefresh<60000)return;
  roundError='';
@@ -332,7 +337,9 @@ async function syncRecentFinals(force=false){
  finally{recentSyncPending=false;scheduleFinalRetry();}
 }
 function ranked(){
- return roundRows().filter(qualifies).sort((a,b)=>
+ const fullById=new Map(mergedRows().map(p=>[String(p.id),p]));
+ const teamGames=roundData?teamGamesFromRounds(roundData,phase,[...recentFinals.values()]):{};
+ return roundRows().filter(p=>qualifies(p,fullById,teamGames)).sort((a,b)=>
   metricValue(b)-metricValue(a)||b.gp-a.gp||a.name.localeCompare(b.name,'pt-BR'));
 }
 function fmt(value,key=''){
@@ -346,6 +353,7 @@ function syncURL(){
  url.searchParams.set('stat',metric);
  url.searchParams.set('fase',phase);
  url.searchParams.set('modo',valueMode);
+ if(minimum==='half')url.searchParams.delete('min');else url.searchParams.set('min',minimum);
  if(selectedRounds.size)url.searchParams.set('rodadas',[...selectedRounds].sort((a,b)=>a-b).join(','));
  else url.searchParams.delete('rodadas');
  url.searchParams.delete('time');url.searchParams.delete('times');
@@ -370,7 +378,7 @@ function ratingClass(value){
  if(value>=6)return 'average';
  return 'low';
 }
-function rowHTML(p,i){
+function rowHTML(p,i,headers){
  const info='<div class="leaders-table-player">'+
   '<span class="leaders-table-rank">'+(i+1)+'</span>'+
   '<img class="leaders-table-photo" src="'+athleteImage(p.id)+'" loading="lazy" decoding="async" alt="" referrerpolicy="no-referrer" onerror="this.style.opacity=.18">'+
@@ -380,7 +388,7 @@ function rowHTML(p,i){
    '<div class="leaders-row-actions"><button type="button" data-leader-follow="'+esc(p.id)+'" class="leaders-row-action'+(followed(p.id)?' is-following':'')+'" title="'+(followed(p.id)?'Deixar de seguir':'Seguir jogador')+'" aria-label="'+(followed(p.id)?'Deixar de seguir ':'Seguir ')+esc(p.name)+'" aria-pressed="'+followed(p.id)+'">'+(followed(p.id)?'♥':'♡')+'</button>'+
    '<button type="button" class="leaders-row-action" data-leader-card="'+esc(p.id)+'" title="Gerar card das médias" aria-label="Gerar card das médias de '+esc(p.name)+'">▣</button><button type="button" class="leaders-row-action" data-player-options aria-label="Opções de '+esc(p.name)+'" title="Opções do jogador">⋯</button></div>'+
   '</div></div>';
- const fields=['pts','reb','ast','stl','blk','rating'].map(key=>{
+ const fields=headers.map(([key])=>{
   const val=metricValue(p,key);
   const label=key==='rating'?'Nota DLQ':(metricName[key]||key)+(valueMode==='total'?' total':' por jogo');
   return '<span role="cell" class="leaders-table-stat '+(metric===key?' is-active':'')+'">'+
@@ -391,14 +399,16 @@ function rowHTML(p,i){
   '<div role="cell" class="leaders-table-player-cell">'+info+'</div>'+fields+'</div>';
 }
 function tableHTML(rows){
- const headers=[['pts','PTS'],['reb','REB'],['ast','AST'],['stl','STL'],['blk','BLK'],['rating','RTG']];
- return '<div class="leaders-rank-table" role="table" aria-label="Ranking geral dos jogadores">'+
+ const headers=[['pts','PTS'],['reb','REB'],['ast','AST'],['stl','STL'],['blk','BLK'],['rating','RTG'],['min','MIN']];
+ const extra={threeM:'3PT',fgpct:'FG %',threepct:'3PT %'};
+ if(extra[metric])headers.push([metric,extra[metric]]);
+ return '<div class="leaders-rank-table" style="--stat-columns:'+headers.length+'" role="table" aria-label="Ranking geral dos jogadores">'+
  '<div role="rowgroup"><div role="row" class="leaders-table-header">'+
  '<div role="columnheader" class="leaders-table-player-head">Jogador</div>'+
  headers.map(([id,label])=>'<button type="button" role="columnheader" data-leaders-metric="'+id+
  '" class="leaders-table-sort'+(metric===id?' is-active':'')+'" aria-label="Ordenar por '+esc(id==='rating'?'Nota DLQ':metricName[id])+'" aria-sort="'+(metric===id?'descending':'none')+'">'+label+
  (metric===id?'<span aria-hidden="true">▼</span>':'')+'</button>').join('')+'</div></div>'+
- '<div role="rowgroup">'+rows.map(rowHTML).join('')+'</div></div>';
+ '<div role="rowgroup">'+rows.map((row,i)=>rowHTML(row,i,headers)).join('')+'</div></div>';
 }
 
 function toolbar(){
@@ -419,8 +429,9 @@ function toolbar(){
  '" aria-pressed="'+(valueMode==='total')+'">Soma total</button></div></div>'+
  filterOptions('rounds')+
  filterOptions('teams')+
- '<label>Mínimo de jogos<select class="control" id="leadersMinimum">'+[1,3,5,10,20].map(v=>
-  '<option value="'+v+'"'+(minimum===v?' selected':'')+'>'+v+' '+(v===1?'jogo':'jogos')+'</option>').join('')+'</select></label>'+
+ '<label>Mínimo de jogos<select class="control" id="leadersMinimum">'+
+  '<option value="half"'+(minimum==='half'?' selected':'')+'>Metade dos jogos (padrão)</option>'+
+  [1,3,5,10,20].map(v=>'<option value="'+v+'"'+(minimum===String(v)?' selected':'')+'>'+v+' '+(v===1?'jogo':'jogos')+'</option>').join('')+'</select></label>'+
  '<label class="leaders-following-toggle"><input id="leadersFollowing" type="checkbox"'+(followingOnly?' checked':'')+'> Só jogadores que sigo</label><button type="button" class="btn ghost" data-open-comparison>⇄ Comparar jogadores</button></div></div>';
 }
 
@@ -440,19 +451,20 @@ function renderResults(){
   latestGameDate().split('-').reverse().join('/'):'sem partidas finalizadas')+
  (overlayCount()?' • +'+overlayCount()+' jogos finais recentes':'')+'</span>'+
  '<button type="button" class="btn ghost" id="leadersRefresh">↻ Atualizar</button></div></div>'+
- (selectedRounds.size&&!roundData?
+ ((selectedRounds.size||minimum==='half')&&!roundData?
   '<div class="filler"><b>'+(roundError?'Rodadas indisponíveis':'Carregando estatísticas das rodadas…')+
   '</b>'+(roundError?esc(roundError):'A tabela será atualizada ao terminar o carregamento.')+'</div>':
   rows.length?
   tableHTML(shown)+
   (rows.length>limit?'<div class="center leaders-load"><button class="btn" id="leadersLoadMore" type="button">Ver mais '+Math.min(30,rows.length-limit)+' jogadores ↓</button></div>':''):
   '<div class="filler"><b>Nenhum jogador com esses filtros</b>Reduza o mínimo de partidas ou escolha outra estatística.</div>')+
- '<p class="leaders-disclaimer">Toque em PTS, REB, AST, STL, BLK ou RTG para ordenar. '+
+ '<p class="leaders-disclaimer">Toque nos títulos das colunas, inclusive MIN, para ordenar. '+
  (valueMode==='total'?'PTS, REB, AST, STL e BLK mostram a soma das partidas selecionadas.':
  'PTS, REB, AST, STL e BLK mostram médias por partida.')+
  ' A nota RTG (NOTA DLQ) e os percentuais continuam como médias.'+
  ' Fonte: '+esc(board.source)+'. São considerados somente jogos finalizados já importados. A NOTA DLQ não é oficial da NBA.'+
- ' Os rankings de porcentagem exigem um mínimo de arremessos.</p>';
+ ' Os rankings de porcentagem exigem um mínimo de arremessos.'+
+ (minimum==='half'?' O filtro padrão exige ao menos metade dos jogos da equipe, arredondando para cima, inclusive nos recortes por rodada.':'')+'</p>';
 }
 
 function render(){
@@ -465,7 +477,7 @@ function render(){
  const current=root.querySelector('.leaders-select-dropdown[open] .leaders-select-menu');
  if(current)current.scrollTop=previousScroll;
  renderResults();
- if(selectedRounds.size&&!roundData&&!roundPromise)loadRoundData();
+ if((selectedRounds.size||minimum==='half')&&!roundData&&!roundPromise)loadRoundData();
 }
 root.innerHTML='<div class="filler">Preparando ranking dos jogadores…</div>';
 refreshLeaders(true);
@@ -519,7 +531,7 @@ root.addEventListener('click',e=>{
  if(e.target.closest('#leadersLoadMore')){limit+=30;renderResults();return;}
  if(e.target.closest('#leadersRefresh')){
   refreshLeaders(true);syncRecentFinals(true);
-  if(selectedRounds.size)loadRoundData(true);
+  if(selectedRounds.size||minimum==='half')loadRoundData(true);
   return;
  }
  const card=e.target.closest('[data-leader-card]');
@@ -571,7 +583,7 @@ root.addEventListener('change',e=>{
  if(roundTick){applyFilter('rounds',Number(roundTick.dataset.leadersRound));return;}
  const teamTick=e.target.closest('[data-leaders-team]');
  if(teamTick){applyFilter('teams',teamTick.dataset.leadersTeam);return;}
- if(e.target.id==='leadersMinimum'){minimum=Number(e.target.value)||1;limit=30;renderResults();}
+ if(e.target.id==='leadersMinimum'){minimum=e.target.value;limit=30;syncURL();render();}
  if(e.target.id==='leadersFollowing'){followingOnly=e.target.checked;limit=30;renderResults();}
 });
 window.addEventListener('quadra:refresh',()=>{if(board)renderResults();});
