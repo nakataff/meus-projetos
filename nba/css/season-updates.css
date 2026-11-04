@@ -5,13 +5,15 @@
 }
 .records-tools{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:8px 0 24px}
 .records-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:15px 0 32px}
-.records-tile{min-width:0;display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:7px;padding:17px;background:#131e2b;border:1px solid #304257;border-radius:14px}
+.records-tile{position:relative;isolation:isolate;overflow:hidden;min-width:0;min-height:188px;display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:7px;padding:17px;background:radial-gradient(ellipse at 90% 90%,#d57a3231,transparent 65%),linear-gradient(135deg,#223449,#141e2b 85%);border:1px solid #304257;border-radius:14px}
+.records-tile::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(90deg,#182637 0%,#182637ec 30%,#1826377d 60%,transparent 100%)}
+.records-tile-photo{position:absolute;z-index:1;right:-5%;bottom:-3px;width:61%;height:92%;object-fit:contain;object-position:bottom right;pointer-events:none;filter:drop-shadow(-9px 2px 10px #04091466)}
 .records-tile:hover,.records-tile:focus-visible{border-color:#e98b49;background:#1d2b3b}
 .records-tile.is-active{border-color:#ff9b58;background:#39281e}
-.records-tile>span:first-child{text-transform:uppercase;font-size:11px;font-weight:900;color:#bdcbe0;letter-spacing:.04em}
-.records-tile b{font-size:30px;line-height:1.15;color:#fff;font-variant-numeric:tabular-nums}
+.records-tile>span:first-child{position:relative;z-index:2;max-width:70%;text-transform:uppercase;font-size:11px;font-weight:900;color:#bdcbe0;letter-spacing:.04em}
+.records-tile b{position:relative;z-index:2;font-size:30px;line-height:1.15;color:#fff;font-variant-numeric:tabular-nums}
 .records-tile b small{font-size:12px;color:#ffb67c}
-.records-tile-name{font-size:12px;color:#a3b6cb;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;max-width:100%}
+.records-tile-name{position:relative;z-index:2;margin-top:auto;font-size:12px;font-weight:750;line-height:1.35;color:#d8e6f5;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;max-width:66%;overflow-wrap:anywhere}
 .records-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin:22px 0 15px}
 .records-heading h2{font-size:clamp(22px,3vw,32px);margin:4px 0}
 .records-list{border:1px solid #33475b;background:#111923;border-radius:14px;overflow:hidden}
@@ -20,7 +22,7 @@
 .records-entry:last-child{border-bottom:0}
 .records-place{font-weight:900;color:#9fb5cc;font-size:13px}
 .records-player{min-width:0;display:flex;align-items:center;gap:10px}
-.records-player>img{width:45px;height:48px;object-fit:cover;object-position:top;border-radius:50%;background:#293d53}
+.records-player>img{width:56px;height:60px;flex:none;object-fit:cover;object-position:top;border-radius:50%;background:#293d53}
 .records-player>span{min-width:0;display:flex;flex-direction:column;gap:4px}
 .records-player strong{font-size:13px}
 .records-player a:hover{color:#ffb67c}
@@ -33,13 +35,13 @@
 .records-game a{display:inline-flex;white-space:nowrap;color:#ffb679;font-weight:850}
 @media(max-width:760px){
  .records-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
- .records-tile{padding:12px}
+ .records-tile{padding:12px;min-height:166px}.records-tile-photo{right:-9%;width:67%;height:88%}.records-player>img{width:43px;height:47px}
  .records-tile b{font-size:24px}
  .records-entry{grid-template-columns:26px minmax(0,1fr) 72px;gap:8px;padding:12px 9px}
  .records-game{grid-column:2/4;justify-content:flex-start;text-align:left}
  .records-value strong{font-size:21px}
 }
-@media(max-width:420px){.records-grid{grid-template-columns:1fr 1fr}.records-tile>span:first-child{font-size:10px}.records-tile b{font-size:20px}}
+@media(max-width:420px){.records-grid{grid-template-columns:1fr 1fr}.records-tile>span:first-child{font-size:10px}.records-tile b{font-size:20px}.records-tile{min-height:155px}.records-tile-photo{width:70%;right:-12%}}
 
 
 /* Vitrine de recordes dentro de Jogadores: cartões com fotos, rolagem por gesto ou setas. */
@@ -63,7 +65,7 @@
 .records-feature-card:focus-visible{outline:2px solid #ffbd85;outline-offset:-3px}
 .records-feature-card::after{content:"";position:absolute;z-index:0;inset:0;background:linear-gradient(90deg,#162435 0%,#162435ee 30%,#16243555 65%,transparent 100%);pointer-events:none}
 .records-feature-card>span{position:relative;z-index:2}
-.records-feature-card-kicker{font-size:10px;letter-spacing:.09em;font-weight:900;color:#f6b889}
+.records-feature-card-kicker{max-width:calc(100% - 100px);font-size:10px;letter-spacing:.09em;font-weight:900;color:#f6b889}
 .records-feature-card-kicker span{color:#9eb1ca;letter-spacing:.01em;font-size:9px}
 .records-feature-card-title{font-size:14px;font-weight:850;color:#e1edfb;margin-top:15px;max-width:72%}
 .records-feature-card-value{font-size:clamp(34px,3.4vw,48px);font-weight:950;line-height:1.1;letter-spacing:-.04em;color:#ffbb82;font-variant-numeric:tabular-nums;margin-top:1px}
@@ -74,7 +76,7 @@
 .records-feature-card-player>span{font-size:11px;color:#afc6dc;display:flex;align-items:center;gap:5px}
 .records-feature-card-player img{width:18px;height:18px;object-fit:contain}
 .records-feature-card-photo{position:absolute;z-index:1;right:-7%;bottom:-2px;height:92%;width:66%;object-fit:contain;object-position:bottom right;filter:drop-shadow(-13px 0 14px #050a1360);pointer-events:none}
-.records-feature-card-open{font-size:10px;font-weight:800;color:#ffca9f;position:absolute!important;right:12px;bottom:10px}
+.records-feature-card-open{font-size:10px;font-weight:850;color:#ffca9f;position:absolute!important;z-index:4!important;right:12px;top:12px;bottom:auto;padding:5px 8px;border:1px solid #a77e5a8a;border-radius:7px;background:#162333e8;white-space:nowrap;line-height:1.2;box-shadow:0 2px 8px #0004}
 .records-feature-empty{margin:0;flex:0 0 100%;min-height:120px;background:#172536;border:1px solid #33455a;border-radius:14px;display:flex;align-items:center;justify-content:center;text-align:center;color:#b6c5d7;padding:20px;font-size:13px}
 @media(max-width:1150px){.records-feature-card{flex-basis:calc((100% - 14px)/2)}}
 @media(max-width:760px){
