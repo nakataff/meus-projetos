@@ -19,6 +19,8 @@ test('recordes exibem marcas de um jogo, mudam categoria e abrem a partida corre
   vm.runInContext(strip(read('js/season-stats.mjs')),dom.getInternalVMContext());
   vm.runInContext(strip(read('js/pages/records.js')),dom.getInternalVMContext());
   await settle(()=>w.document.querySelector('.records-entry'));
+  assert.equal(scrollCalls.length,1,'Link direto deve rolar ao ranking após carregar os dados');
+  assert.equal(scrollCalls[0].id,'ranking-recordes');
   assert.equal(w.document.querySelector('.records-entry .records-player strong').textContent,'Segundo');
   assert(w.document.querySelector('.records-game a').href.includes('espn_game1'));
   w.document.querySelector('[data-record-metric="threeM"]').click();
