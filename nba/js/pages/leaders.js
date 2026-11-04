@@ -483,7 +483,7 @@ function renderRecordHighlights(){
  }
  track.innerHTML=categories.map(({key,label,short,player},index)=>{
   const formatted=['rating','min'].includes(key)?round(player[key]).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}):Math.round(player[key]).toLocaleString('pt-BR');
-  const href=asset('recordes/?stat='+encodeURIComponent(key)+(phase==='preseason'?'&fase=preseason':''));
+  const href=asset('recordes/?stat='+encodeURIComponent(key)+(phase==='preseason'?'&fase=preseason':'')+'#ranking-recordes');
   return '<a class="records-feature-card" href="'+esc(href)+'" aria-label="'+esc(label+': '+formatted+' '+short+', '+player.name+'. Ver recordes desta categoria')+'">'+
    '<span class="records-feature-card-kicker">RECORDE '+String(index+1).padStart(2,'0')+' <span>• '+esc(phase==='regular'?'TEMPORADA REGULAR':'PRÉ-TEMPORADA')+'</span></span>'+
    '<span class="records-feature-card-title">'+esc(label)+'</span>'+
