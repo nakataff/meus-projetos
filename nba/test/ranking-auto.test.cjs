@@ -59,6 +59,7 @@ test('vitrine de recordes fica em Jogadores, com fotos, setas e link para lista 
   assert.equal(b.$('.records-feature-card-value').textContent.trim(),'10 PTS');
   assert(b.$('.records-feature-card-photo').getAttribute('src').includes('/1.png'));
   assert.equal(b.$('.records-feature-card').getAttribute('href').includes('recordes/?stat=pts'),true);
+  assert(b.$('.records-feature-card').getAttribute('href').endsWith('#ranking-recordes'),'Card da vitrine deve abrir diretamente o ranking');
   assert.equal(b.$('.records-feature-all').getAttribute('href'),'recordes/');
   assert.equal(b.$('.records-feature-counter').textContent,'1–2 de 9');
   b.$('[data-record-step="1"]').click();
