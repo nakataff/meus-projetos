@@ -1,4 +1,5 @@
 import {FRANCHISE_PLAYERS,isFranchise} from '../../data/franchises.js?v=20261024-franchise-v1';
+import {trackedTeams,teamFollowChange} from '../team-follows.mjs?v=20261103-home-v1';
 /* QUADRA — perfil leve de franquia com médias coletivas e por atleta. */
 import {$,setupShared,TEAMS,EAST,WEST,name,logo,esc,qs,fetchRoster,loadGames,MONTHS,
  currentDate,shortDate,teamLink,playerLink,path,jsonFile,getData,setSettings,
@@ -219,13 +220,14 @@ function tabs(){
  '" data-tab="'+key+'">'+label+'</button>').join('')+'</nav>';
 }
 function hero(){
- const b=getData(),fav=b.settings.fav===code,st=ownStanding(),pos=teamPosition();
+ const b=getData(),fav=b.settings.fav===code,followed=trackedTeams(b.settings,TEAMS).includes(code),st=ownStanding(),pos=teamPosition();
  return '<section class="team-hero"><img src="'+logoImage+'" alt=""><div>'+
  '<div class="eyebrow">CONFERÊNCIA '+conf.toUpperCase()+' • DIVISÃO '+esc(division).toUpperCase()+'</div>'+
  '<h2>'+esc(name(code))+'</h2><p>'+roster.length+' jogadores no elenco'+
  (st?' • Temporada regular: '+st.w+'V / '+st.l+'D'+(pos?' • '+pos+'º no '+conf:''):'')+'</p>'+
  '<div class="controls"><button class="btn '+(fav?'accent':'')+'" id="favoriteTeam">'+
- (fav?'★ Meu time favorito':'☆ Marcar como favorito')+'</button>'+
+ (fav?'★ Meu time principal':'☆ Definir como principal')+'</button>'+
+  '<button class="btn ghost" id="followTeam" aria-pressed="'+followed+'">'+(followed?'♥ Seguindo · Deixar de seguir':'♡ Seguir equipe')+'</button>'+
  '<a class="btn" href="'+path('classificacao/?time='+code)+'">Ver classificação ↗</a>'+
  '<a class="btn" href="'+path('equipes/')+'">Outras equipes</a></div></div></section>';
 }
@@ -285,7 +287,8 @@ root.addEventListener('click',e=>{
  if(e.target.closest('#teamSortDirection')){sortAsc=!sortAsc;draw();return;}
  const sort=e.target.closest('[data-team-stat]');
  if(sort){if(sortBy===sort.dataset.teamStat)sortAsc=!sortAsc;else{sortBy=sort.dataset.teamStat;sortAsc=false;}draw();return;}
- if(e.target.closest('#favoriteTeam')){setSettings({fav:getData().settings.fav===code?'':code});draw();return;}
+ if(e.target.closest('#favoriteTeam')){setSettings(teamFollowChange(getData().settings,TEAMS,code,'primary'));draw();return;}
+ if(e.target.closest('#followTeam')){setSettings(teamFollowChange(getData().settings,TEAMS,code,trackedTeams(getData().settings,TEAMS).includes(code)?'unfollow':'follow'));draw();return;}
  const player=e.target.closest('[data-rate]');
  if(player){const p=roster.find(x=>String(x.id)===player.dataset.rate);if(p)ratingForm(p);return;}
  if(handleWishes(e.target,draw))e.preventDefault();
