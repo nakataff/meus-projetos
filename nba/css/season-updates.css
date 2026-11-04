@@ -40,3 +40,57 @@
  .records-value strong{font-size:21px}
 }
 @media(max-width:420px){.records-grid{grid-template-columns:1fr 1fr}.records-tile>span:first-child{font-size:10px}.records-tile b{font-size:20px}}
+
+
+/* Vitrine de recordes dentro de Jogadores: cartões com fotos, rolagem por gesto ou setas. */
+.records-feature{margin:4px 0 30px}
+.records-feature-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;margin-bottom:15px}
+.records-feature-heading h2{font-size:clamp(23px,2.6vw,31px);line-height:1.12;letter-spacing:-.03em;margin:6px 0}
+.records-feature-heading p{color:#a9bcd0;margin:0;font-size:13px}
+.records-feature-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:flex-end}
+.records-feature-all{font-size:12px;white-space:nowrap;text-align:center}
+.records-feature-controls{display:flex;align-items:center;gap:8px}
+.records-feature-arrow{width:39px;height:39px;border:1px solid #41546a;border-radius:11px;background:#1b2939;color:#e8f1fb;font-size:29px;line-height:1;display:flex;align-items:center;justify-content:center}
+.records-feature-arrow:hover:not(:disabled),.records-feature-arrow:focus-visible{border-color:#f39a5c;color:#ffbd86;background:#302b2a}
+.records-feature-arrow:disabled{opacity:.32;cursor:not-allowed}
+.records-feature-counter{font-size:12px;color:#afc0d3;font-variant-numeric:tabular-nums;min-width:61px;text-align:center}
+.records-feature-viewport{overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;border-radius:16px}
+.records-feature-viewport::-webkit-scrollbar{display:none}
+.records-feature-viewport:focus-visible{outline:2px solid #ff9d59;outline-offset:3px}
+.records-feature-track{display:flex;gap:14px}
+.records-feature-card{isolation:isolate;position:relative;display:flex;flex-direction:column;align-items:flex-start;flex:0 0 calc((100% - 28px)/3);min-width:0;min-height:245px;scroll-snap-align:start;overflow:hidden;border:1px solid #42516a;border-radius:15px;padding:19px;background:radial-gradient(ellipse at 92% 83%,#e3782631,transparent 53%),linear-gradient(135deg,#24364a 0%,#182536 53%,#111924 100%);transition:border-color .2s ease,background-color .2s ease}
+.records-feature-card:hover,.records-feature-card:focus-visible{border-color:#ffad72}
+.records-feature-card:focus-visible{outline:2px solid #ffbd85;outline-offset:-3px}
+.records-feature-card::after{content:"";position:absolute;z-index:0;inset:0;background:linear-gradient(90deg,#162435 0%,#162435ee 30%,#16243555 65%,transparent 100%);pointer-events:none}
+.records-feature-card>span{position:relative;z-index:2}
+.records-feature-card-kicker{font-size:10px;letter-spacing:.09em;font-weight:900;color:#f6b889}
+.records-feature-card-kicker span{color:#9eb1ca;letter-spacing:.01em;font-size:9px}
+.records-feature-card-title{font-size:14px;font-weight:850;color:#e1edfb;margin-top:15px;max-width:72%}
+.records-feature-card-value{font-size:clamp(34px,3.4vw,48px);font-weight:950;line-height:1.1;letter-spacing:-.04em;color:#ffbb82;font-variant-numeric:tabular-nums;margin-top:1px}
+.records-feature-card-value small{font-size:12px;letter-spacing:0;vertical-align:baseline;color:#d5e2f3}
+.records-feature-card-context{font-size:10px;font-weight:850;letter-spacing:.09em;color:#afc3d9;margin-top:1px}
+.records-feature-card-player{margin-top:auto;display:flex;flex-direction:column;gap:2px;max-width:69%}
+.records-feature-card-player strong{font-size:14px;line-height:1.2;overflow-wrap:anywhere;color:#fff}
+.records-feature-card-player>span{font-size:11px;color:#afc6dc;display:flex;align-items:center;gap:5px}
+.records-feature-card-player img{width:18px;height:18px;object-fit:contain}
+.records-feature-card-photo{position:absolute;z-index:1;right:-7%;bottom:-2px;height:92%;width:66%;object-fit:contain;object-position:bottom right;filter:drop-shadow(-13px 0 14px #050a1360);pointer-events:none}
+.records-feature-card-open{font-size:10px;font-weight:800;color:#ffca9f;position:absolute!important;right:12px;bottom:10px}
+.records-feature-empty{margin:0;flex:0 0 100%;min-height:120px;background:#172536;border:1px solid #33455a;border-radius:14px;display:flex;align-items:center;justify-content:center;text-align:center;color:#b6c5d7;padding:20px;font-size:13px}
+@media(max-width:1150px){.records-feature-card{flex-basis:calc((100% - 14px)/2)}}
+@media(max-width:760px){
+ .records-feature-heading{align-items:flex-start;flex-direction:column;gap:12px}
+ .records-feature-actions{width:100%;justify-content:space-between;gap:8px}
+ .records-feature-card{flex-basis:100%;min-height:240px}
+ .records-feature-card-photo{right:-3%;width:60%;height:96%}
+ .records-feature-card-value{font-size:44px}
+ .records-feature-card-player{max-width:64%}
+ .records-feature{margin-bottom:25px}
+}
+@media(max-width:390px){
+ .records-feature-card{min-height:230px;padding:15px}
+ .records-feature-card-photo{right:-8%;width:66%}
+ .records-feature-card-kicker span{font-size:8px}
+ .records-feature-card-player strong{font-size:13px}
+ .records-feature-all{font-size:11px;padding:10px}
+}
+@media(prefers-reduced-motion:reduce){.records-feature-card{transition:none}.records-feature-viewport{scroll-behavior:auto}}
