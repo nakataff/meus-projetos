@@ -23,7 +23,10 @@ test('recordes exibem marcas de um jogo, mudam categoria e abrem a partida corre
   assert.equal(scrollCalls[0].id,'ranking-recordes');
   assert.equal(w.document.querySelector('.records-entry .records-player strong').textContent,'Segundo');
   assert(w.document.querySelector('.records-game a').href.includes('espn_game1'));
-  w.document.querySelector('[data-record-metric="threeM"]').click();
+  w.document.querySelector('[data-record-metric="threeM"] .records-tile-photo').click();
+  assert.equal(scrollCalls.length,2,'Clicar na foto deve descer ao ranking selecionado');
+  assert.equal(scrollCalls[1].id,'ranking-recordes');
+  assert.equal(scrollCalls[1].options.behavior,'smooth');
   assert.equal(w.document.querySelector('.records-entry .records-player strong').textContent,'Primeiro');
   assert.equal(w.document.querySelector('.records-entry .records-value strong').textContent,'6');
   assert.equal(w.document.querySelectorAll('.records-tile').length,9);
