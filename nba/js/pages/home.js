@@ -7,7 +7,7 @@ let games=[],loaded=false,teamIndex=0,resultsExpanded=false;
 const followedStats={};
 const currentMonth=currentDate().slice(0,7);
 const byDate=(a,b)=>String(a.date||'').localeCompare(String(b.date||''))||
- String(a.time||'').localeCompare(String(b.time||'');
+ String(a.time||'').localeCompare(String(b.time||''));
 const isTeamGame=(g,code)=>g.away===code||g.home===code;
 const isLive=g=>effectiveGame(g).status==='live';
 const isFinal=g=>effectiveGame(g).status==='final';
