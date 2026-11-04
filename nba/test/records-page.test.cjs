@@ -22,6 +22,9 @@ test('recordes exibem marcas de um jogo, mudam categoria e abrem a partida corre
   assert.equal(w.document.querySelector('.records-entry .records-player strong').textContent,'Primeiro');
   assert.equal(w.document.querySelector('.records-entry .records-value strong').textContent,'6');
   assert.equal(w.document.querySelectorAll('.records-tile').length,9);
+  assert.equal(w.document.querySelectorAll('.records-tile-photo').length,9);
+  assert(w.document.querySelector('.records-tile-photo').getAttribute('src').includes('/2.png'));
+  assert.equal(w.document.querySelector('.records-tile-photo').getAttribute('alt'),'');
   w.document.querySelector('[data-record-phase="preseason"]').click();
   assert(w.document.querySelector('#pageContent').textContent.includes('Ainda não há atuações'));
  }finally{w.close();}
