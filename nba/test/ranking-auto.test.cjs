@@ -50,3 +50,24 @@ test('minutos aparecem na tabela, terceira bola selecionada tem coluna e metade 
   assert.equal(b.eval('minimum'),'1');
  }finally{w.close();}
 });
+
+test('vitrine de recordes fica em Jogadores, com fotos, setas e link para lista completa',async()=>{
+ const b=await leaders(),{w}=b;
+ try{
+  await settle(()=>b.$('.records-feature-card'));
+  assert.equal(b.$('.records-feature-card-title').textContent,'Pontos');
+  assert.equal(b.$('.records-feature-card-value').textContent.trim(),'10 PTS');
+  assert(b.$('.records-feature-card-photo').getAttribute('src').includes('/1.png'));
+  assert.equal(b.$('.records-feature-card').getAttribute('href').includes('recordes/?stat=pts'),true);
+  assert.equal(b.$('.records-feature-all').getAttribute('href'),'recordes/');
+  assert.equal(b.$('.records-feature-counter').textContent,'1–2 de 9');
+  b.$('[data-record-step="1"]').click();
+  assert.equal(b.$('.records-feature-counter').textContent,'2–3 de 9');
+  assert.equal(b.$('[data-record-step="-1"]').disabled,false);
+  b.$('[data-record-step="-1"]').click();
+  assert.equal(b.$('.records-feature-counter').textContent,'1–2 de 9');
+  b.$('[data-leaders-phase="preseason"]').click();
+  assert(b.$('.records-feature-empty').textContent.includes('Nenhuma atuação'));
+  assert.equal(b.$('.records-feature-all').getAttribute('href'),'recordes/');
+ }finally{w.close();}
+});
