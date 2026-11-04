@@ -57,7 +57,7 @@ test('multiplas equipes podem ser seguidas, navegadas e uma equipe principal pre
   assert.equal(b.$('.home-carousel-controls span').textContent,'1 de 1');
   b.$('#homeAddTeam').value='BOS';
   b.$('#homeAddTeam').dispatchEvent(new w.Event('change',{bubbles:true}));
-  assert.deepEqual(state.settings.followedTeams,['LAL','BOS']);
+  assert.deepEqual(Array.from(state.settings.followedTeams),['LAL','BOS']);
   assert.equal(state.settings.fav,'LAL');
   assert.equal(b.$('.home-team-identity h3').textContent,'Boston Celtics');
   assert.equal(b.$('.home-carousel-controls span').textContent,'2 de 2');
@@ -68,7 +68,7 @@ test('multiplas equipes podem ser seguidas, navegadas e uma equipe principal pre
   b.$('[data-home-team-step="1"]').click();
   assert.equal(b.$('.home-team-identity h3').textContent,'Los Angeles Lakers');
   b.$('[data-home-team-unfollow="LAL"]').click();
-  assert.deepEqual(state.settings.followedTeams,['BOS']);
+  assert.deepEqual(Array.from(state.settings.followedTeams),['BOS']);
   assert.equal(state.settings.fav,'BOS');
   assert.equal(b.$('.home-carousel-controls span').textContent,'1 de 1');
  }finally{w.close();}
@@ -80,7 +80,7 @@ test('sem favorito anterior, adicionar equipe define primeiro principal; ainda p
   b.$('#homeAddTeam').value='NYK';
   b.$('#homeAddTeam').dispatchEvent(new w.Event('change',{bubbles:true}));
   assert.equal(state.settings.fav,'NYK');
-  assert.deepEqual(state.settings.followedTeams,['NYK']);
+  assert.deepEqual(Array.from(state.settings.followedTeams),['NYK']);
   assert(b.$('.home-team-identity h3').textContent.includes('New York'));
  }finally{w.close();}
 });
