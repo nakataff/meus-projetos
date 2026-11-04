@@ -10,6 +10,8 @@ test('team summary and games show recent finals newest first without duplicating
  ];
  Object.assign(w,{$:s=>w.document.querySelector(s),isFranchise:()=>false,setupShared:()=>{},TEAMS:{BOS:[],LAL:[]},EAST:{Atlantic:['BOS']},WEST:{Pacific:['LAL']},name:x=>x,logo:x=>x,esc:String,qs:()=> 'BOS',fetchRoster:async()=>[],loadGames:async m=>{loads++;months=Array.from(m);return fixtures;},MONTHS:['2026-09','2026-10','2026-11'],currentDate:()=> '2026-10-24',shortDate:x=>x,teamLink:x=>x,playerLink:x=>x,path:x=>x,jsonFile:async()=>({}),getData:()=>({settings:{},extras:{}}),setSettings:()=>{},modify:()=>{},modal:()=>{},closeModal:()=>{},toast:()=>{},groupGames:list=>list.map(g=>'<a class="test-game" href="/jogo/?id='+g.id+'">'+g.id+'</a>').join(''),handleWishes:()=>false,effectiveGame:g=>g});
  try{
+ const followHelpers=fs.readFileSync(require('node:path').join(__dirname,'../js/team-follows.mjs'),'utf8').replace(/^export /gm,'');
+ vm.runInContext(followHelpers,dom.getInternalVMContext());
  const code=fs.readFileSync(require('node:path').join(__dirname,'../js/pages/team.js'),'utf8').replace(/^import[\s\S]*?from[^\n]*\n/gm,'');
  vm.runInContext(code,dom.getInternalVMContext());
  for(let i=0;i<30&&!w.document.querySelector('.test-game');i++)await new Promise(r=>setTimeout(r,5));
