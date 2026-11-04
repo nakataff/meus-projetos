@@ -1,134 +1,166 @@
-import {$,setupShared,loadGames,currentDate,dayShift,groupGames,effectiveGame,path,getData,note,handleWishes,esc,broadcastInfo,name,logo,MONTHS,shortDate,fetchBox,eventBox,playerLink,jsonFile,gameLink,gameRow,overnightGame} from '../app.js?v=13';
-import {topPerformance,ratingLabel} from '../performance-rating.js?v=2';
-setupShared('home','A NBA acontece aqui.','Jogos, transmissões, estatísticas e tudo sobre a temporada da NBA.');
+/* DE LA QUADRA — Início: agora, próximos confrontos, TV brasileira e equipes seguidas. */
+import {$,setupShared,loadGames,currentDate,dayShift,groupGames,effectiveGame,path,getData,setSettings,note,handleWishes,esc,broadcastInfo,TEAMS,name,logo,MONTHS,playerLink,jsonFile,gameLink,gameRow,overnightGame,shortDate} from '../app.js?v=13';
+import {trackedTeams,teamFollowChange} from '../team-follows.mjs?v=20261103-home-v1';
+setupShared('home','A NBA acontece aqui.','Acompanhe os jogos ao vivo, os próximos confrontos e onde assistir no Brasil.');
 const root=$('#pageContent');
-let games=[],loaded=false;
-let lastStar={key:'',ready:false,player:null,rating:null};
-let followedStats={};
+let games=[],loaded=false,teamIndex=0,resultsExpanded=false;
+const followedStats={};
 const currentMonth=currentDate().slice(0,7);
-function section(title,actionLabel,href,body,empty){
- return '<section class="section"><div class="section-title"><h2>'+esc(title)+'</h2><a class="btn ghost" href="'+path(href)+'">'+esc(actionLabel)+' ↗</a></div>'+
- (body.length?(title==='Jogos de hoje'?body.map(gameRow).join(''):groupGames(body)):'<div class="filler">'+empty+'</div>')+'</section>';
+const byDate=(a,b)=>String(a.date||'').localeCompare(String(b.date||''))||
+ String(a.time||'').localeCompare(String(b.time||'');
+const isTeamGame=(g,code)=>g.away===code||g.home===code;
+const isLive=g=>effectiveGame(g).status==='live';
+const isFinal=g=>effectiveGame(g).status==='final';
+const isUpcoming=g=>!isFinal(g)&&!isLive(g)&&g.date>=currentDate();
+function listSection(title,href,action,rows,empty,cssClass=''){
+ return '<section class="section home-section '+cssClass+'"><div class="section-title"><h2>'+title+'</h2>'+
+ '<a class="btn ghost" href="'+path(href)+'">'+esc(action)+' ↗</a></div>'+
+ (rows.length?groupGames(rows):'<div class="filler">'+empty+'</div>')+'</section>';
 }
-
-function isTeamGame(g,code){return g.away===code||g.home===code;}
-function lastAndNext(fav){
- const today=currentDate(),mine=games.filter(g=>isTeamGame(g,fav));
- const past=mine.filter(g=>g.date<=today&&effectiveGame(g).status==='final')
-  .sort((a,b)=>(b.date+' '+b.time).localeCompare(a.date+' '+a.time))[0]||null;
- const next=mine.filter(g=>effectiveGame(g).status!=='final'&&
-  effectiveGame(g).status!=='live'&&g.date>=today)
-  .sort((a,b)=>(a.date+' '+a.time).localeCompare(b.date+' '+b.time))[0]||null;
- return {past,next};
+function gameForTeam(team){
+ const today=currentDate(),mine=games.filter(g=>isTeamGame(g,team));
+ const current=mine.filter(isLive).sort(byDate)[0]||null;
+ const next=mine.filter(g=>g.date>=today&&isUpcoming(g)).sort(byDate)[0]||null;
+ const last=mine.filter(g=>g.date<=today&&isFinal(g)).sort((a,b)=>byDate(b,a))[0]||null;
+ return {current,next,last};
 }
-function loadBestPlayer(fav,past){
- const key=fav+':'+String(past?.id||'');
- if(!past||lastStar.key===key)return;
- lastStar={key,ready:false,player:null,rating:null};
- fetchBox(past.date.slice(0,7)).then(boxes=>{
-  if(lastStar.key!==key)return;
-  const record=eventBox(boxes,past);
-  const players=record?.players?.[fav]||[];
-  const best=topPerformance({[fav]:players});
-  lastStar={key,ready:true,player:best?.player||null,rating:best?.rating??null};
-  render();
- }).catch(()=>{if(lastStar.key===key){lastStar.ready=true;render();}});
-}
-function matchLabel(g,fav){
- if(!g)return '';
- const other=g.away===fav?g.home:g.away;
- return (g.home===fav?'vs ':'@ ')+name(other);
-}
-function gamePanel(g,fav,title){
- if(!g)return '<div class="fav-info"><span class="caps">'+title+'</span><b>Aguardando calendário</b><small>Nenhum confronto disponível neste período</small></div>';
- const state=effectiveGame(g),hasScore=state.scoreAway!=null&&state.scoreHome!=null;
+function teamMatch(g,team,title){
+ if(!g)return '<div class="fav-info"><span class="caps">'+title+'</span><b>Aguardando calendário</b>'+
+ '<small>Nenhum confronto encontrado no período carregado.</small></div>';
+ const other=g.away===team?g.home:g.away,state=effectiveGame(g);
+ const hasScore=state.scoreAway!=null&&state.scoreHome!=null;
+ const channels=(g.platforms||[]).filter(x=>x==='ESPN'||x==='PRIME').map(x=>x==='ESPN'?'ESPN / Disney+':'Prime Video');
  return '<a class="fav-info" href="'+gameLink(g)+'"><span class="caps">'+title+'</span>'+
-  '<div class="fav-info-teams"><img src="'+esc(logo(g.away===fav?g.home:g.away))+'" alt="" loading="lazy">'+
-  '<b>'+esc(matchLabel(g,fav))+'</b></div>'+
-  '<strong>'+esc(hasScore?state.scoreAway+' – '+state.scoreHome:
-    (state.status==='live'?'AO VIVO':g.time?g.time+' BRT':'Horário a definir'))+'</strong>'+
-  '<small>'+esc(shortDate(g.date))+(hasScore?' • Resultado final':'')+'</small></a>';
+ '<div class="fav-info-teams"><img src="'+esc(logo(other))+'" alt="" loading="lazy"><b>'+esc(g.home===team?'vs '+name(other):'@ '+name(other))+'</b></div>'+
+ '<strong>'+esc(state.status==='live'?'● AO VIVO':hasScore?state.scoreAway+' – '+state.scoreHome:g.time?g.time+' BRT':'Horário a definir')+'</strong>'+
+ '<small>'+esc(shortDate(g.date))+(channels.length?' • '+esc(channels.join(' + ')):'')+'</small></a>';
 }
-function favoritePanel(fav){
- const {past,next}=lastAndNext(fav);
- loadBestPlayer(fav,past);
- const star=lastStar.ready&&past&&lastStar.key===fav+':'+String(past.id)?lastStar.player:null;
- const standout=star?'<a class="fav-info" href="'+playerLink(star.id,fav)+'"><span class="caps">Destaque do último jogo</span>'+
-  '<div class="fav-star"><img src="https://a.espncdn.com/i/headshots/nba/players/full/'+encodeURIComponent(String(star.id))+'.png" alt="" loading="lazy" referrerpolicy="no-referrer">'+
-  '<b>'+esc(star.name)+'</b></div>'+
-  '<strong>'+esc(star.pts??'—')+' PTS · '+esc(star.reb??'—')+' REB · '+esc(star.ast??'—')+' AST</strong>'+
-  '<small>NOTA DLQ '+ratingLabel(lastStar.rating)+' • Ver perfil →</small></a>':
-  '<div class="fav-info"><span class="caps">Destaque do último jogo</span><b>'+(!past?'Sem partida anterior':lastStar.ready?'Estatísticas indisponíveis':'Carregando destaque…')+'</b>'+
-  '<small>'+(!past?'Aparece após o primeiro jogo':'Baseado no box score da partida')+'</small></div>';
- return '<section class="favorite-dashboard"><div class="favorite-hero"><img src="'+esc(logo(fav))+'" alt="" width="64" height="64">'+
- '<div><span class="caps">Meu time favorito</span><strong>'+esc(name(fav))+'</strong><span class="small subtle">Temporada 2026/27</span></div>'+
- '<a class="btn" href="'+path('equipe/?id='+encodeURIComponent(fav))+'">Ver equipe ↗</a></div>'+
- '<div class="fav-overview-grid">'+gamePanel(past,fav,'Última partida')+
- gamePanel(next,fav,'Próxima partida')+standout+'</div></section>';
+function teamDashboard(){
+ const settings=getData().settings,teams=trackedTeams(settings,TEAMS);
+ teamIndex=Math.max(0,Math.min(teamIndex,Math.max(0,teams.length-1)));
+ const team=teams[teamIndex],untracked=Object.keys(TEAMS).filter(x=>!teams.includes(x))
+  .sort((a,b)=>name(a).localeCompare(name(b),'pt-BR'));
+ const picker='<label class="home-team-picker"><span class="sr-only">Adicionar equipe seguida</span>'+
+ '<select class="control" id="homeAddTeam" aria-label="Adicionar equipe seguida"><option value="">+ Seguir equipe</option>'+
+ untracked.map(code=>'<option value="'+esc(code)+'">'+esc(name(code))+'</option>').join('')+'</select></label>';
+ if(!team)return '<section class="home-teams home-teams-empty"><div><span class="caps">SUA NBA</span>'+
+ '<h2>Acompanhe suas equipes</h2><p>Escolha o primeiro time para ver seus próximos jogos e siga quantas franquias quiser.</p></div>'+
+ '<div class="home-team-empty-actions">'+picker+'<a class="btn ghost" href="'+path('equipes/')+'">Ver as 30 equipes ↗</a></div></section>';
+ const {current,next,last}=gameForTeam(team),primary=settings.fav===team;
+ return '<section class="home-teams" aria-labelledby="home-teams-title">'+
+ '<header class="home-teams-head"><div><span class="caps">MINHA NBA</span><h2 id="home-teams-title">Meus times</h2></div>'+
+ '<div class="home-teams-tools">'+picker+
+ '<div class="home-carousel-controls"><button type="button" data-home-team-step="-1" aria-label="Equipe anterior"'+(!teamIndex?' disabled':'')+'>‹</button>'+
+ '<span aria-live="polite">'+(teamIndex+1)+' de '+teams.length+'</span>'+
+ '<button type="button" data-home-team-step="1" aria-label="Próxima equipe"'+(teamIndex>=teams.length-1?' disabled':'')+'>›</button></div></div></header>'+
+ '<div class="home-team-view" id="homeTeamViewport" role="region" aria-label="Equipe seguida: '+esc(name(team))+'">'+
+ '<div class="home-team-identity"><img src="'+esc(logo(team))+'" alt="" loading="lazy">'+
+ '<div><span class="caps">'+(primary?'★ MEU TIME PRINCIPAL':'♡ EQUIPE SEGUIDA')+'</span>'+
+ '<h3>'+esc(name(team))+'</h3><span class="subtle small">Temporada NBA 2026/27</span></div></div>'+
+ '<div class="home-team-overview">'+
+ teamMatch(current||next,team,current?'Em quadra agora':'Próxima partida')+
+ teamMatch(last,team,'Último resultado')+'</div>'+
+ '<div class="home-team-actions"><button type="button" class="btn '+(primary?'accent':'ghost')+'" data-home-team-primary="'+esc(team)+'" aria-pressed="'+primary+'">'+
+ (primary?'★ Time principal':'☆ Definir como principal')+'</button>'+
+ '<button type="button" class="btn ghost" data-home-team-unfollow="'+esc(team)+'">✓ Seguindo · Deixar de seguir</button>'+
+ '<a class="btn ghost" href="'+path('equipe/?id='+encodeURIComponent(team))+'">Ver equipe ↗</a></div></div></section>';
 }
 function loadFollowedPlayers(rows){
- const keys=[...new Set(rows.map(([,p])=>p.team).filter(Boolean))];
- for(const code of keys){
+ const codes=[...new Set(rows.map(([,p])=>p.team).filter(Boolean))];
+ for(const code of codes){
   if(Object.prototype.hasOwnProperty.call(followedStats,code))continue;
   followedStats[code]=null;
-  jsonFile('data/team-stats/'+encodeURIComponent(code)+'.json').then(data=>{
-   followedStats[code]=data;render();
-  }).catch(()=>{followedStats[code]={};render();});
+  jsonFile('data/team-stats/'+encodeURIComponent(code)+'.json').then(data=>{followedStats[code]=data;render();})
+   .catch(()=>{followedStats[code]={};render();});
  }
 }
-function followedPanel(){
+function followedPlayers(){
  const people=Object.entries(getData().extras.players||{}).filter(([,p])=>p?.favorite&&p?.team).slice(0,5);
  if(!people.length)return '';
  loadFollowedPlayers(people);
- return '<section class="section"><div class="section-title"><h2>Jogadores que sigo</h2>'+
- '<a class="btn ghost" href="'+path('perfil/?tab=seguindo')+'">Ver todos →</a></div>'+
+ return '<section class="section home-followed-players"><div class="section-title"><h2>Jogadores que sigo</h2>'+
+ '<a class="btn ghost" href="'+path('perfil/?tab=seguindo')+'">Ver todos ↗</a></div>'+
  '<div class="followed-home-grid">'+people.map(([id,p])=>{
-   const regular=followedStats[p.team]?.regular;
-   const pre=followedStats[p.team]?.preseason;
-   const stats=regular?.players?.find(x=>String(x.id)===id);
-   const use=stats&&stats.gp?stats:pre?.players?.find(x=>String(x.id)===id);
-   const average=k=>use?.gp?(Number(use[k]||0)/use.gp).toFixed(1).replace('.',','):'—';
-   return '<a class="followed-home-player" href="'+playerLink(id,p.team)+'"><img src="https://a.espncdn.com/i/headshots/nba/players/full/'+encodeURIComponent(id)+'.png" alt="" loading="lazy" referrerpolicy="no-referrer">'+
+  const regular=followedStats[p.team]?.regular,pre=followedStats[p.team]?.preseason;
+  const stats=regular?.players?.find(x=>String(x.id)===id);
+  const use=stats&&stats.gp?stats:pre?.players?.find(x=>String(x.id)===id);
+  const average=k=>use?.gp?(Number(use[k]||0)/use.gp).toFixed(1).replace('.',','):'—';
+  return '<a class="followed-home-player" href="'+playerLink(id,p.team)+'">'+
+   '<img src="https://a.espncdn.com/i/headshots/nba/players/full/'+encodeURIComponent(id)+'.png" alt="" loading="lazy" referrerpolicy="no-referrer">'+
    '<div><strong>'+esc(p.name||'Jogador #'+id)+'</strong><span>'+esc(name(p.team))+'</span>'+
-   '<small>'+ (use?.gp?average('pts')+' PTS · '+average('reb')+' REB · '+average('ast')+' AST':'Médias ainda indisponíveis')+'</small></div></a>';
- }).join('')+'</div><p class="small subtle">Médias por jogo nos dados disponíveis. Toque no atleta para comparar com a liga.</p></section>';
+   '<small>'+(use?.gp?average('pts')+' PTS · '+average('reb')+' REB · '+average('ast')+' AST':'Médias ainda indisponíveis')+'</small></div></a>';
+ }).join('')+'</div></section>';
 }
-
 function render(){
  if(!loaded)return;
- const today=currentDate(),tomorrow=dayShift(today,1),week=dayShift(today,7);
- // NBA atravessa a meia-noite em Brasília: jogos que começaram ontem
- // ainda em andamento (ou encerrados há pouco) continuam no resumo de hoje.
- const future=games.filter(g=>g.date>=today||overnightGame(g));
- const todayGames=future.filter(g=>g.date===today||overnightGame(g));
- const tv=future.filter(broadcastInfo).slice(0,5);
- const {settings}=getData(),fav=settings.fav;
- const watchlist=future.filter(g=>g.date<week&&note(g.id).wish&&!note(g.id).watched).slice(0,6);
- const nextTomorrow=future.filter(g=>g.date===tomorrow);
- const liveNow=future.filter(g=>effectiveGame(g).status==='live');
- const liveNotice=liveNow.length?
-  '<div class="live-banner"><span class="live-banner-label"><i aria-hidden="true"></i> AO VIVO AGORA</span>'+
-  '<strong>'+liveNow.length+' '+(liveNow.length===1?'partida em andamento':'partidas em andamento')+'</strong>'+
-  '<a class="btn" href="'+path('jogos/?data='+today)+'">Ver jogos →</a></div>'+
-  groupGames(liveNow.slice(0,4)) : '';
- const favHeader=fav?favoritePanel(fav):
- '<div class="favorite-hero empty"><div><span class="caps">Seu time, sua NBA</span><strong>Escolha seu time favorito</strong><span class="small subtle">Veja o próximo jogo e os destaques da equipe.</span></div><a class="btn accent" href="'+path('equipes/')+'">Escolher time →</a></div>';
+ const today=currentDate(),week=dayShift(today,7);
+ const inWindow=games.filter(g=>g.date>=today||overnightGame(g));
+ const live=inWindow.filter(isLive).sort((a,b)=>Number(broadcastInfo(b))-Number(broadcastInfo(a))||byDate(a,b));
+ const scheduled=inWindow.filter(isUpcoming).sort(byDate);
+ // Partidas próximas têm preferência; dentro do recorte de dois dias, priorizar TV brasileira.
+ const close=scheduled.filter(g=>g.date<=dayShift(today,2));
+ const upcoming=(close.length?close:scheduled.slice(0,12))
+  .sort((a,b)=>Number(broadcastInfo(b))-Number(broadcastInfo(a))||byDate(a,b)).slice(0,6);
+ const tv=scheduled.filter(broadcastInfo).slice(0,4);
+ const watchlist=scheduled.filter(g=>g.date<week&&note(g.id).wish&&!note(g.id).watched).slice(0,5);
+ const finished=games.filter(g=>(g.date===today||overnightGame(g))&&isFinal(g)).sort(byDate);
  root.innerHTML=
- liveNotice+favHeader+followedPanel()+
- section('Jogos de hoje','Agenda completa','jogos/',todayGames.slice(0,14),'Nenhuma partida prevista para hoje no calendário consultado.')+
- (todayGames.length===0&&nextTomorrow.length?'<div class="small subtle">Próximos jogos amanhã: <a href="'+path('jogos/')+'">'+nextTomorrow.length+' confrontos →</a></div>':'')+
-
- section('Onde assistir no Brasil','Todas as transmissões','jogos/?tv=br',tv,'Ainda não há transmissões brasileiras confirmadas no período carregado.')+
- '<section class="section"><div class="section-title"><h2>Minha agenda da semana</h2><a class="btn ghost" href="'+path('perfil/?tab=atividade&filtro=desejos')+'">Minha lista ↗</a></div>'+
- (watchlist.length?groupGames(watchlist):'<div class="filler"><b>Você ainda não marcou jogos para esta semana</b>Toque no ♡ dos confrontos para montar sua agenda personalizada.</div>')+'</section>'+
- '<div class="grid leaders-home-shortcuts"><a class="card link" href="'+path('equipes/')+'"><div class="caps">Explore</div><h3>🏀 As 30 franquias</h3><p>Conferências, elencos, quintetos e próximos jogos.</p></a>'+
- '<a class="card link" href="'+path('melhores/')+'"><div class="caps">Destaques da temporada</div><h3>🏅 Melhores jogadores</h3><p>Médias de pontos, rebotes, assistências, NOTA DLQ e muito mais.</p></a>'+
- '<a class="card link" href="'+path('perfil/')+'"><div class="caps">Sua jornada</div><h3>☆ Meu perfil</h3><p>Partidas assistidas, rankings, conquistas e dados pessoais.</p></a></div>';
+ (live.length?'<section class="section home-live home-section"><div class="section-title"><h2><span class="home-live-dot"></span> Ao vivo agora <small>('+live.length+')</small></h2>'+
+ '<a class="btn ghost" href="'+path('jogos/')+'">Ver todos ↗</a></div>'+groupGames(live.slice(0,5))+'</section>':'')+
+ listSection('Próximos jogos','jogos/','Agenda completa',upcoming,'Ainda não há partidas agendadas no período consultado.','home-upcoming')+
+ teamDashboard()+
+ listSection('Onde assistir no Brasil','jogos/?tv=br','Transmissões',tv,'Nenhuma transmissão brasileira confirmada no calendário carregado.','home-brazil-tv')+
+ followedPlayers()+
+ '<section class="section home-watchlist"><div class="section-title"><h2>Minha agenda da semana</h2>'+
+ '<a class="btn ghost" href="'+path('perfil/?tab=atividade&filtro=desejos')+'">Minha lista ↗</a></div>'+
+ (watchlist.length?groupGames(watchlist):'<div class="filler"><b>Monte sua agenda</b>Toque em ♡ nos jogos para salvar os confrontos que deseja acompanhar.</div>')+'</section>'+
+ (finished.length?'<section class="section home-results"><details id="homeResults"'+(resultsExpanded?' open':'')+'>'+
+ '<summary><span><span class="caps">PLACARES E RESULTADOS</span><strong>Jogos encerrados hoje <small>('+finished.length+')</small></strong></span>'+
+ '<span class="home-results-expand">Ver resultados <span aria-hidden="true">⌄</span></span></summary>'+
+ '<div class="home-results-body">'+finished.map(gameRow).join('')+'</div></details></section>':'')+
+ '<div class="grid leaders-home-shortcuts">'+
+ '<a class="card link" href="'+path('equipes/')+'"><div class="caps">Explore</div><h3>🏀 As 30 franquias</h3><p>Conferências, elencos e próximos confrontos.</p></a>'+
+ '<a class="card link" href="'+path('melhores/')+'"><div class="caps">Temporada</div><h3>🏅 Melhores jogadores</h3><p>Rankings, recordes e NOTA DLQ.</p></a>'+
+ '<a class="card link" href="'+path('perfil/')+'"><div class="caps">Sua jornada</div><h3>☆ Meu perfil</h3><p>Jogos assistidos, conquistas e seus favoritos.</p></a></div>';
 }
-root.innerHTML='<div class="filler">Carregando os jogos de hoje…</div>';
+root.innerHTML='<div class="filler">Carregando próximos jogos…</div>';
 const idx=Math.max(MONTHS.indexOf(currentMonth),0);
-loadGames(MONTHS.slice(Math.max(0,idx-1),Math.min(idx+2,MONTHS.length))).then(rows=>{games=rows;loaded=true;render()})
- .catch(e=>{console.error(e);root.innerHTML='<div class="filler">Agenda indisponível no momento. Atualize a página para tentar novamente.</div>'});
-root.addEventListener('click',e=>{if(handleWishes(e.target,render))e.preventDefault()});
+loadGames(MONTHS.slice(Math.max(0,idx-1),Math.min(idx+2,MONTHS.length))).then(rows=>{games=rows;loaded=true;render();})
+ .catch(e=>{console.error(e);root.innerHTML='<div class="filler">Agenda indisponível agora. Atualize a página para tentar novamente.</div>';});
+root.addEventListener('click',e=>{
+ const arrow=e.target.closest('[data-home-team-step]');
+ if(arrow){teamIndex+=Number(arrow.dataset.homeTeamStep);render();return;}
+ const primary=e.target.closest('[data-home-team-primary]');
+ if(primary){setSettings(teamFollowChange(getData().settings,TEAMS,primary.dataset.homeTeamPrimary,'primary'));render();return;}
+ const unfollow=e.target.closest('[data-home-team-unfollow]');
+ if(unfollow){
+  const code=unfollow.dataset.homeTeamUnfollow;
+  setSettings(teamFollowChange(getData().settings,TEAMS,code,'unfollow'));
+  teamIndex=Math.max(0,teamIndex-1);render();return;
+ }
+ if(handleWishes(e.target,render))e.preventDefault();
+});
+root.addEventListener('change',e=>{
+ if(e.target.id!=='homeAddTeam'||!TEAMS[e.target.value])return;
+ const code=e.target.value;
+ setSettings(teamFollowChange(getData().settings,TEAMS,code,'follow'));
+ teamIndex=trackedTeams(getData().settings,TEAMS).indexOf(code);
+ render();
+});
+let touchStart=null;
+root.addEventListener('touchstart',e=>{
+ if(!e.target.closest?.('#homeTeamViewport')||e.touches.length!==1)return;
+ touchStart={x:e.touches[0].clientX,y:e.touches[0].clientY};
+},{passive:true});
+root.addEventListener('touchend',e=>{
+ if(!touchStart||!e.target.closest?.('#homeTeamViewport')){touchStart=null;return;}
+ const x=e.changedTouches[0].clientX-touchStart.x,y=e.changedTouches[0].clientY-touchStart.y;
+ touchStart=null;
+ if(Math.abs(x)<55||Math.abs(x)<=Math.abs(y)*1.3)return;
+ teamIndex+=x<0?1:-1;render();
+},{passive:true});
+root.addEventListener('toggle',e=>{
+ if(e.target.id==='homeResults')resultsExpanded=e.target.open;
+},true);
 window.addEventListener('quadra:refresh',render);
 window.addEventListener('quadra:live-update',render);
