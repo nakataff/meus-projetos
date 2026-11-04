@@ -1,0 +1,87 @@
+/* Home 2026/27 — prioridade para o agora e próximos jogos. */
+.home-section{margin:18px 0 26px}
+.home-section .section-title{align-items:center}
+.home-section .section-title h2{font-size:20px;letter-spacing:-.03em}
+.home-section .section-title h2 small{font-size:12px;color:#a5bad1}
+.home-upcoming{margin-top:0}
+.home-live{border:1px solid #5f483b;border-radius:16px;padding:13px 16px 16px;background:linear-gradient(120deg,#231d1b,#111b27 64%);margin-top:0}
+.home-live-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#ff5c51;box-shadow:0 0 0 4px #ff5c5123;margin-right:7px;vertical-align:middle}
+.home-live .dayhead,.home-upcoming .dayhead,.home-brazil-tv .dayhead,.home-watchlist .dayhead{font-size:11px;color:#9fb7d0;margin:13px 0 7px}
+.home-live .game-card{border-color:#684634}
+.home-brazil-tv{padding:15px 16px;border:1px solid #324760;border-radius:15px;background:#121d2a}
+.home-brazil-tv .section-title{margin-bottom:12px}
+.home-teams{border:1px solid #40556e;border-radius:17px;background:linear-gradient(140deg,#172536,#111a29);padding:18px;margin:24px 0}
+.home-teams-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:13px}
+.home-teams-head h2,.home-teams-empty h2{font-size:22px;letter-spacing:-.035em;margin:3px 0}
+.home-teams-tools{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:12px}
+.home-team-picker{display:block;min-width:150px;max-width:210px}
+.home-team-picker .control{min-width:0;width:100%;min-height:39px;font-size:12px;font-weight:750;border-radius:10px}
+.home-carousel-controls{display:flex;align-items:center;gap:9px}
+.home-carousel-controls button{display:grid;place-items:center;width:39px;height:39px;border:1px solid #41556d;background:#1c2b3e;border-radius:10px;font-size:25px;line-height:1}
+.home-carousel-controls button:hover:not(:disabled){background:#273e57;border-color:#fba363}
+.home-carousel-controls button:disabled{opacity:.27;cursor:not-allowed}
+.home-carousel-controls span{font-size:12px;min-width:50px;text-align:center;white-space:nowrap;color:#b2c5d9;font-weight:750;font-variant-numeric:tabular-nums}
+.home-team-view{border:1px solid #324a64;background:linear-gradient(120deg,#1b2a3c,#101a28);border-radius:13px;padding:16px}
+.home-team-identity{display:flex;align-items:center;gap:14px;margin-bottom:15px}
+.home-team-identity>img{width:63px;height:63px;object-fit:contain;flex:none}
+.home-team-identity>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.home-team-identity h3{font-size:21px;line-height:1.15;margin:0;letter-spacing:-.025em}
+.home-team-identity .caps{color:#ffb87a;font-size:10px}
+.home-team-overview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.home-team-overview .fav-info{padding:13px 15px;min-height:120px}
+.home-team-overview .fav-info>strong{color:#ffb783}
+.home-team-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:13px}
+.home-team-actions .btn{min-height:37px;font-size:11px;padding:9px 12px}
+.home-teams-empty{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.home-teams-empty p{margin:5px 0;color:#aebfd3;max-width:560px;font-size:13px}
+.home-team-empty-actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.home-team-empty-actions>.btn{white-space:nowrap}
+.home-results{margin:28px 0 22px}
+.home-results details{border:1px solid #35475d;background:#131f2e;border-radius:15px;overflow:hidden}
+.home-results summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;padding:15px 17px}
+.home-results summary::-webkit-details-marker{display:none}
+.home-results summary>span:first-child{display:flex;flex-direction:column;gap:3px}
+.home-results summary strong{font-size:17px}
+.home-results summary strong small{font-size:12px;color:#a3b8cf;font-weight:750}
+.home-results summary:hover{background:#1b2c3e}
+.home-results-expand{font-size:12px;font-weight:850;color:#ffbe8e;white-space:nowrap}
+.home-results-expand span{display:inline-block;transition:transform .15s ease}
+.home-results details[open] .home-results-expand span{transform:rotate(180deg)}
+.home-results-body{border-top:1px solid #35475d;padding:10px 15px 15px}
+.home-results-body .game-card{margin-top:9px}
+.home-watchlist{margin:25px 0}
+.home-followed-players{margin:25px 0}
+.home-watchlist>.section-title h2{font-size:19px}
+.home-team-viewport:focus-visible{outline:2px solid #ffa766}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+@media(max-width:760px){
+ .home-section .section-title h2{font-size:18px}
+ .home-teams{padding:13px;margin:20px 0}
+ .home-teams-head{align-items:flex-start}
+ .home-teams-tools{width:100%;justify-content:space-between}
+ .home-team-picker{max-width:min(60%,245px)}
+ .home-team-overview{grid-template-columns:1fr 1fr}
+ .home-team-identity>img{width:52px;height:52px}
+ .home-team-identity h3{font-size:19px}
+ .home-team-overview .fav-info{padding:11px;min-height:130px}
+ .home-team-overview .fav-info>b,.home-team-overview .fav-info>strong{font-size:14px}
+ .home-team-overview .fav-info-teams img{width:27px;height:27px}
+ .home-team-overview .fav-info-teams b{font-size:11px}
+ .home-team-actions .btn{flex:1 1 auto}
+ .home-teams-empty{display:block}
+ .home-team-empty-actions{margin-top:12px;justify-content:flex-start}
+ .home-brazil-tv{padding:12px 11px}
+}
+@media(max-width:440px){
+ .home-team-view{padding:12px}
+ .home-team-overview{grid-template-columns:1fr}
+ .home-team-overview .fav-info{min-height:0}
+ .home-team-picker{max-width:100%}
+ .home-carousel-controls{gap:5px}
+ .home-carousel-controls button{width:35px;height:35px}
+ .home-results summary{padding:13px 12px}
+ .home-results-body{padding:8px}
+ .home-results summary strong{font-size:14px}
+ .home-results-expand{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){.home-results-expand span{transition:none}}
