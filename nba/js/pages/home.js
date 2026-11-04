@@ -131,12 +131,12 @@ root.addEventListener('click',e=>{
  const arrow=e.target.closest('[data-home-team-step]');
  if(arrow){teamIndex+=Number(arrow.dataset.homeTeamStep);render();return;}
  const primary=e.target.closest('[data-home-team-primary]');
- if(primary){setSettings(teamFollowChange(getData().settings,TEAMS,primary.dataset.homeTeamPrimary,'primary'));render();return;}
+ if(primary){const code=primary.dataset.homeTeamPrimary;setSettings(teamFollowChange(getData().settings,TEAMS,code,'primary'));teamIndex=trackedTeams(getData().settings,TEAMS).indexOf(code);render();return;}
  const unfollow=e.target.closest('[data-home-team-unfollow]');
  if(unfollow){
   const code=unfollow.dataset.homeTeamUnfollow;
   setSettings(teamFollowChange(getData().settings,TEAMS,code,'unfollow'));
-  teamIndex=Math.max(0,teamIndex-1);render();return;
+  teamIndex=Math.max(0,Math.min(teamIndex,trackedTeams(getData().settings,TEAMS).length-1));render();return;
  }
  if(handleWishes(e.target,render))e.preventDefault();
 });
