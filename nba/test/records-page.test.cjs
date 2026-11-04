@@ -9,6 +9,9 @@ test('recordes exibem marcas de um jogo, mudam categoria e abrem a partida corre
  const rounds={regular:[['1',1,'game1','BOS',36,5,8,1,0,2,32,12,24,6,9,8.8],['2',1,'game1','LAL',40,8,4,3,2,2,35,15,28,4,10,9.4]],preseason:[]};
  const leaders={regular:[{id:'1',name:'Primeiro',team:'BOS'},{id:'2',name:'Segundo',team:'LAL'}],preseason:[]};
  const game={id:'espn_game1',externalId:'game1',date:'2026-11-01',away:'BOS',home:'LAL',scoreAway:110,scoreHome:101};
+ const scrollCalls=[];
+ w.HTMLElement.prototype.scrollIntoView=function(options){scrollCalls.push({id:this.id,options});};
+ w.history.replaceState(null,'',w.location.pathname+w.location.search+'#ranking-recordes');
  Object.assign(w,{$:s=>w.document.querySelector(s),setupShared:()=>{},asset:s=>s,esc,logo:c=>'/'+c+'.png',name:c=>c,
   playerLink:(id,t)=>'/nba/jogador/?id='+id+'&team='+t,gameLink:g=>'/nba/jogo/?id='+g.id+'&data='+g.date,
   loadGames:async()=>[game],jsonFile:async p=>p.includes('rounds')?rounds:leaders});
