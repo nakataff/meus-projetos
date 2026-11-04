@@ -5,7 +5,7 @@ setupShared('records','Recordes da Temporada','Maiores atuações individuais em
 const root=$('#pageContent'),params=new URLSearchParams(location.search);
 let phase=params.get('fase')==='preseason'?'preseason':'regular';
 let metric=GAME_RECORD_METRICS.some(([id])=>id===params.get('stat'))?params.get('stat'):'pts';
-let dataset=null,players=null,games=new Map(),error='';
+let dataset=null,players=null,games=new Map(),error='',initialAnchorHandled=false;
 const headshot=id=>'https://a.espncdn.com/i/headshots/nba/players/full/'+encodeURIComponent(id)+'.png';
 const showDate=value=>/^\d{4}-\d{2}-\d{2}$/.test(value||'')?value.split('-').reverse().join('/'):'Data não informada';
 const stat=v=>metric==='rating'||metric==='min'?Number(v).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}):Number(v).toLocaleString('pt-BR');
@@ -31,6 +31,7 @@ function render(){
   return '<button type="button" class="records-tile'+(key===metric?' is-active':'')+'" data-record-metric="'+key+'" aria-pressed="'+(metric===key)+'">'+
    '<span>'+esc(label)+'</span><b>'+(winner?format(winner[key],key):'—')+' <small>'+esc(short)+'</small></b>'+
    '<span class="records-tile-name">'+(winner?esc(winner.name):'Sem jogos')+'</span>'+
+   '<span class="records-tile-jump" aria-hidden="true">Ver ranking ↓</span>'+
    (winner?'<img class="records-tile-photo" src="'+headshot(winner.id)+'" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.opacity=.12">':'')+
    '</button>';
  }).join('');
@@ -41,7 +42,7 @@ function render(){
  '<span class="subtle">'+rows.length.toLocaleString('pt-BR')+' atuações individuais • NBA 2026/27</span></div>'+
  '<div class="records-grid">'+leaderCards+'</div>'+
  '<div class="records-heading"><div><span class="caps">MARCAS EM UMA PARTIDA • '+esc(phase==='regular'?'TEMPORADA REGULAR':'PRÉ-TEMPORADA')+'</span>'+
- '<h2>Mais '+esc(selected[1].toLowerCase())+' em um jogo</h2></div><span class="subtle">Top 20 atuações</span></div>'+
+ '<h2 id="ranking-recordes" tabindex="-1">Mais '+esc(selected[1].toLowerCase())+' em um jogo</h2></div><span class="subtle">Top 20 atuações</span></div>'+
  (top.length?'<div class="records-list">'+top.map((p,i)=>{
   const g=games.get(p.gameId);
   return '<article class="records-entry"><span class="records-place">'+(i+1)+'º</span>'+player(p)+
@@ -52,6 +53,13 @@ function render(){
  'Cada atuação aparece separadamente, mesmo que um atleta tenha vários jogos entre os melhores. NOTA DLQ é uma avaliação própria, não oficial da NBA. '+
  'Fonte: box scores ESPN já importados no DE LA QUADRA.</p>';
 }
+function jumpToRecordRanking(smooth=true){
+ const heading=$('#ranking-recordes');
+ if(!heading)return;
+ const reduceMotion=typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ if(typeof heading.scrollIntoView==='function')heading.scrollIntoView({behavior:smooth&&!reduceMotion?'smooth':'auto',block:'start'});
+ if(typeof heading.focus==='function')heading.focus({preventScroll:true});
+}
 root.addEventListener('click',e=>{
  const tab=e.target.closest('[data-record-metric]'),season=e.target.closest('[data-record-phase]');
  if(tab)metric=tab.dataset.recordMetric;
@@ -60,8 +68,9 @@ root.addEventListener('click',e=>{
  const url=new URL(location.href);
  url.searchParams.set('stat',metric);
  if(phase==='regular')url.searchParams.delete('fase');else url.searchParams.set('fase',phase);
- history.replaceState(null,'',url.pathname+url.search);
+ history.replaceState(null,'',url.pathname+url.search+url.hash);
  render();
+ if(tab)jumpToRecordRanking();
 });
 (async()=>{
  try{
@@ -73,4 +82,8 @@ root.addEventListener('click',e=>{
   games=new Map(events.filter(g=>g.externalId||g.id).map(g=>[String(g.externalId||g.id),g]));
  }catch(e){console.warn('DLQ: falha ao carregar recordes',e);error='Não foi possível carregar os recordes. Atualize a página para tentar novamente.';}
  render();
+ if(!initialAnchorHandled&&location.hash==='#ranking-recordes'){
+  initialAnchorHandled=true;
+  jumpToRecordRanking(false);
+ }
 })();
