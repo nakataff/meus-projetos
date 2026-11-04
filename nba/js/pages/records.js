@@ -30,7 +30,9 @@ function render(){
   const winner=topSingleGames(rows,key,1)[0];
   return '<button type="button" class="records-tile'+(key===metric?' is-active':'')+'" data-record-metric="'+key+'" aria-pressed="'+(metric===key)+'">'+
    '<span>'+esc(label)+'</span><b>'+(winner?format(winner[key],key):'—')+' <small>'+esc(short)+'</small></b>'+
-   '<span class="records-tile-name">'+(winner?esc(winner.name):'Sem jogos')+'</span></button>';
+   '<span class="records-tile-name">'+(winner?esc(winner.name):'Sem jogos')+'</span>'+
+   (winner?'<img class="records-tile-photo" src="'+headshot(winner.id)+'" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.opacity=.12">':'')+
+   '</button>';
  }).join('');
  const selected=GAME_RECORD_METRICS.find(([id])=>id===metric),top=topSingleGames(rows,metric,20);
  root.innerHTML='<div class="records-tools"><div class="leaders-phase" role="group" aria-label="Fase da temporada">'+
