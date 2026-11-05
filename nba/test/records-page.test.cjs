@@ -14,7 +14,7 @@ test('recordes exibem marcas de um jogo, mudam categoria e abrem a partida corre
  w.history.replaceState(null,'',w.location.pathname+w.location.search+'#ranking-recordes');
  Object.assign(w,{$:s=>w.document.querySelector(s),setupShared:()=>{},asset:s=>s,esc,logo:c=>'/'+c+'.png',name:c=>c,
   playerLink:(id,t)=>'/nba/jogador/?id='+id+'&team='+t,gameLink:g=>'/nba/jogo/?id='+g.id+'&data='+g.date,
-  loadGames:async()=>[game],jsonFile:async p=>p.includes('rounds')?rounds:leaders});
+  loadGames:async()=>[game],fetch:async p=>({ok:true,json:async()=>p.includes('rounds')?rounds:leaders})});
  try{
   vm.runInContext(strip(read('js/season-stats.mjs')),dom.getInternalVMContext());
   vm.runInContext(strip(read('js/pages/records.js')),dom.getInternalVMContext());
@@ -35,5 +35,46 @@ test('recordes exibem marcas de um jogo, mudam categoria e abrem a partida corre
   assert.equal(w.document.querySelector('.records-tile-photo').getAttribute('alt'),'');
   w.document.querySelector('[data-record-phase="preseason"]').click();
   assert(w.document.querySelector('#pageContent').textContent.includes('Ainda não há atuações'));
+ }finally{w.close();}
+});
+
+test('recordes incluem um final recente empatado sem esperar o arquivo publicado e sem duplicar após o sync',async()=>{
+ const dom=new JSDOM('<main id="pageContent"></main>',{url:'https://example.com/nba/recordes/',runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window;
+ const wemby={id:'5104157',name:'Victor Wembanyama',pts:52,reb:24,ast:2,stl:2,blk:8,to:2,min:'34',fg:'16-28',three:'1-8',hasStats:true};
+ const event={id:'401909933',status:'final',seasonType:2,date:'2026-11-04',away:'DAL',home:'SAS',scoreAway:111,scoreHome:112};
+ const cached=['luka',1,'earlier','LAL',52,8,10,2,0,4,38,17,30,8,18,10];
+ const players=[{id:'luka',name:'Luka Doncic',team:'LAL'}],calls=[];
+ let imported=false,now=Date.now();
+ w.Date.now=()=>now;
+ Object.assign(w,{$:s=>w.document.querySelector(s),setupShared:()=>{},asset:s=>s,esc:String,logo:c=>'/'+c+'.png',
+  playerLink:(id,t)=>'/nba/jogador/?id='+id+'&team='+t,gameLink:g=>'/nba/jogo/?id='+g.id+'&data='+g.date,
+  performanceRating:()=>10,loadGames:async()=>[],
+  fetch:async p=>({ok:true,json:async()=>p.includes('rounds')?
+   {regular:imported?[cached,[wemby.id,6,event.id,'SAS',52,24,2,2,8,2,34,16,28,1,8,10]]:[cached],preseason:[],
+    countedGameIds:{regular:imported?['earlier',event.id]:['earlier'],preseason:[]}}:
+   {regular:imported?[...players,wemby]:players,preseason:[]}}),
+  fetchLiveBoxscore:async e=>{
+   calls.push(e.id);
+   const roster=code=>Array.from({length:5},(_,i)=>({id:code+i,name:code+i,min:'20',pts:10,reb:2,ast:2,hasStats:true}));
+   return {status:'final',scoreAway:111,scoreHome:112,box:{players:{DAL:roster('DAL'),SAS:[wemby,...roster('SAS')]}}};
+  }});
+ try{
+  vm.runInContext(strip(read('js/season-stats.mjs')),dom.getInternalVMContext());
+  vm.runInContext(strip(read('js/pages/records.js')),dom.getInternalVMContext());
+  const names=()=>[...w.document.querySelectorAll('.records-entry .records-player strong')].map(x=>x.textContent);
+  await settle(()=>names().length===1);
+  w.QUADRA_LIVE_GAMES=new Map([
+   [event.id,event],['earlier',{...event,id:'earlier'}],['ongoing',{...event,id:'ongoing',status:'live'}]
+  ]);
+  w.dispatchEvent(new w.Event('quadra:live-update'));
+  await settle(()=>names().includes(wemby.name));
+  assert.deepEqual(calls,[event.id]);
+  assert.deepEqual([...w.document.querySelectorAll('.records-place')].slice(0,2).map(x=>x.textContent),['1º','1º']);
+  assert.match(w.document.querySelector('a[href*="espn_401909933"]').closest('.records-entry').textContent,/111 × 112/);
+  imported=true;now+=121000;
+  w.dispatchEvent(new w.Event('quadra:live-update'));
+  await settle(()=>w.document.body.textContent.includes('6º jogo do atleta'));
+  assert.equal(names().filter(x=>x===wemby.name).length,1);
+  assert.deepEqual(calls,[event.id]);
  }finally{w.close();}
 });
