@@ -42,6 +42,18 @@ class InjuryTests(unittest.TestCase):
         self.assertEqual(result["4594268"]["reason"], "Knee")
         self.assertEqual(result["4594268"]["returnDate"], "2026-12-21")
 
+    def test_grouped_espn_feed_resolves_team_and_player_from_links(self):
+        sample = {"injuries": [{"id": "16", "injuries": [{
+            "id": "536718", "status": "Out",
+            "athlete": {"displayName": "Anthony Edwards", "links": [
+                {"href": "https://www.espn.com/nba/player/_/id/4594268/anthony-edwards"}]},
+            "type": {"name": "INJURY_STATUS_OUT"},
+            "details": {"type": "Knee", "side": "Right", "returnDate": "2026-12-21"}
+        }]}]}
+        player = normalize_injuries(sample, now=self.now)["4594268"]
+        self.assertEqual((player["team"], player["reason"], player["returnDate"]),
+                         ("MIN", "Knee", "2026-12-21"))
+
     def test_previous_injury_keeps_first_seen(self):
         old = {"players": {"4594268": {
             "team": "MIN", "reason": "Knee", "firstSeen": "2026-10-29"}}}
@@ -58,7 +70,7 @@ class InjuryTests(unittest.TestCase):
     def test_skip_fresh_cache_without_network_call(self):
         with TemporaryDirectory() as root:
             base = Path(root)
-            previous = {"checkedAt": (self.now - timedelta(hours=1)).isoformat(), "players": {}}
+            previous = {"schemaVersion": 3, "checkedAt": (self.now - timedelta(hours=1)).isoformat(), "players": {}}
             calls = []
             def read(path, default):
                 return previous

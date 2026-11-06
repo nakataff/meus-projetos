@@ -18,12 +18,15 @@ test('other pages keep the single-day idle request after morning',async()=>{cons
 const row=(extra={})=>({id:'1',name:'Atleta Um',team:'BOS',lastDate:'2026-10-22',gp:1,pts:10,reb:5,ast:3,stl:1,blk:0,to:1,min:25,fgm:4,fga:10,threeM:2,threeA:4,ratingSum:7,ratingGames:1,...extra});
 const snapshot=()=>({season:'2026-27',source:'Teste',lastGameDate:'2026-10-22',countedGameIds:{regular:['base'],preseason:[]},regular:[row()],preseason:[]});
 function summary(status='final'){return {status,box:{players:Object.fromEntries(['BOS','LAL'].map((team,t)=>[team,Array.from({length:5},(_,i)=>({id:String(t*5+i+1),name:t===0&&i===0?'Atleta Um':'Atleta '+(t*5+i+1),min:'24',pts:t===0&&i===0?20:4,reb:5,ast:2,stl:1,blk:0,to:1,fg:'4-9',three:'2-4',hasStats:true}))]))}};}
-async function leaders({overlay=false,summaryStatus='final'}={}){
+async function leaders({overlay=false,summaryStatus='final',injuryData=null}={}){
  const b=dom('leaders'),{w,d}=b,intervals=[],requests=[],boxes=[],timers=new Map();let data=snapshot(),fail=false,boxStatus=summaryStatus,clock=Date.now(),timerId=0;
  w.Date.now=()=>clock;w.setTimeout=(fn,delay)=>{const id=++timerId;timers.set(id,{fn,at:clock+delay});return id;};w.clearTimeout=id=>timers.delete(id);
  Object.assign(w,{$:s=>w.document.querySelector(s),setupShared:()=>{},asset:s=>s,currentDate:()=> '2026-10-24',dayShift:shift,TEAMS:{BOS:[],LAL:[]},name:c=>c,logo:c=>c+'.webp',esc:v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),playerLink:(id,team)=>'?id='+id+'&team='+team,getData:()=>({extras:{players:{}}}),modify:()=>{},toast:()=>{},openPlayerCardComposer:()=>{},mountPlayerActions:()=>({destroy(){}}),openPlayerComparison:()=>{},performanceRating:()=>8,fetchLiveBoxscore:async g=>{boxes.push(g.id);return summary(boxStatus);}});
  w.QUADRA_LIVE_GAMES=new Map(overlay?[[final.id,clone(final)]]:[]);w.setInterval=(fn,delay)=>{intervals.push({fn,delay});return intervals.length;};
  w.fetch=async url=>{requests.push(url);if(fail)throw Error('offline');return {ok:true,json:async()=>url.includes('player-rounds')?{regular:[['1',1,'base','BOS',10,5,3,1,0,1,25,4,10,2,4,7]],preseason:[],countedGameIds:{regular:['base'],preseason:[]}}:clone(data)};};
+ w.jsonFile=async()=>({schemaVersion:3,checkedAt:new Date(clock).toISOString(),players:injuryData||{}});
+ const injuries=read('js/injuries.js').replace(/^import[^\n]*\n/gm,'').replace(/^export /gm,'');
+ vm.runInContext('(()=>{'+injuries+'\nObject.assign(window,{loadInjuries,injuryFor,injuryList,injuryBadgeHTML,injuryReason,injuryReturnText});})()',d.getInternalVMContext());
  vm.runInContext(read('js/season-stats.mjs').replace(/^export /gm,''),d.getInternalVMContext());
  vm.runInContext(read('js/pages/leaders.js').replace(/^import[^\n]*\n/gm,''),d.getInternalVMContext());await settle(()=>w.document.querySelector('.leaders-table-row'));
  const flush=async()=>{intervals[0].fn();await new Promise(r=>setTimeout(r,15));};
@@ -71,4 +74,25 @@ test('vitrine de recordes fica em Jogadores, com fotos, setas e link para lista 
   assert(b.$('.records-feature-empty').textContent.includes('Nenhuma atuação'));
   assert.equal(b.$('.records-feature-all').getAttribute('href'),'recordes/');
  }finally{w.close();}
+});
+
+test('a cruz aparece no ranking e a aba Lesionados busca atletas mesmo sem jogos importados',async()=>{
+ const b=await leaders({injuryData:{
+  1:{id:'1',name:'Atleta Um',team:'BOS',status:'Out',reason:'Knee',returnDate:'2026-12-21'},
+  900:{id:'900',name:'Sem partidas',team:'LAL',status:'Out',reason:'Ankle',returnDate:''},
+  901:{id:'901',name:'Descansando',team:'BOS',status:'Out',reason:'Rest'}
+ }});
+ try{
+  assert(b.$('[data-leader-id="1"] .dlq-injury-cross'));
+  b.$('[data-player-view="lesionados"]').click();
+  assert.equal(new URL(b.w.location.href).searchParams.get('aba'),'lesionados');
+  assert.match(b.$('#dlqInjuryResults').textContent,/Retorno estimado: .*21/);
+  assert.match(b.$('#dlqInjuryResults').textContent,/Sem partidas.*Sem previsão de retorno/);
+  assert.doesNotMatch(b.$('#dlqInjuryResults').textContent,/Descansando/);
+  const search=b.$('#dlqInjurySearch');search.value='LAL';search.dispatchEvent(new b.w.Event('input',{bubbles:true}));
+  assert.equal(b.w.document.querySelectorAll('.dlq-league-injury-row').length,1);
+  b.$('[data-player-view="ranking"]').click();
+  await settle(()=>b.$('[data-leader-id="1"] .dlq-injury-cross'));
+  await new Promise(resolve=>setImmediate(resolve));
+ }finally{b.w.close();}
 });

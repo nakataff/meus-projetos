@@ -1,3 +1,4 @@
+import {loadInjuries,injuryFor,injuryBadgeHTML,injuryReturnText} from '../injuries.js?v=20261106-injuries-v3';
 import {$,setupShared,qs,esc,name,logo,tlogo,effectiveGame,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,note,getData,setNote,setExtraGroup,platform,broadcastLinks,shortDate,currentDate,toast,modal,closeModal,eventBox,fetchRoster,livePeriodLabel} from '../app.js?v=13';
 import {fetchLiveBoxscore,projectStartingFive,normalizeSummary} from '../boxscore.js?v=2';
 import {openPlayerCardComposer} from '../share-card.js?v=20261024-comparison-options-v1';
@@ -5,6 +6,7 @@ import {mountPlayerActions,openPlayerComparison} from '../player-actions.js?v=20
 import {performanceRating,ratingLabel,topPerformance,RATING_EXPLANATION} from '../performance-rating.js?v=2';
 const id=qs('id')||'',hint=qs('data')||'',root=$('#pageContent');
 setupShared('games','Centro da partida','Escalações, estatísticas e seu diário pessoal de basquete.');
+let injuryReport=null;
 let game=null,boxes={},box=null,probable={},rosters={},tab='resumo';
 let statsSort='rating',statsAsc=false;
 let statsTeam='both'; // No mobile, Ambos mostra ranking misto das duas franquias.
@@ -264,13 +266,15 @@ function lineupPlayerCard(player,code,projected=false){
  const roster=rosters[code]?.find(x=>String(x.id)===String(player.id));
  const position=roster?.position||player.position||'';
  const image=playerPortrait(player,code);
+ const injury=gameStatus().status!=='final'&&game.date>=currentDate()?injuryFor(injuryReport,player.id,code):null;
  const stats=[['pts','PTS'],['reb','REB'],['ast','AST']]
   .filter(([key])=>statValue(player,key)!==null)
   .map(([key,label])=>'<span><b>'+esc(player[key])+'</b> '+label+'</span>').join('');
  const clickable=player.id&&box?.players?.[code]?.some(p=>String(p.id)===String(player.id));
  const attrs=clickable?' data-lineup-player="'+esc(player.id)+'" data-lineup-team="'+esc(code)+'" role="button" tabindex="0"':'';
  return '<div class="lineup-player-card"'+attrs+'>'+
-  image+'<div class="lineup-player-main"><a href="'+playerLink(player.id,code)+'">'+esc(player.name)+'</a>'+
+  image+'<div class="lineup-player-main"><div class="dlq-player-name"><a href="'+playerLink(player.id,code)+'">'+esc(player.name)+'</a>'+injuryBadgeHTML(injury,true)+'</div>'+
+  (injury?'<small class="dlq-lineup-return">'+esc(injuryReturnText(injury))+'</small>':'')+
   '<span>'+esc((player.number?'#'+player.number+' • ':'')+(position||'Jogador'))+'</span>'+
   (stats?'<div class="lineup-mini-stats">'+stats+'</div>'+
    (projected?'<small>Números de jogo anterior</small>':''):
@@ -768,6 +772,7 @@ async function load(){
   // Quando o jogo terminou e o box score já está completo no cache, não precisamos
   // disparar outra requisição. Jogos em andamento ou sem dados tentam busca direta.
   const cachedHasStats=boxHasStats(box,true);
+  if(gameStatus().status!=='final'&&game.date>=currentDate())loadInjuries().then(report=>{injuryReport=report;if(tab==='quintetos')draw();});
   if(gameStatus().status!=='final'||!cachedHasStats)refreshBox(true);
   else {
    statsMessage='Estatísticas finais carregadas do cache atualizado pelo GitHub.';

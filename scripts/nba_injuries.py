@@ -3,6 +3,8 @@
 A API da ESPN é pública, mas não oficial e não tem SLA. Salvar no cache do
 GitHub evita consultas por visitante e mantém a atualização independente do browser.
 """
+import re
+from urllib.parse import urlparse
 from datetime import datetime, timedelta, timezone
 
 
@@ -22,6 +24,22 @@ def _date(value):
             return datetime.strptime(value[:10], "%Y-%m-%d").strftime("%Y-%m-%d")
         except ValueError:
             pass
+    return ""
+
+
+def _player_id(athlete):
+    pid = str(athlete.get("id") or "")
+    if pid.isdigit():
+        return pid
+    for link in athlete.get("links") or []:
+        if not isinstance(link, dict):
+            continue
+        url = urlparse(str(link.get("href") or ""))
+        if url.hostname not in {"espn.com", "www.espn.com"}:
+            continue
+        match = re.match(r"^/nba/player/(?:[a-z-]+/)?_/id/([0-9]+)(?:/|$)", url.path)
+        if match:
+            return match.group(1)
     return ""
 
 
@@ -51,7 +69,7 @@ def normalize_injuries(payload, previous=None, now=None):
         code = aliases.get(code, code)
         if not code and isinstance(team, dict):
             try:
-                code = id_to_team.get(int(team.get("id") or 0), "")
+                code = id_to_team.get(int(team.get("id") or (group.get("id") if isinstance(group.get("injuries"), list) else 0) or 0), "")
             except (ValueError, TypeError):
                 pass
         records = group.get("injuries")
@@ -63,8 +81,8 @@ def normalize_injuries(payload, previous=None, now=None):
             athlete = injury.get("athlete") or {}
             if not isinstance(athlete, dict):
                 continue
-            pid = str(athlete.get("id") or "")
-            if not pid.isdigit():
+            pid = _player_id(athlete)
+            if not pid or not code:
                 continue
             status = _text(injury.get("status"))
             if not status or status.lower() in {"active","healthy","available"}:
@@ -75,12 +93,13 @@ def normalize_injuries(payload, previous=None, now=None):
             injury_info = injury.get("injury") or {}
             if not isinstance(injury_info, dict):
                 injury_info = {"type": injury_info}
-            typ = injury_info.get("type") or injury.get("type") or {}
+            typ = injury_info.get("type") or details.get("type") or injury.get("type") or {}
             if isinstance(typ, dict):
                 reason = _text(typ.get("name") or typ.get("displayName"))
             else:
                 reason = _text(typ)
-            reason = reason or _text(details.get("type")) or _text(details.get("injury"))
+            reason = reason if not reason.startswith("INJURY_STATUS_") else ""
+            reason = reason or _text(details.get("injury"))
             side = _text(injury_info.get("location") or details.get("side") or injury.get("side"))
             detail = _text(injury_info.get("detail") or details.get("detail") or details.get("description"))
             expected = _date(injury.get("returnDate") or injury.get("expectedReturnDate") or
@@ -100,7 +119,7 @@ def sync_injuries(get_json, read, save, root, now, logs, force=False):
     target = root / "injuries" / "current.json"
     prev = read(target, {})
     last = prev.get("checkedAt")
-    if not force and prev.get("schemaVersion") == 2 and isinstance(last, str):
+    if not force and prev.get("schemaVersion") == 3 and isinstance(last, str):
         try:
             if now - datetime.fromisoformat(last.replace("Z","+00:00")) < timedelta(hours=4):
                 return
@@ -115,7 +134,7 @@ def sync_injuries(get_json, read, save, root, now, logs, force=False):
         logs.append("Lesões NBA: nenhum jogador reconhecido no boletim; cache preservado")
         return
     save(target, {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "source": "ESPN (API pública não oficial)",
         "checkedAt": now.isoformat(timespec="seconds").replace("+00:00", "Z"),
         "players": players

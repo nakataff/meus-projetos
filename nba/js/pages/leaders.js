@@ -1,3 +1,4 @@
+import {loadInjuries,injuryFor,injuryList,injuryBadgeHTML,injuryReason,injuryReturnText} from '../injuries.js?v=20261106-injuries-v3';
 /* DE LA QUADRA — ranking de atletas gerado a partir dos box scores finalizados. */
 import {$,setupShared,asset,currentDate,dayShift,TEAMS,name,logo,esc,playerLink,getData,modify,toast} from '../app.js?v=13';
 import {openPlayerCardComposer} from '../share-card.js?v=20261024-comparison-options-v1';
@@ -22,6 +23,7 @@ const metrics=[
 const metricName=Object.fromEntries(metrics.map(([id,label])=>[id,label]));
 const isAverageOnly=key=>['rating','fgpct','threepct'].includes(key);
 const query=new URLSearchParams(location.search);
+let view=query.get('aba')==='lesionados'?'lesionados':'ranking',injuryReport,injurySearch='';
 const valid=new Set(metrics.map(x=>x[0]));
 let metric=valid.has(query.get('stat'))?query.get('stat'):'pts';
 let phase=query.get('fase')==='preseason'?'preseason':'regular';
@@ -240,7 +242,7 @@ function overlayCount(phaseName=phase){
   record.phase===phaseName&&!alreadyCounted(record.event,phaseName)).length;
 }
 async function refreshLeaders(force=false){
- if(refreshPending||document.hidden||!navigator.onLine)return;
+ if(view!=='ranking'||refreshPending||document.hidden||!navigator.onLine)return;
  refreshPending=true;
  try{
   // Não usar jsonFile: ele memoriza permanentemente o primeiro JSON da sessão.
@@ -259,8 +261,8 @@ async function refreshLeaders(force=false){
   if(changed)syncRecentFinals(true);
  }catch(error){
   console.warn('DLQ: falha ao atualizar ranking',error);
-  if(!board){
-   root.innerHTML='<div class="filler"><b>Ranking temporariamente indisponível</b>'+
+  if(!board&&view==='ranking'){
+   root.innerHTML=viewTabs()+'<div class="filler"><b>Ranking temporariamente indisponível</b>'+
    'Não foi possível buscar o arquivo de estatísticas. Tente novamente mais tarde.'+
    '<p><button class="btn" id="leadersRetry">Tentar novamente</button></p></div>';
   }
@@ -350,6 +352,7 @@ function fmt(value,key=''){
 }
 function syncURL(){
  const url=new URL(location.href);
+ if(view==='lesionados')url.searchParams.set('aba',view);else url.searchParams.delete('aba');
  url.searchParams.set('stat',metric);
  url.searchParams.set('fase',phase);
  url.searchParams.set('modo',valueMode);
@@ -383,7 +386,7 @@ function rowHTML(p,i,headers){
   '<span class="leaders-table-rank">'+(i+1)+'</span>'+
   '<img class="leaders-table-photo" src="'+athleteImage(p.id)+'" loading="lazy" decoding="async" alt="" referrerpolicy="no-referrer" onerror="this.style.opacity=.18">'+
   '<div class="leaders-table-player-info">'+
-   '<a href="'+esc(playerLink(p.id,p.team))+'" title="Ver perfil de '+esc(p.name)+'"><b>'+esc(p.name)+'</b></a>'+
+   '<div class="dlq-player-name"><a href="'+esc(playerLink(p.id,p.team))+'" title="Ver perfil de '+esc(p.name)+'"><b>'+esc(p.name)+'</b></a>'+injuryBadgeHTML(injuryFor(injuryReport,p.id,p.team),true)+'</div>'+
    '<span class="leaders-table-club"><img src="'+esc(logo(p.team))+'" alt="" loading="lazy">'+esc(p.team)+' • '+p.gp+' '+(p.gp===1?'jogo':'jogos')+'</span>'+
    '<div class="leaders-row-actions"><button type="button" data-leader-follow="'+esc(p.id)+'" class="leaders-row-action'+(followed(p.id)?' is-following':'')+'" title="'+(followed(p.id)?'Deixar de seguir':'Seguir jogador')+'" aria-label="'+(followed(p.id)?'Deixar de seguir ':'Seguir ')+esc(p.name)+'" aria-pressed="'+followed(p.id)+'">'+(followed(p.id)?'♥':'♡')+'</button>'+
    '<button type="button" class="leaders-row-action" data-leader-card="'+esc(p.id)+'" title="Gerar card das médias" aria-label="Gerar card das médias de '+esc(p.name)+'">▣</button><button type="button" class="leaders-row-action" data-player-options aria-label="Opções de '+esc(p.name)+'" title="Opções do jogador">⋯</button></div>'+
@@ -553,20 +556,48 @@ function renderResults(){
  (minimum==='half'?' O filtro padrão exige ao menos metade dos jogos da equipe, arredondando para cima, inclusive nos recortes por rodada.':'')+'</p>';
 }
 
+function viewTabs(){
+ return '<nav class="tabs dlq-injury-tabs" aria-label="Jogadores">'+[['ranking','Ranking'],['lesionados','Lesionados']].map(([key,label])=>
+  '<button type="button" class="tab'+(view===key?' active':'')+'" data-player-view="'+key+'" aria-pressed="'+(view===key)+'">'+label+'</button>').join('')+'</nav>';
+}
+function renderInjuryList(){
+ const target=$('#dlqInjuryResults');if(!target)return;
+ if(injuryReport===undefined){target.innerHTML='<p class="filler" role="status">Carregando boletim…</p>';return;}
+ if(!injuryReport){target.innerHTML='<p class="filler">Boletim indisponível no momento. Tente novamente mais tarde.</p>';return;}
+ const q=injurySearch.trim().toLocaleLowerCase('pt-BR');
+ const entries=injuryList(injuryReport).filter(p=>[p.name,p.team,name(p.team)].some(v=>String(v||'').toLocaleLowerCase('pt-BR').includes(q)))
+  .sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
+ target.innerHTML='<p class="small subtle" role="status">'+entries.length+' '+(entries.length===1?'jogador':'jogadores')+' no boletim</p>'+
+  (entries.length?'<div class="dlq-team-injuries">'+entries.map(p=>
+   '<a class="dlq-team-injury-row dlq-league-injury-row" href="'+esc(playerLink(p.id,p.team))+'">'+
+    '<img class="dlq-injury-photo" src="'+athleteImage(p.id)+'" width="44" height="44" alt="" loading="lazy" decoding="async">'+
+    '<div><strong>'+esc(p.name)+'</strong> '+injuryBadgeHTML(p)+'<small>'+esc(name(p.team))+' · '+esc(injuryReason(p))+'</small>'+
+    '<small class="dlq-lineup-return">'+esc(injuryReturnText(p))+'</small></div></a>').join('')+'</div>':
+   '<div class="filler">'+(q?'Nenhum jogador encontrado.':'Nenhum jogador listado no boletim.')+'</div>');
+}
+function renderInjuryPage(){
+ root.innerHTML=viewTabs()+'<section class="section"><div class="section-title"><h2>Jogadores lesionados</h2></div>'+
+  '<p class="small subtle">Fonte: ESPN. As datas de retorno são estimativas e podem mudar.</p>'+
+  '<label class="leaders-search-bar"><input class="control" id="dlqInjurySearch" type="search" value="'+esc(injurySearch)+'" placeholder="Buscar jogador ou equipe…" aria-label="Buscar jogador ou equipe no boletim"></label>'+
+  '<div id="dlqInjuryResults"></div></section>';
+ renderInjuryList();
+}
 function render(){
- if(!board)return;
+ if(view==='lesionados'){if(!$('#dlqInjuryResults'))renderInjuryPage();return;}
+ if(!board){root.innerHTML=viewTabs()+'<div class="filler">Carregando ranking dos jogadores…</div>';return;}
  // Preservar a posição do menu, evitando voltar ao topo ao selecionar
  // equipes ou rodadas no fim da lista.
  const previous=root.querySelector('.leaders-select-dropdown[open]');
  const previousScroll=previous?.querySelector('.leaders-select-menu')?.scrollTop||0;
- root.innerHTML=recordHighlightsShell()+toolbar()+'<div id="leadersResults"></div>';
+ root.innerHTML=viewTabs()+recordHighlightsShell()+toolbar()+'<div id="leadersResults"></div>';
  const current=root.querySelector('.leaders-select-dropdown[open] .leaders-select-menu');
  if(current)current.scrollTop=previousScroll;
  renderRecordHighlights();
  renderResults();
  if((selectedRounds.size||minimum==='half')&&!roundData&&!roundPromise)loadRoundData();
 }
-root.innerHTML='<div class="filler">Preparando ranking dos jogadores…</div>';
+render();
+loadInjuries().then(report=>{injuryReport=report;if(view==='lesionados')renderInjuryList();else renderResults();});
 refreshLeaders(true);
 // Um novo FINAL não espera o intervalo de revalidação do consolidado.
 window.addEventListener('quadra:live-update',()=>syncRecentFinals(true));
@@ -601,6 +632,13 @@ const playerActions=mountPlayerActions({root,selector:'[data-leader-id]',resolve
 }});
 window.addEventListener('pagehide',()=>playerActions.destroy());
 root.addEventListener('click',e=>{
+ const viewButton=e.target.closest('[data-player-view]');
+ if(viewButton){
+  view=viewButton.dataset.playerView;syncURL();render();
+  if(view==='ranking')refreshLeaders(!board);
+  root.querySelector('[data-player-view="'+view+'"]')?.focus();
+  return;
+ }
  const recordArrow=e.target.closest('[data-record-step]');
  if(recordArrow){recordIndex+=Number(recordArrow.dataset.recordStep);scrollToRecord();return;}
  if(e.target.closest('[data-open-comparison]')){compareLeaders();return;}
@@ -657,6 +695,7 @@ root.addEventListener('click',e=>{
  }
 });
 root.addEventListener('input',e=>{
+ if(e.target.id==='dlqInjurySearch'){injurySearch=e.target.value;renderInjuryList();return;}
  if(e.target.id==='leadersSearch'){
   search=e.target.value.toLocaleLowerCase('pt-BR').trim();limit=30;renderResults();
  }

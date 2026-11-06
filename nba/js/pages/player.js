@@ -5,7 +5,7 @@ import {$,setupShared,qs,TEAMS,name,logo,esc,fetchRoster,fetchBox,fetchMonth,MON
 import {fetchLiveBoxscore} from '../boxscore.js?v=2';
 import {openPlayerCardComposer} from '../share-card.js?v=8';
 import {performanceRating,ratingLabel} from '../performance-rating.js?v=2';
-import {loadInjuries,injuryFor,injuryCardHTML} from '../injuries.js?v=1';
+import {loadInjuries,injuryFor,injuryBadgeHTML,injuryCardHTML} from '../injuries.js?v=20261106-injuries-v3';
 
 const pid=qs('id')||'',rawTeam=(qs('team')||'').toUpperCase();
 const highlightGame=qs('game')||'',hintDate=qs('data')||'';
@@ -205,7 +205,7 @@ function profileHTML(){
  '<section class="team-hero player-profile-hero">'+
  '<img src="'+esc(player.headshot||logo(team))+'" alt="" referrerpolicy="no-referrer" onerror="this.src=\''+esc(logo(team))+'\'">'+
  '<div><div class="eyebrow">'+esc(name(team))+' • '+esc(player.position||'NBA')+'</div>'+
- '<h2>'+esc(player.name)+'</h2><p>#'+esc(player.number||'—')+' • Temporada 2026/27</p>'+
+ '<h2>'+esc(player.name)+injuryBadgeHTML(injuryFor(injuryReport,pid,team),true)+'</h2><p>#'+esc(player.number||'—')+' • Temporada 2026/27</p>'+
  '<div class="controls"><a href="'+teamLink(team)+'" class="btn ghost">← Elenco</a>'+
  (franchise?'<span class="tag accent">★ Franchise player</span>':'')+
  '<button type="button" id="followPlayer" class="btn '+(p.favorite?'accent':'ghost')+'" aria-pressed="'+!!p.favorite+'">'+(p.favorite?'♥ Seguindo':'♡ Seguir jogador')+'</button></div></div></section>'+

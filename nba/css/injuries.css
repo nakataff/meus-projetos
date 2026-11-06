@@ -12,3 +12,15 @@
 .dlq-team-injury-row strong{font-size:14px}
 .dlq-team-injury-row small{display:block;flex-basis:100%;color:#aebacd;font-size:12px}
 @media(max-width:620px){.dlq-injury-card{padding:17px;margin:16px 0 4px}.dlq-injury-card h3{font-size:19px}.dlq-injury-meta{flex-direction:column;gap:4px}}
+.dlq-injury-cross{width:18px;height:18px;justify-content:center;padding:0;margin-inline-start:6px;border-radius:50%;font-size:12px;line-height:1;flex:none;color:#ffd2d2;border-color:#ed747a88;background:#a32b433b}
+.dlq-injury-tabs{margin:4px 0 18px}
+.dlq-league-injury-row{display:grid;grid-template-columns:44px minmax(0,1fr);align-items:start}
+.dlq-injury-photo{width:44px;height:44px;object-fit:cover;object-position:top;border-radius:50%;background:#26374a}
+.dlq-lineup-return,.dlq-league-injury-row .dlq-lineup-return{color:#ffd0ad}
+#dlqInjuryResults .dlq-team-injuries{margin:12px 0}
+.lineup-player-main .dlq-injury-cross{display:inline-flex;color:#ffd2d2}
+.dlq-player-name{display:flex;align-items:center;min-width:0}
+.dlq-player-name>a,.dlq-player-name>b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.leaders-table-player-info .dlq-player-name>a{font-size:12px}
+.lineup-player-main .dlq-player-name>a{font-size:12px;font-weight:850;color:#f1f6fd}
+@media(max-width:620px){.leaders-table-player-info .dlq-player-name>a{font-size:10px}}

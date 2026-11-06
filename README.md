@@ -53,8 +53,8 @@ Na nova página de partida, o quinteto antes do jogo é indicado **como projeç�
 ### Boletim automático de lesões da NBA
 
 - O perfil dos jogadores exibe status, região afetada e previsão estimada de retorno **somente quando a ESPN publicar esses campos**.
-- A página de cada franquia mostra o boletim do elenco e selos de situação física; ausências sem informação confiável não são tratadas como confirmação de saúde.
-- A importação compartilha o GitHub Actions já utilizado pelo site e armazena um JSON compacto em `nba/data/injuries/current.json`, consultando a ESPN no máximo uma vez a cada quatro horas. Falhas preservam o arquivo anterior e o navegador esconde boletins com mais de 72 horas.
+- Uma cruz acompanha o nome no perfil, no elenco, no ranking de jogadores e nas escalações de partidas atuais. A aba Jogadores → Lesionados lista os desfalques médicos, com busca e retorno estimado. Uma previsão vencida aparece como anterior.
+- A importação compartilha o GitHub Actions já utilizado pelo site e armazena um JSON compacto em `nba/data/injuries/current.json`, consultando a ESPN no máximo uma vez a cada quatro horas. Se o arquivo publicado passar de quatro horas sem atualização, a página consulta uma vez o boletim público da ESPN e reutiliza o resultado na aba por 20 minutos. Falhas preservam dados com até 72 horas.
 - O contador indica quantos dias o atleta aparece no boletim registrado pelo site, **não** há quantos dias a lesão começou. Previsões de retorno não são datas oficiais ou garantias médicas.
 - Fonte não oficial, sujeita a alterações e indisponibilidade. O site não solicita a API de lesões diretamente no navegador.
 

@@ -1,6 +1,6 @@
 import {FRANCHISE_PLAYERS,isFranchise} from '../../data/franchises.js?v=20261024-franchise-v1';
 import {trackedTeams,teamFollowChange} from '../team-follows.mjs?v=20261103-home-v1';
-import {loadInjuries,injuryFor,injuryBadgeHTML,injuryCardHTML} from '../injuries.js?v=1';
+import {loadInjuries,injuryFor,injuryBadgeHTML,injuryReason,injuryReturnText} from '../injuries.js?v=20261106-injuries-v3';
 /* QUADRA — perfil leve de franquia com médias coletivas e por atleta. */
 import {$,setupShared,TEAMS,EAST,WEST,name,logo,esc,qs,fetchRoster,loadGames,MONTHS,
  currentDate,shortDate,teamLink,playerLink,path,jsonFile,getData,setSettings,
@@ -135,7 +135,7 @@ function teamInjuriesHTML(){
  return '<section class="section"><div class="section-title"><h2>Boletim de lesões</h2>'+
  '<span class="small subtle">ESPN • Retornos estimados</span></div><div class="dlq-team-injuries">'+
  items.map(({p,info})=>'<a href="'+playerLink(p.id,code)+'" class="dlq-team-injury-row"><strong>'+esc(p.name)+'</strong>'+injuryBadgeHTML(info)+
- '<small>'+esc(info.reason||'Lesão')+(info.returnDate?' • Retorno estimado: '+esc(new Date(info.returnDate+'T12:00:00Z').toLocaleDateString('pt-BR',{timeZone:'UTC'})):' • Sem previsão de retorno')+'</small></a>').join('')+
+ '<small>'+esc(injuryReason(info)+' • '+injuryReturnText(info))+'</small></a>').join('')+
  '</div><p class="small subtle">Datas estimadas não são confirmações médicas. Consulte o perfil para mais detalhes.</p></section>';
 }
 function overview(){
@@ -191,10 +191,9 @@ function playerRow(p){
  const recent=Boolean(section()?.lastLineup?.players?.some(x=>String(x.id)===String(p.id)));
  const badges=(star?'<span class="tag accent">★ Franchise</span>':'')+
   (own?'<span class="tag">Meu quinteto</span>':'')+
-  (recent?'<span class="tag finished">Último titular</span>':'')+
- injuryBadgeHTML(injuryFor(injuryReport,p.id,code));
+  (recent?'<span class="tag finished">Último titular</span>':'');
  return '<article class="player-row"><a href="'+playerLink(p.id,code)+'">'+playerImage(p)+'</a>'+
-  '<div class="pname"><b><a href="'+playerLink(p.id,code)+'">'+esc(p.name)+'</a></b>'+
+  '<div class="pname"><div class="dlq-player-name"><b><a href="'+playerLink(p.id,code)+'">'+esc(p.name)+'</a></b>'+injuryBadgeHTML(injuryFor(injuryReport,p.id,code),true)+'</div>'+
   '<small>#'+esc(p.number||'—')+' • '+esc(p.position||'—')+' '+badges+'</small></div>'+
   '<span class="muted-star">'+(saved.players?.[p.id]?.rating?'★ '+esc(saved.players[p.id].rating):'')+'</span>'+
   '<button class="btn" type="button" data-rate="'+esc(p.id)+'">Avaliar</button></article>';
