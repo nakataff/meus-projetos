@@ -5,9 +5,10 @@ Central pessoal de aplicativos e ferramentas web da conta **nakataff**.
 ## Aplicativos
 
 - **[Quadra — NBA Tracker](./nba/)** — calendário de transmissões, agenda completa, elencos, quintetos, notas, partidas assistidas e box scores.
+- **[Quiz da Bola](./quiz-da-bola/)** — 200 perguntas sobre futebol europeu, brasileiro, Copas do Mundo, Libertadores e Mundial; alternativas, respostas secretas ao passar o celular e placar opcional.
 - **Futebol Tracker** — planejado para o futuro.
 
-**Links quando o GitHub Pages estiver publicado:** [Central](https://nakataff.github.io/meus-projetos/) · [NBA Tracker](https://nakataff.github.io/meus-projetos/nba/)
+**Links quando o GitHub Pages estiver publicado:** [Central](https://nakataff.github.io/meus-projetos/) · [NBA Tracker](https://nakataff.github.io/meus-projetos/nba/) · [Quiz da Bola](https://nakataff.github.io/meus-projetos/quiz-da-bola/)
 
 ## QUADRA 3 — páginas independentes
 
