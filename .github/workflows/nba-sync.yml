@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - 'scripts/sync_nba.py'
+      - 'scripts/nba_injuries.py'
+      - 'scripts/tests/test_nba_injuries.py'
       - '.github/workflows/nba-sync.yml'
   schedule:
     # Cache recente a cada meia hora, inclusive após a rodada e de manhã.
