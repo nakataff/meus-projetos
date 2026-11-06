@@ -50,6 +50,14 @@ Na nova página de partida, o quinteto antes do jogo é indicado **como projeç�
 
 **Antes de começar a usar a nova versão intensivamente, faça um backup JSON** na página Meu QUADRA, teste uma avaliação no computador e verifique se ela surge no celular com a mesma conta Google.
 
+### Boletim automático de lesões da NBA
+
+- O perfil dos jogadores exibe status, região afetada e previsão estimada de retorno **somente quando a ESPN publicar esses campos**.
+- A página de cada franquia mostra o boletim do elenco e selos de situação física; ausências sem informação confiável não são tratadas como confirmação de saúde.
+- A importação compartilha o GitHub Actions já utilizado pelo site e armazena um JSON compacto em `nba/data/injuries/current.json`, consultando a ESPN no máximo uma vez a cada quatro horas. Falhas preservam o arquivo anterior e o navegador esconde boletins com mais de 72 horas.
+- O contador indica quantos dias o atleta aparece no boletim registrado pelo site, **não** há quantos dias a lesão começou. Previsões de retorno não são datas oficiais ou garantias médicas.
+- Fonte não oficial, sujeita a alterações e indisponibilidade. O site não solicita a API de lesões diretamente no navegador.
+
 ## QUADRA: como funciona
 
 A agenda inicial contém os jogos brasileiros da ESPN/Disney+ e do Prime Video. Os demais confrontos, elencos e estatísticas finais vêm de arquivos JSON atualizados pelo GitHub Actions.
