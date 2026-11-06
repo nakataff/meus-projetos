@@ -35,6 +35,11 @@ def normalize_injuries(payload, previous=None, now=None):
     result = {}
     aliases = {"GS":"GSW", "NY":"NYK", "SA":"SAS", "NO":"NOP",
                "UTAH":"UTA", "WSH":"WAS", "PHO":"PHX"}
+    id_to_team = {1:"ATL",2:"BOS",3:"NOP",4:"CHI",5:"CLE",6:"DAL",7:"DEN",
+                  8:"DET",9:"GSW",10:"HOU",11:"IND",12:"LAC",13:"LAL",14:"MIA",
+                  15:"MIL",16:"MIN",17:"BKN",18:"NYK",19:"ORL",20:"PHI",
+                  21:"PHX",22:"POR",23:"SAC",24:"SAS",25:"OKC",26:"UTA",
+                  27:"WAS",28:"TOR",29:"MEM",30:"CHA"}
     for group in groups:
         if not isinstance(group, dict):
             continue
@@ -44,6 +49,11 @@ def normalize_injuries(payload, previous=None, now=None):
         else:
             code = ""
         code = aliases.get(code, code)
+        if not code and isinstance(team, dict):
+            try:
+                code = id_to_team.get(int(team.get("id") or 0), "")
+            except (ValueError, TypeError):
+                pass
         records = group.get("injuries")
         if not isinstance(records, list):
             records = [group] if isinstance(group.get("athlete"), dict) else []
@@ -62,14 +72,17 @@ def normalize_injuries(payload, previous=None, now=None):
             details = injury.get("details") or {}
             if not isinstance(details, dict):
                 details = {}
-            typ = injury.get("type") or {}
+            injury_info = injury.get("injury") or {}
+            if not isinstance(injury_info, dict):
+                injury_info = {"type": injury_info}
+            typ = injury_info.get("type") or injury.get("type") or {}
             if isinstance(typ, dict):
                 reason = _text(typ.get("name") or typ.get("displayName"))
             else:
                 reason = _text(typ)
             reason = reason or _text(details.get("type")) or _text(details.get("injury"))
-            side = _text(details.get("side") or injury.get("side"))
-            detail = _text(details.get("detail") or details.get("description"))
+            side = _text(injury_info.get("location") or details.get("side") or injury.get("side"))
+            detail = _text(injury_info.get("detail") or details.get("detail") or details.get("description"))
             expected = _date(injury.get("returnDate") or injury.get("expectedReturnDate") or
                              details.get("returnDate") or details.get("expectedReturnDate"))
             old = before.get(pid) or {}
@@ -87,7 +100,7 @@ def sync_injuries(get_json, read, save, root, now, logs, force=False):
     target = root / "injuries" / "current.json"
     prev = read(target, {})
     last = prev.get("checkedAt")
-    if not force and isinstance(last, str):
+    if not force and prev.get("schemaVersion") == 2 and isinstance(last, str):
         try:
             if now - datetime.fromisoformat(last.replace("Z","+00:00")) < timedelta(hours=4):
                 return
@@ -98,10 +111,11 @@ def sync_injuries(get_json, read, save, root, now, logs, force=False):
     if players is None:
         logs.append("Lesões NBA: resposta indisponível ou formato desconhecido; cache preservado")
         return
-    if not players and prev.get("players"):
-        logs.append("Lesões NBA: boletim inesperadamente vazio; cache anterior preservado")
+    if not players:
+        logs.append("Lesões NBA: nenhum jogador reconhecido no boletim; cache preservado")
         return
     save(target, {
+        "schemaVersion": 2,
         "source": "ESPN (API pública não oficial)",
         "checkedAt": now.isoformat(timespec="seconds").replace("+00:00", "Z"),
         "players": players
