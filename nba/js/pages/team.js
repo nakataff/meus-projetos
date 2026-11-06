@@ -1,5 +1,6 @@
 import {FRANCHISE_PLAYERS,isFranchise} from '../../data/franchises.js?v=20261024-franchise-v1';
 import {trackedTeams,teamFollowChange} from '../team-follows.mjs?v=20261103-home-v1';
+import {loadInjuries,injuryFor,injuryBadgeHTML,injuryCardHTML} from '../injuries.js?v=1';
 /* QUADRA — perfil leve de franquia com médias coletivas e por atleta. */
 import {$,setupShared,TEAMS,EAST,WEST,name,logo,esc,qs,fetchRoster,loadGames,MONTHS,
  currentDate,shortDate,teamLink,playerLink,path,jsonFile,getData,setSettings,
@@ -11,7 +12,7 @@ setupShared('teams',valid?name(code):'Equipe não encontrada',
 const groups={...EAST,...WEST};
 const division=Object.keys(groups).find(d=>groups[d].includes(code))||'';
 const conf=Object.values(EAST).some(list=>list.includes(code))?'Leste':'Oeste';
-let roster=[],teamStats=null,standings=null,games=[],active='resumo',
+let roster=[],teamStats=null,standings=null,games=[],active='resumo',injuryReport=null,
  phase='regular',sortBy='pts',sortAsc=false,statError='',rosterReady=false,gamesLoaded=false,gamesError=false,gamesPromise=null,recentLimit=10;
 
 const n=x=>Number.isFinite(Number(x))?Number(x):0;
@@ -128,8 +129,17 @@ function recentResults(limit=3){
     (active==='jogos'&&recent.length>limit?'<button type="button" class="btn ghost" data-more-results>Ver mais resultados</button>':''):
    '<div class="filler">Nenhuma partida encerrada nos meses recentes.</div>')+'</section>';
 }
+function teamInjuriesHTML(){
+ const items=roster.map(p=>({p,info:injuryFor(injuryReport,p.id,code)})).filter(x=>x.info);
+ if(!items.length)return '';
+ return '<section class="section"><div class="section-title"><h2>Boletim de lesões</h2>'+
+ '<span class="small subtle">ESPN • Retornos estimados</span></div><div class="dlq-team-injuries">'+
+ items.map(({p,info})=>'<a href="'+playerLink(p.id,code)+'" class="dlq-team-injury-row"><strong>'+esc(p.name)+'</strong>'+injuryBadgeHTML(info)+
+ '<small>'+esc(info.reason||'Lesão')+(info.returnDate?' • Retorno estimado: '+esc(new Date(info.returnDate+'T12:00:00Z').toLocaleDateString('pt-BR',{timeZone:'UTC'})):' • Sem previsão de retorno')+'</small></a>').join('')+
+ '</div><p class="small subtle">Datas estimadas não são confirmações médicas. Consulte o perfil para mais detalhes.</p></section>';
+}
 function overview(){
- return phaseControl()+teamWarning()+(section()?.games?
+ return teamInjuriesHTML()+phaseControl()+teamWarning()+(section()?.games?
   '<section class="section"><div class="section-title"><h2>Números da equipe</h2>'+
   '<a class="btn ghost" href="'+path('classificacao/?time='+code)+'">Classificação completa →</a></div>'+
   teamOverviewMetrics()+
@@ -181,7 +191,8 @@ function playerRow(p){
  const recent=Boolean(section()?.lastLineup?.players?.some(x=>String(x.id)===String(p.id)));
  const badges=(star?'<span class="tag accent">★ Franchise</span>':'')+
   (own?'<span class="tag">Meu quinteto</span>':'')+
-  (recent?'<span class="tag finished">Último titular</span>':'');
+  (recent?'<span class="tag finished">Último titular</span>':'')+
+ injuryBadgeHTML(injuryFor(injuryReport,p.id,code));
  return '<article class="player-row"><a href="'+playerLink(p.id,code)+'">'+playerImage(p)+'</a>'+
   '<div class="pname"><b><a href="'+playerLink(p.id,code)+'">'+esc(p.name)+'</a></b>'+
   '<small>#'+esc(p.number||'—')+' • '+esc(p.position||'—')+' '+badges+'</small></div>'+
@@ -296,6 +307,7 @@ root.addEventListener('click',e=>{
 root.addEventListener('change',e=>{if(e.target.id==='teamSort'){sortBy=e.target.value;sortAsc=false;draw();}});
 window.addEventListener('quadra:refresh',draw);
 if(valid){
+ loadInjuries().then(report=>{injuryReport=report;if(rosterReady)draw();});
  root.innerHTML='<div class="filler">Carregando números e elenco do time…</div>';
  Promise.allSettled([
   jsonFile('data/team-stats/'+code+'.json'),
