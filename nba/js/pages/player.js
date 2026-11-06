@@ -5,6 +5,7 @@ import {$,setupShared,qs,TEAMS,name,logo,esc,fetchRoster,fetchBox,fetchMonth,MON
 import {fetchLiveBoxscore} from '../boxscore.js?v=2';
 import {openPlayerCardComposer} from '../share-card.js?v=8';
 import {performanceRating,ratingLabel} from '../performance-rating.js?v=2';
+import {loadInjuries,injuryFor,injuryCardHTML} from '../injuries.js?v=1';
 
 const pid=qs('id')||'',rawTeam=(qs('team')||'').toUpperCase();
 const highlightGame=qs('game')||'',hintDate=qs('data')||'';
@@ -13,6 +14,7 @@ setupShared('teams','Perfil do jogador','Médias da temporada, histórico por jo
 let team=TEAMS[rawTeam]?rawTeam:'',player=null,gameStats=[],selectedMonth='all',selectedGame=highlightGame,
  sort='recent',onlyStarters=false,loading=false,leaguePlayers=[];
 let seasonPhase='regular',historyPhase='regular',selectedRounds=new Set();
+let injuryReport=null;
 const calendarById=new Map();
 const percentField=value=>value!==undefined&&value!==null&&value!==''?value:'—';
 function getPlayer(){return getData().extras.players?.[pid]||{};}
@@ -207,6 +209,7 @@ function profileHTML(){
  '<div class="controls"><a href="'+teamLink(team)+'" class="btn ghost">← Elenco</a>'+
  (franchise?'<span class="tag accent">★ Franchise player</span>':'')+
  '<button type="button" id="followPlayer" class="btn '+(p.favorite?'accent':'ghost')+'" aria-pressed="'+!!p.favorite+'">'+(p.favorite?'♥ Seguindo':'♡ Seguir jogador')+'</button></div></div></section>'+
+ injuryCardHTML(injuryFor(injuryReport,pid,team),injuryReport?.checkedAt)+
  (selected?matchDetail(selected):selectedGame?
   '<div class="info">Este jogo ainda não possui estatísticas individuais disponíveis. Os resultados aparecerão quando a fonte publicar o box score.</div>':'')+
  '<section class="section"><div class="section-title"><h2>Médias dos jogos importados</h2><div class="season-card-actions">'+
@@ -408,4 +411,5 @@ async function boot(){
  }catch(e){console.warn('QUADRA: falha no perfil do atleta',e);root.innerHTML='<div class="filler">'+esc(e.message)+'</div>';}
 }
 root.innerHTML='<div class="filler">Carregando estatísticas da temporada…</div>';
+loadInjuries().then(report=>{injuryReport=report;if(player)profileHTML();});
 boot();
