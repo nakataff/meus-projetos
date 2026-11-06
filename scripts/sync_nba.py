@@ -667,6 +667,9 @@ def main():
     sync_standings()
     if not recent:
         sync_rosters()
+    # Boletim completo uma vez a cada 4 horas; nenhuma consulta extra por visitante.
+    from nba_injuries import sync_injuries
+    sync_injuries(get_json, read, save, ROOT, NOW, LOGS)
     sync_final_stats()
     if not recent:
         sync_team_summaries()
