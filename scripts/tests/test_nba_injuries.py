@@ -32,6 +32,16 @@ class InjuryTests(unittest.TestCase):
         self.assertEqual(ant["reason"], "Knee")
         self.assertEqual(ant["firstSeen"], "2026-11-06")
 
+    def test_flat_feed(self):
+        sample = {"injuries": [{"team": {"id": "16"},
+            "athlete": {"id": "4594268", "displayName": "Anthony Edwards"},
+            "injury": {"type": "Knee", "location": "Right"},
+            "status": "Out", "returnDate": "2026-12-21"}]}
+        result = normalize_injuries(sample, now=self.now)
+        self.assertEqual(result["4594268"]["team"], "MIN")
+        self.assertEqual(result["4594268"]["reason"], "Knee")
+        self.assertEqual(result["4594268"]["returnDate"], "2026-12-21")
+
     def test_previous_injury_keeps_first_seen(self):
         old = {"players": {"4594268": {
             "team": "MIN", "reason": "Knee", "firstSeen": "2026-10-29"}}}
