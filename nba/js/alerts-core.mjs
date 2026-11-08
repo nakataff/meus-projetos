@@ -5,10 +5,16 @@ export const ALERT_EVENTS = Object.freeze({
 export const TV_LABELS = Object.freeze({ESPN:'ESPN / Disney+', PRIME:'Prime Video'});
 export const ALERT_WINDOW = 8 * 60 * 1000;
 export const MAX_RULES = 20;
+export const ALERT_RULES_KEY = 'quadra_alert_rules_v1';
 export const ESPN_NBA = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/';
 const TEAM_ALIASES = {GS:'GSW',NY:'NYK',SA:'SAS',NO:'NOP',PHO:'PHX',UTAH:'UTA',WSH:'WAS'};
 const code = raw => TEAM_ALIASES[raw] || raw;
 const idPattern = /^[0-9]{7,15}$/;
+
+export function gameAlertId(game) {
+ const id = String(game.externalId || game.id || '').replace(/^espn_/, '');
+ return idPattern.test(id) ? id : '';
+}
 
 export const brDate = date => new Intl.DateTimeFormat('en-CA', {
  timeZone:'America/Sao_Paulo', year:'numeric', month:'2-digit', day:'2-digit'
@@ -24,10 +30,11 @@ export function normalizeRules(input, now = Date.now()) {
  if (!Array.isArray(input)) return [];
  const result = new Map();
  for (const rule of input.slice(0, MAX_RULES)) {
-  if (!rule || !['team','player','tv'].includes(rule.kind)) continue;
+  if (!rule || !['team','player','tv','game'].includes(rule.kind)) continue;
   const id = String(rule.id ?? '');
   if (rule.kind === 'team' && !/^[A-Z]{3}$/.test(id) ||
       rule.kind === 'player' && !/^[0-9]{1,15}$/.test(id) ||
+      rule.kind === 'game' && !idPattern.test(id) ||
       rule.kind === 'tv' && id !== 'br') continue;
   const available = rule.kind === 'tv' ? TV_LABELS : ALERT_EVENTS;
   const events = Array.isArray(rule.events) ? [...new Set(rule.events.filter(e => typeof e === 'string' && Object.hasOwn(available,e)))] : [];
@@ -93,6 +100,7 @@ export function alertGame(raw) {
 export function wantsGame(rules, game, platforms, playerTeams = new Map()) {
  return rules.some(rule => {
   if (rule.kind === 'tv') return platforms.some(channel => rule.events.includes(channel));
+  if (rule.kind === 'game') return rule.id === gameAlertId(game);
   if (rule.kind === 'player') {
    const team = playerTeams.get(rule.id) || rule.team;
    return !team || [game.away,game.home].includes(team);
@@ -148,6 +156,7 @@ export function matchingAlerts(rules, game, summary, platforms, now = Date.now()
   const matched = rules.filter(rule => {
    if (marker.at < rule.since || rule.kind === 'tv' || !rule.events.includes(event)) return false;
    if (rule.kind === 'team') return [game.away,game.home].includes(rule.id);
+   if (rule.kind === 'game') return rule.id === gameAlertId(game);
    const row = athletes.get(rule.id);
    if (row?.dnp === true) return false;
    const appeared = players.get(rule.id);

@@ -1,5 +1,5 @@
 /* DE LA QUADRA — Início: agora, próximos confrontos, TV brasileira e equipes seguidas. */
-import {$,setupShared,loadGames,currentDate,dayShift,groupGames,effectiveGame,path,getData,setSettings,note,handleWishes,esc,broadcastInfo,TEAMS,name,logo,MONTHS,playerLink,jsonFile,gameLink,gameRow,overnightGame,shortDate} from '../app.js?v=13';
+import {$,setupShared,loadGames,currentDate,dayShift,groupGames,effectiveGame,path,getData,setSettings,note,handleWishes,esc,broadcastInfo,TEAMS,name,logo,MONTHS,playerLink,jsonFile,gameLink,gameRow,overnightGame,shortDate} from '../app.js?v=14';
 import {trackedTeams,teamFollowChange} from '../team-follows.mjs?v=20261103-home-v1';
 setupShared('home','A NBA acontece aqui.','Acompanhe os jogos ao vivo, os próximos confrontos e onde assistir no Brasil.');
 const root=$('#pageContent');

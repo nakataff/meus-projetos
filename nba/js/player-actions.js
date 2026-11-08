@@ -1,6 +1,6 @@
 /* Shared comparison and contextual actions. Uses only loaded data and lazy round summaries. */
-import {modal,esc,toast} from './app.js?v=13';
-import {openPlayerCardComposer} from './share-card.js?v=20261024-comparison-options-v1';
+import {modal,esc,toast} from './app.js?v=14';
+import {openPlayerCardComposer} from './share-card.js?v=20261108-game-bell-v1';
 import {COMPARISON_FIELDS,DEFAULT_CARD_FIELDS,normalizeComparisonFields,comparisonValue} from './comparison-fields.js?v=20261024-comparison-options-v1';
 export function openPlayerComparison({getPlayers,context,firstKey='',secondKey='',seasonOptions=null,initialSelection=null}){
  const selection=initialSelection?{...initialSelection,rounds:[...(initialSelection.rounds||[])]}:null;

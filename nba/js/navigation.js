@@ -1,4 +1,4 @@
-import {TEAMS,name,logo,path,playerLink,teamLink,shortDate,jsonFile,currentDate} from './app.js?v=13';
+import {TEAMS,name,logo,path,playerLink,teamLink,shortDate,jsonFile,currentDate} from './app.js?v=14';
 const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 let indexPromise;
 function searchIndex(){

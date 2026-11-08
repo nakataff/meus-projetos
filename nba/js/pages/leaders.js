@@ -1,8 +1,8 @@
-import {loadInjuries,injuryFor,injuryList,injuryBadgeHTML,injuryReason,injuryReturnText} from '../injuries.js?v=20261106-injuries-v3';
+import {loadInjuries,injuryFor,injuryList,injuryBadgeHTML,injuryReason,injuryReturnText} from '../injuries.js?v=20261108-game-bell-v1';
 /* DE LA QUADRA — ranking de atletas gerado a partir dos box scores finalizados. */
-import {$,setupShared,asset,currentDate,dayShift,TEAMS,name,logo,esc,playerLink,getData,modify,toast} from '../app.js?v=13';
-import {openPlayerCardComposer} from '../share-card.js?v=20261024-comparison-options-v1';
-import {mountPlayerActions,openPlayerComparison} from '../player-actions.js?v=20261024-roster-points-v1';
+import {$,setupShared,asset,currentDate,dayShift,TEAMS,name,logo,esc,playerLink,getData,modify,toast} from '../app.js?v=14';
+import {openPlayerCardComposer} from '../share-card.js?v=20261108-game-bell-v1';
+import {mountPlayerActions,openPlayerComparison} from '../player-actions.js?v=20261108-game-bell-v1';
 import {fetchLiveBoxscore} from '../boxscore.js?v=2';
 import {performanceRating} from '../performance-rating.js?v=2';
 import {teamGamesFromRounds,requiredHalf,GAME_RECORD_METRICS,gamePerformances,topSingleGames} from '../season-stats.mjs?v=20261103-records-v1';

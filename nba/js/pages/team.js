@@ -1,11 +1,11 @@
-import {alertButton} from '../alerts.js?v=20261108-alerts-v1';
+import {alertButton} from '../alerts.js?v=20261108-game-bell-v1';
 import {FRANCHISE_PLAYERS,isFranchise} from '../../data/franchises.js?v=20261024-franchise-v1';
 import {trackedTeams,teamFollowChange} from '../team-follows.mjs?v=20261103-home-v1';
-import {loadInjuries,injuryFor,injuryBadgeHTML,injuryReason,injuryReturnText} from '../injuries.js?v=20261106-injuries-v3';
+import {loadInjuries,injuryFor,injuryBadgeHTML,injuryReason,injuryReturnText} from '../injuries.js?v=20261108-game-bell-v1';
 /* QUADRA — perfil leve de franquia com médias coletivas e por atleta. */
 import {$,setupShared,TEAMS,EAST,WEST,name,logo,esc,qs,fetchRoster,loadGames,MONTHS,
  currentDate,shortDate,teamLink,playerLink,path,jsonFile,getData,setSettings,
- modify,modal,closeModal,toast,groupGames,handleWishes,effectiveGame} from '../app.js?v=13';
+ modify,modal,closeModal,toast,groupGames,handleWishes,effectiveGame} from '../app.js?v=14';
 
 const code=(qs('id')||'BOS').toUpperCase(),root=$('#pageContent'),valid=!!TEAMS[code];
 setupShared('teams',valid?name(code):'Equipe não encontrada',

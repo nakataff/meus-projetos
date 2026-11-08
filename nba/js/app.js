@@ -1,4 +1,4 @@
-import {parseBroadcasts} from './alerts-core.mjs?v=1';
+import {ALERT_RULES_KEY, gameAlertId, normalizeRules, parseBroadcasts} from './alerts-core.mjs?v=2';
 /* QUADRA 3 • funções partilhadas, armazenamento e catálogo NBA */
 export const ROOT = new URL('../', import.meta.url);
 export const MONTHS = ['2026-10','2026-11','2026-12','2027-01','2027-02','2027-03','2027-04'];
@@ -39,6 +39,8 @@ export function overnightGame(g,at=new Date()){
 export function niceDate(date){return new Date(date+'T12:00:00Z').toLocaleDateString('pt-BR',{timeZone:'UTC',weekday:'long',day:'numeric',month:'long',year:'numeric'});}
 export const shortDate=date=>date?new Date(date+'T12:00:00Z').toLocaleDateString('pt-BR',{timeZone:'UTC'}):'—';
 export function read(key,fallback){try{return JSON.parse(localStorage.getItem(key))||fallback}catch{return fallback;}}
+export const alertRules=()=>normalizeRules(read(ALERT_RULES_KEY,[]));
+export const ALERT_ICON='<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12a2 2 0 0 0 4 0"/></svg>';
 const blankSaved=()=>({notes:{},custom:[]});
 const blankExtras=()=>({players:{},franchise:{},lineups:{},gameRatings:{},gameMvp:{},hideSpoilers:false});
 export function getData(){const saved={...blankSaved(),...read(STORAGE,{})};const extras={...blankExtras(),...read(EXTRAS,{})};return {saved:{notes:saved.notes||{},custom:Array.isArray(saved.custom)?saved.custom:[]},settings:read(SETTINGS,{fav:''}),extras};}
@@ -178,6 +180,11 @@ export function gameRow(g){
    (p.rating?'<span class="tag accent">★ '+esc(p.rating)+'</span>':'');
  const channels=broadcastLinks(g);
  const broadcast='<span class="broadcast-badge '+tv.variant+(tv.lines.length>1?' multi':'')+'" title="Transmissão: '+esc(tv.lines.join(' / '))+'">'+channels+'</span>';
+ const alertId=!result&&gameAlertId(g);
+ const alertLabel=alertId?g.away+' × '+g.home+' · '+shortDate(g.date):'';
+ const gameBell=alertId?'<button type="button" class="dlq-game-bell" data-alert-kind="game" data-alert-id="'+alertId+
+  '" data-alert-label="'+esc(alertLabel)+'" aria-haspopup="dialog" title="Alertas da partida" aria-label="Alertas de '+esc(alertLabel)+
+  '" aria-pressed="'+alertRules().some(rule=>rule.kind==='game'&&rule.id===alertId)+'">'+ALERT_ICON+'</button>':'';
  return '<article class="game-card game-card-link">'+
  '<div class="time">'+esc(g.time||'—')+'<small>BRASÍLIA</small>'+
  (overnightGame(g)?'<span class="overnight-game-note">Iniciado ontem</span>':'')+
@@ -186,8 +193,8 @@ export function gameRow(g){
  '<span class="club">'+tlogo(g.away,42)+'<span><strong>'+esc(name(g.away))+'</strong><small>'+esc(g.away)+'</small></span></span>'+
  middle+
  '<span class="club right">'+tlogo(g.home,42)+'<span><strong>'+esc(name(g.home))+'</strong><small>'+esc(g.home)+'</small></span></span></a>'+
- '<div class="game-meta"><div class="game-status">'+status+'</div>'+broadcast+
- '<button type="button" class="fav" title="'+(p.wish?'Remover da minha lista':'Quero assistir')+'" aria-label="'+(p.wish?'Remover da lista':'Quero assistir')+'" aria-pressed="'+!!p.wish+'" data-wish="'+esc(g.id)+'">'+(p.wish?'♥':'♡')+'</button></div></article>';
+ '<div class="game-meta"><div class="game-status">'+status+'</div>'+broadcast+'<div class="game-actions">'+gameBell+
+ '<button type="button" class="fav" title="'+(p.wish?'Remover da minha lista':'Quero assistir')+'" aria-label="'+(p.wish?'Remover da lista':'Quero assistir')+'" aria-pressed="'+!!p.wish+'" data-wish="'+esc(g.id)+'">'+(p.wish?'♥':'♡')+'</button></div></div></article>';
 }
 export function groupGames(list){let out='',last='';for(const g of list){if(g.date!==last){last=g.date;out+='<h3 class="dayhead">'+esc(niceDate(last))+'</h3>';}out+=gameRow(g);}return out||'<div class="filler"><b>Nenhum jogo encontrado</b>Tente outro filtro ou período.</div>';}
 export function handleWishes(target,callback){const b=target.closest('[data-wish]');if(!b)return false;const id=b.dataset.wish;toggleWish({id});callback?.();return true;}

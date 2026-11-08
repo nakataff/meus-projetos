@@ -1,5 +1,5 @@
 /* DE LA QUADRA — melhores marcas individuais em uma única partida. */
-import {$,setupShared,asset,esc,logo,playerLink,gameLink,loadGames} from '../app.js?v=13';
+import {$,setupShared,asset,esc,logo,playerLink,gameLink,loadGames} from '../app.js?v=14';
 import {GAME_RECORD_METRICS,gamePerformances,topSingleGames} from '../season-stats.mjs?v=20261103-records-v1';
 import {fetchLiveBoxscore} from '../boxscore.js?v=2';
 import {performanceRating} from '../performance-rating.js?v=2';

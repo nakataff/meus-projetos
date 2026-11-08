@@ -1,7 +1,7 @@
 /* DE LA QUADRA — imagens 1200×630, 1080×1080 e 1080×1920.
  * Geradas localmente: prévia, cópia, compartilhamento nativo ou PNG opcional.
  */
-import {modal,closeModal,toast} from './app.js?v=13';
+import {modal,closeModal,toast} from './app.js?v=14';
 import {COMPARISON_FIELDS,normalizeComparisonFields} from './comparison-fields.js?v=20261024-comparison-options-v1';
 import {performanceRating,ratingLabel} from './performance-rating.js?v=2';
 const COLOR={base:'#0c1421',panel:'#1f3046',line:'#3c526c',orange:'#ff9d4d',white:'#f5f7fd',muted:'#afbed3'};

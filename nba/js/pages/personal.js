@@ -1,5 +1,5 @@
 import {FRANCHISE_PLAYERS,isFranchise} from '../../data/franchises.js?v=20261024-franchise-v1';
-import {$,setupShared,loadGames,MONTHS,getData,modify,groupGames,esc,path,backup,restore,handleWishes,note,TEAMS,teamLink,playerLink,gameLink,logo,modal,closeModal,setSettings,toast} from '../app.js?v=13';
+import {$,setupShared,loadGames,MONTHS,getData,modify,groupGames,esc,path,backup,restore,handleWishes,note,TEAMS,teamLink,playerLink,gameLink,logo,modal,closeModal,setSettings,toast} from '../app.js?v=14';
 setupShared('personal','Meu perfil','Sua jornada na NBA: avaliações, jogos assistidos, jogadores favoritos e conquistas.');
 const root=$('#pageContent');
 let games=[],loaded=false,tab=new URLSearchParams(location.search).get('tab')||'resumo';

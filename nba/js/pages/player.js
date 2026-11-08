@@ -1,12 +1,12 @@
-import {alertButton} from '../alerts.js?v=20261108-alerts-v1';
+import {alertButton} from '../alerts.js?v=20261108-game-bell-v1';
 import {FRANCHISE_PLAYERS,isFranchise} from '../../data/franchises.js?v=20261024-franchise-v1';
 /* Perfil de atleta QUADRA — temporada, jogos, ficha compartilhável. */
 import {$,setupShared,qs,TEAMS,name,logo,esc,fetchRoster,fetchBox,fetchMonth,MONTHS,
- currentDate,getData,modify,teamLink,gameLink,shortDate,toast,path} from '../app.js?v=13';
+ currentDate,getData,modify,teamLink,gameLink,shortDate,toast,path} from '../app.js?v=14';
 import {fetchLiveBoxscore} from '../boxscore.js?v=2';
-import {openPlayerCardComposer} from '../share-card.js?v=8';
+import {openPlayerCardComposer} from '../share-card.js?v=20261108-game-bell-v1';
 import {performanceRating,ratingLabel} from '../performance-rating.js?v=2';
-import {loadInjuries,injuryFor,injuryBadgeHTML,injuryCardHTML} from '../injuries.js?v=20261106-injuries-v3';
+import {loadInjuries,injuryFor,injuryBadgeHTML,injuryCardHTML} from '../injuries.js?v=20261108-game-bell-v1';
 
 const pid=qs('id')||'',rawTeam=(qs('team')||'').toUpperCase();
 const highlightGame=qs('game')||'',hintDate=qs('data')||'';

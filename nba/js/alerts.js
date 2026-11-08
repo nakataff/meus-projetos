@@ -1,9 +1,8 @@
-import {esc, modal, closeModal, name, path, toast, parseTV, jsonFile} from './app.js?v=13';
+import {ALERT_ICON, alertRules as rules, esc, modal, closeModal, name, path, toast, parseTV, jsonFile} from './app.js?v=14';
 import {fetchGameSummary} from './boxscore.js?v=3';
-import {ALERT_EVENTS, TV_LABELS, MAX_RULES, normalizeRules, wantsGame, matchPlatforms, gameMilestones, matchingAlerts} from './alerts-core.mjs?v=1';
+import {ALERT_RULES_KEY, ALERT_EVENTS, TV_LABELS, MAX_RULES, normalizeRules, wantsGame, matchPlatforms, gameMilestones, matchingAlerts} from './alerts-core.mjs?v=2';
 import {PUSH_API} from './alerts-config.mjs?v=1';
 
-const RULES_KEY = 'quadra_alert_rules_v1';
 const INBOX_KEY = 'quadra_alert_inbox_v1';
 const DEVICE_KEY = 'quadra_push_device_v1';
 const CHECK_MS = 30000;
@@ -11,13 +10,11 @@ const RULE_LABELS = {tv:'Transmissões no Brasil'};
 const broadcasts = parseTV();
 let bell, busy = false, liveModule, lastPoll = 0, playerTeams;
 const completed = new Set();
-const icon = '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12a2 2 0 0 0 4 0"/></svg>';
 
 function read(key, fallback) {
  try {return JSON.parse(localStorage.getItem(key)) ?? fallback;}
  catch {return fallback;}
 }
-const rules = () => normalizeRules(read(RULES_KEY, []));
 const inbox = () => read(INBOX_KEY, []);
 const device = () => read(DEVICE_KEY, '');
 const ruleLabel = rule => RULE_LABELS[rule.kind] || rule.label || rule.id;
@@ -27,7 +24,7 @@ const sameRule = (a,b) => a.kind === b.kind && a.id === b.id;
 export function alertButton(kind, id, label, team = '') {
  return '<button type="button" class="btn ghost dlq-alert-action" data-alert-kind="' + esc(kind) +
   '" data-alert-id="' + esc(id) + '" data-alert-label="' + esc(label) + '" data-alert-team="' + esc(team) +
-  '">' + icon + '<span>Notificações</span></button>';
+  '">' + ALERT_ICON + '<span>Notificações</span></button>';
 }
 
 function refreshBell() {
@@ -35,6 +32,13 @@ function refreshBell() {
  const unread = inbox().filter(item => !item.read).length;
  bell.querySelector('.dlq-alert-count').textContent = unread > 0 ? String(unread) : '';
  bell.setAttribute('aria-label', 'Notificações' + (unread ? ' · ' + unread + ' novas' : ''));
+}
+
+function refreshGameBells(prefs = rules()) {
+ const active = new Set(prefs.filter(rule=>rule.kind==='game').map(rule=>rule.id));
+ document.querySelectorAll('.dlq-game-bell').forEach(button=>{
+  button.setAttribute('aria-pressed', String(active.has(button.dataset.alertId)));
+ });
 }
 
 function write(key, value) {
@@ -65,7 +69,7 @@ async function checkAlerts() {
  lastPoll = now;
  try {
   if (!window.QUADRA_LIVE_GAMES) {
-   liveModule ||= import('./live.js?v=20261108-alerts-v1').catch(error=>{liveModule=null;throw error;});
+   liveModule ||= import('./live.js?v=20261108-game-bell-v1').catch(error=>{liveModule=null;throw error;});
    await liveModule;
   }
   if (prefs.some(rule=>rule.kind==='player') && !playerTeams) {
@@ -96,7 +100,8 @@ function alertDialog(content) {
  modal('<div class="dlq-alert-dialog">' + content + '</div>');
 }
 function saveRules(next) {
- if (!write(RULES_KEY, next)) return false;
+ if (!write(ALERT_RULES_KEY, next)) return false;
+ refreshGameBells(next);
  if (device()) syncDevice(next).catch(()=>toast('Preferências salvas aqui. Abra Notificações para tentar sincronizar o push.'));
  completed.clear();
  lastPoll=0;
@@ -104,21 +109,28 @@ function saveRules(next) {
  return true;
 }
 
-function openRule(target) {
+function openRule(target, gameButton) {
  const existing = rules().find(rule=>sameRule(rule,target));
  const defaults = target.kind === 'tv' ? Object.keys(TV_LABELS) : ['start','final'];
  const selected = existing?.events || defaults;
- alertDialog('<h2>' + esc(ruleLabel(target)) + '</h2><p class="small subtle">Escolha os avisos que quer receber neste dispositivo.</p>' +
+ const hint = gameButton && !device() ? 'Os avisos aparecem enquanto o De La Quadra estiver aberto em primeiro plano.' :
+  'Escolha os avisos que quer receber neste dispositivo.';
+ const leaveRule = () => {
+  if (!gameButton) return openInbox();
+  closeModal();
+  gameButton.focus();
+ };
+ alertDialog('<h2>' + esc(ruleLabel(target)) + '</h2><p class="small subtle">' + hint + '</p>' +
   '<form id="dlqAlertRule"><fieldset class="dlq-alert-choices"><legend>Quando avisar</legend>' +
   Object.entries(labels(target)).map(([key,label])=>'<label><input type="checkbox" name="event" value="'+esc(key)+'"'+
    (selected.includes(key)?' checked':'')+'> '+esc(label)+'</label>').join('') +
-  '</fieldset><div class="modal-footer"><button type="button" class="btn ghost" id="dlqAlertBack">Voltar</button>' +
+  '</fieldset><div class="modal-footer"><button type="button" class="btn ghost" id="dlqAlertBack">'+(gameButton?'Cancelar':'Voltar')+'</button>' +
   (existing ? '<button type="button" class="btn ghost" id="dlqAlertRemove">Remover alertas</button>' : '') +
   '<button class="btn accent" type="submit">Salvar alertas</button></div></form>');
  const form = document.getElementById('dlqAlertRule');
- form.querySelector('#dlqAlertBack').onclick = openInbox;
+ form.querySelector('#dlqAlertBack').onclick = leaveRule;
  const remove = () => {
-  if (saveRules(rules().filter(rule=>!sameRule(rule,target)))) openInbox();
+  if (saveRules(rules().filter(rule=>!sameRule(rule,target)))) leaveRule();
  };
  const removeButton = form.querySelector('#dlqAlertRemove');
  if (removeButton) removeButton.onclick = remove;
@@ -129,7 +141,7 @@ function openRule(target) {
   const others = rules().filter(rule=>!sameRule(rule,target));
   if (others.length >= MAX_RULES) return toast('Limite de '+MAX_RULES+' regras de alerta neste dispositivo.');
   if (saveRules(normalizeRules([...others,{...target,events,since:Date.now()}]))) {
-   openInbox();
+   leaveRule();
    toast('Alertas salvos.');
   }
  };
@@ -140,7 +152,7 @@ function openInbox() {
  const prefs = rules(), feed = inbox();
  const date = new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
  const tv = prefs.find(rule=>rule.kind==='tv');
- alertDialog('<h2>Notificações</h2><p class="small subtle">Configure alertas no perfil de um time ou jogador e escolha as transmissões brasileiras aqui.</p>' +
+ alertDialog('<h2>Notificações</h2><p class="small subtle">Use o sino da partida ou o botão no perfil de um time ou jogador. Os avisos por canal de TV ficam aqui.</p>' +
   '<div class="controls dlq-alert-controls"><button class="btn accent" id="dlqAlertTv" type="button">' +
   (tv?'Editar canais de TV':'Configurar alertas de TV')+'</button>' +
   (PUSH_API?'<button class="btn ghost" id="dlqAlertPush" type="button">'+(device()?'Desativar avisos com o site fechado':'Ativar avisos com o site fechado')+'</button>':'')+
@@ -225,7 +237,7 @@ export function mountAlerts() {
  actions.className = 'dlq-top-actions';
  search.before(actions);
  actions.append(search);
- actions.insertAdjacentHTML('beforeend','<button type="button" class="btn ghost dlq-alert-bell" id="dlqAlerts" aria-haspopup="dialog">'+icon+
+ actions.insertAdjacentHTML('beforeend','<button type="button" class="btn ghost dlq-alert-bell" id="dlqAlerts" aria-haspopup="dialog">'+ALERT_ICON+
   '<span class="dlq-alert-count" aria-hidden="true"></span></button>');
  bell = document.getElementById('dlqAlerts');
  bell.onclick = openInbox;
@@ -233,11 +245,14 @@ export function mountAlerts() {
   const trigger = event.target.closest('[data-alert-kind]');
   if (trigger) {
    const {alertKind:kind,alertId:id,alertLabel:label,alertTeam:team} = trigger.dataset;
-   openRule({kind,id,label:label||name(id),team});
+   openRule({kind,id,label:label||name(id),team},kind==='game'?trigger:null);
   }
  });
  window.addEventListener('quadra:live-update',checkAlerts);
- window.addEventListener('storage',refreshBell);
+ window.addEventListener('storage',event=>{
+  refreshBell();
+  if (!event.key || event.key===ALERT_RULES_KEY) refreshGameBells();
+ });
  document.addEventListener('visibilitychange',checkAlerts);
  navigator.serviceWorker?.addEventListener('message',event=>{
   if (event.data?.type==='quadra-alert') addAlerts([event.data.alert],false);

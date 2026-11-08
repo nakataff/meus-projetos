@@ -46,6 +46,29 @@ test('alerts honor each quarter, confirmed TV and player participation without r
  assert.equal(matchingAlerts(rules.map(rule=>({...rule,since:Date.parse('2026-11-07T23:58:30Z')})),game,summary,channels,Date.parse('2026-11-07T23:59:00Z')).length,0);
 });
 
+test('game alerts use the ESPN event ID and deduplicate overlapping team alerts',async()=>{
+ const {gameAlertId,normalizeRules,wantsGame,matchingAlerts} = await import('../js/alerts-core.mjs');
+ const card={...game,id:'2026-11-07-1900-DEN-IND',externalId:game.id};
+ const rematch={...game,id:'401909940'};
+ const now=game.startTime+3600000;
+ const summary={markers:new Map([['q2',{at:now,score:'DEN 50 × 47 IND'}],['q1',{at:now-30*60000}]])};
+ const [rule,...invalid]=normalizeRules([
+  {kind:'game',id:gameAlertId(card),events:['q2','ESPN'],since:game.startTime},
+  {kind:'game',id:card.id,events:['q2'],since:game.startTime}
+ ],now);
+ assert.deepEqual(invalid,[]);
+ assert.deepEqual(rule.events,['q2']);
+ assert.equal(gameAlertId({id:'espn_'+game.id}),game.id);
+ assert.equal(gameAlertId({id:card.id}),'');
+ assert.equal(wantsGame([rule],card,[]),true);
+ assert.equal(wantsGame([rule],rematch,[]),false);
+ assert.deepEqual(matchingAlerts([rule],rematch,summary,[],now),[]);
+ const overlapping={kind:'team',id:game.away,events:['q2'],since:game.startTime};
+ const alerts=matchingAlerts([rule,overlapping],game,summary,[],now);
+ assert.deepEqual(alerts.map(alert=>alert.id),[game.id+':q2']);
+ assert.equal(alerts[0].title,'Fim do 2º quarto / intervalo');
+});
+
 test('lead chart follows actual scores across a lead change and overtime',async()=>{
  const {leadTimeline,renderLeadChart,selectLeadPoint} = await import('../js/lead-chart.mjs');
  const points=leadTimeline([

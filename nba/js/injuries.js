@@ -1,7 +1,7 @@
 /* DE LA QUADRA — boletim de lesões importado pelo GitHub Actions.
  * Cache estático primeiro; boletim público ao vivo se o cache da publicação estiver atrasado.
  */
-import {jsonFile,esc,currentDate} from './app.js?v=13';
+import {jsonFile,esc,currentDate} from './app.js?v=14';
 
 const FEED='https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries';
 const CACHE='dlq:nba-injuries:v3';

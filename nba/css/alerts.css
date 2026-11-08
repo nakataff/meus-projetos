@@ -17,6 +17,26 @@
 .dlq-top-actions .dlq-search-open { min-width:0; }
 .dlq-alert-bell,.dlq-alert-action { display:inline-flex; align-items:center; justify-content:center; gap:.4rem; }
 .dlq-top .dlq-alert-bell { position:relative; flex:0 0 auto; width:38px; height:36px; padding:0; }
+.game-card-link .game-actions { display:flex; align-items:center; gap:4px; position:relative; z-index:2; }
+.game-card-link .dlq-game-bell { display:grid; place-items:center; flex:0 0 auto; width:38px; height:38px; padding:0; border:1px solid transparent; border-radius:9px; background:transparent; color:#adc3d9; }
+.game-card-link .dlq-game-bell:hover,.game-card-link .dlq-game-bell[aria-pressed="true"] { color:#ffc18c; border-color:#775538; background:#ff95491a; }
+.dlq-game-bell[aria-pressed="true"] svg { fill:#ffc18c40; }
+.dlq-game-bell:focus-visible { outline:2px solid #ff9549; outline-offset:2px; }
+@media (min-width:771px) {
+ .game-card.game-card-link:has(.dlq-game-bell) { grid-template-columns:80px minmax(0,1fr) 308px; }
+ .game-card-link .game-meta:has(.dlq-game-bell) { grid-template-columns:minmax(0,1fr) 126px auto; }
+}
+@media (min-width:771px) and (max-width:1000px) {
+ .game-card.game-card-link:has(.dlq-game-bell) { grid-template-columns:70px minmax(0,1fr) 251px; }
+ .game-card-link .game-meta:has(.dlq-game-bell) { grid-template-columns:minmax(0,1fr) 117px auto; }
+ .game-card-link .game-actions .fav { flex-basis:30px; }
+}
+@media (max-width:770px) {
+ .game-card-link .game-actions { order:2; margin-left:auto; }
+ .game-card-link .game-meta:has(.dlq-game-bell) .game-status { order:3; flex-basis:100%; }
+ .game-card-link .game-meta:has(.dlq-game-bell) .broadcast-badge { max-width:calc(100% - 97px); }
+ .game-card-link .dlq-game-bell { width:44px; height:44px; }
+}
 .dlq-alert-count:not(:empty) { position:absolute; top:-4px; right:-5px; min-width:16px; padding:1px 3px; border-radius:9px; background:#ffc48d; color:#172130; font-size:10px; font-weight:800; }
 .dlq-alert-dialog { max-height:75dvh; overflow:auto; padding-right:4px; }
 .dlq-alert-dialog h2 { margin:0 0 .65rem; }
