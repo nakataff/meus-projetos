@@ -1,0 +1,13 @@
+{
+  "id": "./",
+  "name": "De La Quadra",
+  "short_name": "De La Quadra",
+  "description": "Jogos, placares e estatísticas da NBA",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "lang": "pt-BR",
+  "background_color": "#090d15",
+  "theme_color": "#090d15",
+  "icons": [{"src": "assets/dlq.webp", "sizes": "1254x1254", "type": "image/webp", "purpose": "any"}]
+}

@@ -38,7 +38,7 @@ function normalize(event){
  const statusName=String(phase.name||'');
  const statusDetail=String(phase.shortDetail||event.status?.type?.detail||phase.description||'');
  return {
-  id:eventId,date,
+  id:eventId,date,startTime:dateTime.getTime(),
   away:code(away.team?.abbreviation),home:code(home.team?.abbreviation),
   status,scoreAway:score(away),scoreHome:score(home),
   period,clock,seasonType,statusName,statusDetail

@@ -108,16 +108,27 @@ export function normalizeSummary(payload,game){
   hasStats
  };
 }
-export async function fetchLiveBoxscore(game){
- const id=String(game?.externalId||String(game?.id||'').replace(/^espn_/,'')); 
+const summaryCache=new Map();
+export async function fetchGameSummary(game){
+ const id=String(game?.externalId||String(game?.id||'').replace(/^espn_/,''));
  if(!/^[0-9]{7,15}$/.test(id))return null;
+ const now=Date.now(),previous=summaryCache.get(id);
+ if(previous&&now-previous.at<12000)return previous.promise;
+ for(const [key,value] of summaryCache)if(now-value.at>=12000)summaryCache.delete(key);
  const abort=new AbortController(),timeout=setTimeout(()=>abort.abort(),12000);
- try{
-  const response=await fetch(ENDPOINT+'?event='+encodeURIComponent(id),{cache:'no-store',signal:abort.signal});
-  if(!response.ok)throw new Error('HTTP '+response.status);
-  const raw=await response.json();
-  return normalizeSummary(raw,game);
- }finally{clearTimeout(timeout);}
+ const promise=fetch(ENDPOINT+'?event='+encodeURIComponent(id),{cache:'no-store',signal:abort.signal})
+  .then(response=>{
+   if(!response.ok)throw new Error('HTTP '+response.status);
+   return response.json();
+  }).catch(error=>{
+   if(summaryCache.get(id)?.promise===promise)summaryCache.delete(id);
+   throw error;
+  }).finally(()=>clearTimeout(timeout));
+ summaryCache.set(id,{at:now,promise});
+ return promise;
+}
+export async function fetchLiveBoxscore(game){
+ return normalizeSummary(await fetchGameSummary(game),game);
 }
 /** Projeta até cinco titulares pela frequência nas últimas cinco partidas com quinteto confirmado.
  * Não confundir esta projeção com notícia oficial ou previsão de um jornalista.

@@ -1,3 +1,4 @@
+import {parseBroadcasts} from './alerts-core.mjs?v=1';
 /* QUADRA 3 • funções partilhadas, armazenamento e catálogo NBA */
 export const ROOT = new URL('../', import.meta.url);
 export const MONTHS = ['2026-10','2026-11','2026-12','2027-01','2027-02','2027-03','2027-04'];
@@ -80,26 +81,7 @@ export async function jsonFile(file){if(chunks.has(file))return chunks.get(file)
 export const fetchRoster=async code=>(await jsonFile('data/teams/'+code+'.json')).players||[];
 export async function fetchBox(month){try{return (await jsonFile('data/stats/'+month+'.json')).games||{}}catch{return {};}}
 export async function fetchMonth(month){try{return (await jsonFile('data/months/'+month+'.json')).events||[]}catch{return [];}}
-export function parseTV(){
- const raw=window.QUADRA_TV_RAW||'';let section='ESPN',result=[],seen=new Map();
- for(const original of raw.trim().split('\n')){
-   const line=original.trim();if(!line||line.startsWith('#'))continue;
-   if(line==='===PRIME==='){section='PRIME';continue;}if(line==='===PRE==='){section='PRE';continue;}
-   const [base,desc='']=line.split('|'),[mmdd,hhmm,a,b]=base.trim().split(/\s+/);
-   if(!mmdd||!hhmm||!a||!b)continue;
-   const m=Number(mmdd.slice(0,2)),d=Number(mmdd.slice(2)),yr=m>=10?2026:2027;
-   const src=yr+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-   const time=hhmm==='????'?'':hhmm.slice(0,2)+':'+hhmm.slice(2,4);
-   const date=time&&Number(time.slice(0,2))<3?dayShift(src,1):src;
-   const platform=section==='PRE'?'ESPN':section;
-   const key=desc?'special-'+src+'-'+desc+'-'+platform+'-'+result.length:date+'-'+time+'-'+a+'-'+b;
-   const id=key.replace(/[^a-zA-Z0-9-]/g,'_');
-   if(seen.has(key)){const old=result[seen.get(key)];if(!old.platforms.includes(platform))old.platforms.push(platform);continue;}
-   seen.set(key,result.length);
-   result.push({id,date,time,away:a,home:b,platforms:[platform],stage:section==='PRE'?'Pré-temporada':desc?'Copa NBA':'Temporada regular',label:desc,custom:false,sourceDate:src});
- }
- return result;
-}
+export function parseTV(){return parseBroadcasts(window.QUADRA_TV_RAW||'');}
 const TV = parseTV();
 export function joinGames(remote){
  const built=[...TV,...getData().saved.custom.filter(x=>x?.id&&x?.date)],look=new Map(),used=new Set(),out=[];

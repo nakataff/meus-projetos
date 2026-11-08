@@ -1,3 +1,4 @@
+import {alertButton} from '../alerts.js?v=20261108-alerts-v1';
 import {FRANCHISE_PLAYERS,isFranchise} from '../../data/franchises.js?v=20261024-franchise-v1';
 import {trackedTeams,teamFollowChange} from '../team-follows.mjs?v=20261103-home-v1';
 import {loadInjuries,injuryFor,injuryBadgeHTML,injuryReason,injuryReturnText} from '../injuries.js?v=20261106-injuries-v3';
@@ -238,7 +239,7 @@ function hero(){
  '<div class="controls"><button class="btn '+(fav?'accent':'')+'" id="favoriteTeam">'+
  (fav?'★ Meu time principal':'☆ Definir como principal')+'</button>'+
   '<button class="btn ghost" id="followTeam" aria-pressed="'+followed+'">'+(followed?'♥ Seguindo · Deixar de seguir':'♡ Seguir equipe')+'</button>'+
- '<a class="btn" href="'+path('classificacao/?time='+code)+'">Ver classificação ↗</a>'+
+ alertButton('team',code,name(code))+'<a class="btn" href="'+path('classificacao/?time='+code)+'">Ver classificação ↗</a>'+
  '<a class="btn" href="'+path('equipes/')+'">Outras equipes</a></div></div></section>';
 }
 function draw(){

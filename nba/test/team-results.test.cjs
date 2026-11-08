@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 test('team summary and games show recent finals newest first without duplicating them as upcoming',async()=>{
  const dom=new JSDOM('<main id="pageContent"></main>',{url:'https://example.com/nba/equipe/?id=BOS',runScripts:'outside-only'}),w=dom.window;
  let loads=0,months;
- Object.assign(w,{loadInjuries:async()=>null,injuryFor:()=>null,injuryBadgeHTML:()=>""});
+ Object.assign(w,{loadInjuries:async()=>null,injuryFor:()=>null,injuryBadgeHTML:()=>"",alertButton:()=>""});
  const fixtures=[
   {id:'old',away:'BOS',home:'LAL',date:'2026-09-30',status:'final'},
   {id:'today-final',away:'LAL',home:'BOS',date:'2026-10-24',status:'final'},

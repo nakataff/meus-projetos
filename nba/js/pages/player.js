@@ -1,3 +1,4 @@
+import {alertButton} from '../alerts.js?v=20261108-alerts-v1';
 import {FRANCHISE_PLAYERS,isFranchise} from '../../data/franchises.js?v=20261024-franchise-v1';
 /* Perfil de atleta QUADRA — temporada, jogos, ficha compartilhável. */
 import {$,setupShared,qs,TEAMS,name,logo,esc,fetchRoster,fetchBox,fetchMonth,MONTHS,
@@ -208,7 +209,7 @@ function profileHTML(){
  '<h2>'+esc(player.name)+injuryBadgeHTML(injuryFor(injuryReport,pid,team),true)+'</h2><p>#'+esc(player.number||'—')+' • Temporada 2026/27</p>'+
  '<div class="controls"><a href="'+teamLink(team)+'" class="btn ghost">← Elenco</a>'+
  (franchise?'<span class="tag accent">★ Franchise player</span>':'')+
- '<button type="button" id="followPlayer" class="btn '+(p.favorite?'accent':'ghost')+'" aria-pressed="'+!!p.favorite+'">'+(p.favorite?'♥ Seguindo':'♡ Seguir jogador')+'</button></div></div></section>'+
+ '<button type="button" id="followPlayer" class="btn '+(p.favorite?'accent':'ghost')+'" aria-pressed="'+!!p.favorite+'">'+(p.favorite?'♥ Seguindo':'♡ Seguir jogador')+'</button>'+alertButton('player',pid,player.name,team)+'</div></div></section>'+
  injuryCardHTML(injuryFor(injuryReport,pid,team),injuryReport?.checkedAt)+
  (selected?matchDetail(selected):selectedGame?
   '<div class="info">Este jogo ainda não possui estatísticas individuais disponíveis. Os resultados aparecerão quando a fonte publicar o box score.</div>':'')+

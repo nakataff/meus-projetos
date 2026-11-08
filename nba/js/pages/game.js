@@ -1,12 +1,14 @@
 import {loadInjuries,injuryFor,injuryBadgeHTML,injuryReturnText} from '../injuries.js?v=20261106-injuries-v3';
 import {$,setupShared,qs,esc,name,logo,tlogo,effectiveGame,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,note,getData,setNote,setExtraGroup,platform,broadcastLinks,shortDate,currentDate,toast,modal,closeModal,eventBox,fetchRoster,livePeriodLabel} from '../app.js?v=13';
-import {fetchLiveBoxscore,projectStartingFive,normalizeSummary} from '../boxscore.js?v=2';
+import {fetchGameSummary,projectStartingFive,normalizeSummary} from '../boxscore.js?v=3';
 import {openPlayerCardComposer} from '../share-card.js?v=20261024-comparison-options-v1';
 import {mountPlayerActions,openPlayerComparison} from '../player-actions.js?v=20261024-roster-points-v1';
 import {performanceRating,ratingLabel,topPerformance,RATING_EXPLANATION} from '../performance-rating.js?v=2';
+import {normalizeCourtPlays} from '../court-live.js?v=20261024-compare-v2';
+import {leadTimeline,renderLeadChart,selectLeadPoint} from '../lead-chart.mjs?v=1';
 const id=qs('id')||'',hint=qs('data')||'',root=$('#pageContent');
 setupShared('games','Centro da partida','Escalações, estatísticas e seu diário pessoal de basquete.');
-let injuryReport=null;
+let injuryReport=null, leadPoints=[], leadSignature='';
 let game=null,boxes={},box=null,probable={},rosters={},tab='resumo';
 let statsSort='rating',statsAsc=false;
 let statsTeam='both'; // No mobile, Ambos mostra ranking misto das duas franquias.
@@ -82,6 +84,13 @@ function sourceNotice(){
  '<button class="game-sync-refresh" type="button" id="refreshBox" aria-label="Atualizar escalações e estatísticas" title="Atualizar escalações e estatísticas" '+(checkingStats?'disabled':'')+'>'+
  (checkingStats?'Consultando…':'↻ Atualizar')+'</button></div>';
 }
+function readLead(payload){
+ if(!payload)return;
+ const points=leadTimeline(normalizeCourtPlays(payload,game));
+ if(!points.length)return;
+ leadPoints=points;
+ leadSignature=JSON.stringify(points);
+}
 async function refreshBox(force=false){
  if(!game||checkingStats||document.hidden||(tab==='quadra'&&courtController))return;
  const now=Date.now();
@@ -92,7 +101,9 @@ async function refreshBox(force=false){
  checkingStats=true;statsMessage='Buscando escalações e box score na fonte pública…';
  if(force&&tab!=='avaliar')draw();
  try{
-  const result=await fetchLiveBoxscore(game);
+  const payload=await fetchGameSummary(game);
+  readLead(payload);
+  const result=normalizeSummary(payload,game);
   if(result){
    remoteStatus=result;remoteBox=result.box||remoteBox;
    lastSuccess=new Date();
@@ -448,6 +459,7 @@ function overviewHtml(current,statsReady){
  '<div><span class="caps">Onde assistir</span><strong>'+broadcastLinks(game)+'</strong></div>'+
  '<div><span class="caps">Meu registro</span><strong>'+(saved.watched?'✓ Assistido':saved.wish?'♡ Na minha lista':'Não avaliado')+
  (Number(saved.rating)>0?' • ★ '+esc(saved.rating)+'/10':'')+'</strong></div></section>'+
+ renderLeadChart(leadPoints,game,current.status,esc)+
  (statsReady?leaderCards()+(complete?teamComparison():''):'' )+
  summaryLineups()+
  (!statsReady?recentForm():'')+
@@ -473,6 +485,7 @@ async function startCourt(){
   courtController=mod.mountCourtTracker({element,game,getStatus:gameStatus,onSummary:payload=>{
    if(tab!=='quadra'||!game)return;
    const before=liveRenderSignature();
+   readLead(payload);
    const result=normalizeSummary(payload,game);
    if(!result)return;
    remoteStatus=result;
@@ -547,7 +560,7 @@ function liveRenderSignature(){
  if(!game)return '';
  const state=gameStatus();
  return JSON.stringify([state.status,state.scoreAway,state.scoreHome,state.livePeriod,
-  state.liveClock,box?.players]);
+  state.liveClock,box?.players,tab==='resumo'?leadSignature:null]);
 }
 function updateSourceNoticeOnly(){
  const notice=root.querySelector('.game-sync-inline');
@@ -717,7 +730,10 @@ root.addEventListener('keydown',e=>{
    e.target.dataset.playerTeam||e.target.dataset.lineupTeam);
  }
 });
-root.addEventListener('input',e=>{if(e.target.id==='gameRating')$('#gameRatingValue').textContent=e.target.value;});
+root.addEventListener('input',e=>{
+ if(e.target.id==='gameRating')$('#gameRatingValue').textContent=e.target.value;
+ if(e.target.matches('.dlq-lead-slider'))selectLeadPoint(e.target,leadPoints,game);
+});
 root.addEventListener('change',e=>{
  if(e.target.id==='boxscoreSort'&&statFields.some(f=>f.key===e.target.value)){
   statsSort=e.target.value;statsAsc=false;draw();
@@ -777,6 +793,11 @@ async function load(){
   else {
    statsMessage='Estatísticas finais carregadas do cache atualizado pelo GitHub.';
    draw();
+   // O cache final tem o box score, mas o gráfico precisa do histórico de lances.
+   fetchGameSummary(game).then(payload=>{
+    readLead(payload);
+    if(tab==='resumo'&&leadPoints.length)draw();
+   }).catch(e=>console.info('QUADRA: histórico de lances indisponível',e));
   }
  }catch(e){
   console.error('QUADRA: falha ao abrir jogo',e);
