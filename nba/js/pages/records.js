@@ -2,7 +2,7 @@
 import {$,setupShared,asset,esc,logo,playerLink,gameLink,loadGames} from '../app.js?v=14';
 import {GAME_RECORD_METRICS,gamePerformances,topSingleGames} from '../season-stats.mjs?v=20261103-records-v1';
 import {fetchLiveBoxscore} from '../boxscore.js?v=2';
-import {performanceRating} from '../performance-rating.js?v=2';
+import {performanceRating} from '../performance-rating.js?v=3';
 setupShared('records','Recordes da Temporada','Maiores atuações individuais em um único jogo da NBA 2026/27.');
 const root=$('#pageContent'),params=new URLSearchParams(location.search);
 let phase=params.get('fase')==='preseason'?'preseason':'regular';

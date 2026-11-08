@@ -3,7 +3,7 @@
  */
 import {modal,closeModal,toast} from './app.js?v=14';
 import {COMPARISON_FIELDS,normalizeComparisonFields} from './comparison-fields.js?v=20261024-comparison-options-v1';
-import {performanceRating,ratingLabel} from './performance-rating.js?v=2';
+import {performanceRating,ratingLabel} from './performance-rating.js?v=3';
 const COLOR={base:'#0c1421',panel:'#1f3046',line:'#3c526c',orange:'#ff9d4d',white:'#f5f7fd',muted:'#afbed3'};
 export const PLAYER_CARD_FORMATS=Object.freeze({
  landscape:{width:1200,height:630,label:'Horizontal • 1200 × 630'},

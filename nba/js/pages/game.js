@@ -1,9 +1,9 @@
 import {loadInjuries,injuryFor,injuryBadgeHTML,injuryReturnText} from '../injuries.js?v=20261108-game-bell-v1';
 import {$,setupShared,qs,esc,name,logo,tlogo,effectiveGame,path,teamLink,playerLink,loadGames,MONTHS,fetchBox,note,getData,setNote,setExtraGroup,platform,broadcastLinks,shortDate,currentDate,toast,modal,closeModal,eventBox,fetchRoster,livePeriodLabel} from '../app.js?v=14';
 import {fetchGameSummary,projectStartingFive,normalizeSummary} from '../boxscore.js?v=3';
-import {openPlayerCardComposer} from '../share-card.js?v=20261108-game-bell-v1';
-import {mountPlayerActions,openPlayerComparison} from '../player-actions.js?v=20261108-game-bell-v1';
-import {performanceRating,ratingLabel,topPerformance,RATING_EXPLANATION} from '../performance-rating.js?v=2';
+import {openPlayerCardComposer} from '../share-card.js?v=20261108-rating-v3';
+import {mountPlayerActions,openPlayerComparison} from '../player-actions.js?v=20261108-rating-v3';
+import {performanceRating,ratingLabel,topPerformance,RATING_EXPLANATION} from '../performance-rating.js?v=3';
 import {normalizeCourtPlays} from '../court-live.js?v=20261024-compare-v2';
 import {leadTimeline,renderLeadChart,selectLeadPoint} from '../lead-chart.mjs?v=1';
 const id=qs('id')||'',hint=qs('data')||'',root=$('#pageContent');

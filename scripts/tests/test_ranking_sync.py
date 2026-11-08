@@ -67,8 +67,15 @@ class RankingSync(unittest.TestCase):
         self.assertEqual(leaders['countedGameIds']['regular'], ['old'])
         self.assertEqual(leaders['lastGameDate'], '2026-10-21')
         self.assertTrue(all(p['gp'] == 1 for p in leaders['regular']))
+        self.assertTrue(all(p['ratingSum'] == 7.7 for p in leaders['regular']))
         self.assertEqual(len(rounds['regular']), 10)
         self.assertTrue(all(r[2] == 'old' for r in rounds['regular']))
+
+    def test_rating_top_end_requires_exceptional_box_score(self):
+        great = dict(player('one', 42), reb=7, ast=13, stl=2, blk=1, to=2, fg='14-24', plusMinus='+16')
+        exceptional = dict(player('two', 52), reb=24, ast=2, stl=2, blk=8, to=1, fg='16-28', plusMinus='+23')
+        self.assertEqual(sync._dlq_rating(great), 9.9)
+        self.assertEqual(sync._dlq_rating(exceptional), 10.0)
 
     def test_retries_older_partial_box_and_accepts_only_final_summary(self):
         ev = event('old', '2026-10-20')

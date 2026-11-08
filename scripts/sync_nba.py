@@ -534,7 +534,12 @@ def _dlq_rating(player):
              max(-.25, min(.25, plus * .015)))
     if mins < 8:
         value -= .35
-    return int(max(1, min(10, value)) * 10 + .5) / 10
+    elite_start, perfect_score = 8, 13
+    if value >= perfect_score:
+        return 10.0
+    if value > elite_start:
+        value = elite_start + (value - elite_start) * (10 - elite_start) / (perfect_score - elite_start)
+    return int(max(1, min(9.9, value)) * 10 + .5) / 10
 
 
 def sync_player_leaders():
