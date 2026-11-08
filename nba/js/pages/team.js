@@ -1,4 +1,4 @@
-import {alertButton} from '../alerts.js?v=20261108-game-bell-v1';
+import {alertButton} from '../alerts.js?v=20261108-phone-push-v1';
 import {FRANCHISE_PLAYERS,isFranchise} from '../../data/franchises.js?v=20261024-franchise-v1';
 import {trackedTeams,teamFollowChange} from '../team-follows.mjs?v=20261103-home-v1';
 import {loadInjuries,injuryFor,injuryBadgeHTML,injuryReason,injuryReturnText} from '../injuries.js?v=20261108-game-bell-v1';

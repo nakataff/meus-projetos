@@ -4,10 +4,9 @@ O GitHub Pages entrega a interface. O Worker consulta a ESPN uma vez por minuto 
 
 ## Ativar o envio
 
-1. Nesta pasta, execute `npm ci` e `npx wrangler login` usando a conta Cloudflare que hospedará o serviço.
-2. Gere um par VAPID com `npx web-push generate-vapid-keys`. Guarde a chave privada fora do repositório. Publique o Worker com `npx wrangler deploy`.
-3. Configure `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` e `VAPID_SUBJECT` com `npx wrangler secret put NOME`. Use um contato válido em `VAPID_SUBJECT`, no formato `mailto:`. Preserve o par VAPID nos próximos deploys.
-4. Coloque a URL HTTPS do Worker em `nba/js/alerts-config.mjs`, incremente a versão da importação desse arquivo em `nba/js/alerts.js` e publique o site. O botão **Ativar avisos com o site fechado** aparecerá no sino.
-5. Teste com uma partida acompanhada ao vivo e confirme a entrega com o site fechado. No iPhone e iPad, adicione o site à Tela de Início, abra pelo ícone e ative pelo sino.
+1. Ative o subdomínio workers.dev na conta Cloudflare. Cadastre o ID da conta e um token restrito à edição de Workers nos secrets do GitHub, como `CLOUDFLARE_ACCOUNT_ID` e `CLOUDFLARE_API_TOKEN`.
+2. Na aba Actions do repositório, execute **Publicar notificações do De La Quadra** na branch main. O fluxo gera as chaves VAPID no primeiro deploy, preserva as chaves existentes e verifica a resposta do Worker.
+3. Copie a URL HTTPS mostrada no resumo da execução para `nba/js/alerts-config.mjs`, atualize a versão da importação desse arquivo em `nba/js/alerts.js` e publique o site. O botão **Ativar avisos no celular** aparecerá no sino.
+4. No iPhone ou iPad, abra pelo ícone da Tela de Início, toque no sino, ative os avisos e use **Enviar aviso de teste**. Acompanhe uma partida para confirmar que os eventos também chegam com o app fechado.
 
 O cron usa os registros de jogo publicados pela ESPN. Cada jogo usa o mesmo identificador para alertas por time, jogador e transmissão, inclusive quando o usuário segue mais de uma dessas opções. O serviço só envia avisos recentes, em lotes de até 24 por minuto, e elimina assinaturas que o provedor informa como expiradas. A agenda do site agrupa ESPN e Disney+ e inclui o Prime Video quando informado.

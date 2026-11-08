@@ -12,6 +12,7 @@ self.addEventListener('push', event => {
    body:alert.body, tag:'dlq-'+alert.id, data:{link:destination(alert.link)},
    icon:new URL('assets/dlq.webp',root).href
   });
+  if (alert.id==='test') return;
   const clients = await self.clients.matchAll({type:'window'});
   for (const client of clients) client.postMessage({type:'quadra-alert',alert});
  })());

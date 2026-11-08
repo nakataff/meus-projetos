@@ -2,6 +2,8 @@ name = "de-la-quadra-alertas"
 main = "worker.mjs"
 compatibility_date = "2026-11-08"
 compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+preview_urls = false
 
 [vars]
 SITE_URL = "https://nakataff.github.io/meus-projetos/nba/"

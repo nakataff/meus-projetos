@@ -1,4 +1,4 @@
-import {alertButton} from '../alerts.js?v=20261108-game-bell-v1';
+import {alertButton} from '../alerts.js?v=20261108-phone-push-v1';
 import {FRANCHISE_PLAYERS,isFranchise} from '../../data/franchises.js?v=20261024-franchise-v1';
 /* Perfil de atleta QUADRA — temporada, jogos, ficha compartilhável. */
 import {$,setupShared,qs,TEAMS,name,logo,esc,fetchRoster,fetchBox,fetchMonth,MONTHS,

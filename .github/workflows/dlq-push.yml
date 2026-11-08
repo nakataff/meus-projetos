@@ -1,0 +1,64 @@
+name: Publicar notificações do De La Quadra
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dlq-push-deploy
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: scripts/dlq-push
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci
+      - name: Publicar e verificar o serviço
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          SITE_ORIGIN: https://nakataff.github.io
+          SITE_URL: https://nakataff.github.io/meus-projetos/nba/
+        run: |
+          set -euo pipefail
+          if [[ -z "$CLOUDFLARE_ACCOUNT_ID" || -z "$CLOUDFLARE_API_TOKEN" ]]; then
+            echo "::error::Configure CLOUDFLARE_ACCOUNT_ID e CLOUDFLARE_API_TOKEN nos secrets deste repositório."
+            exit 1
+          fi
+          wrangler=(npx --yes wrangler@4.158.0)
+          deploy_log=$(mktemp)
+          secret_file=$(mktemp)
+          trap 'rm -f "$deploy_log" "$secret_file"' EXIT
+          "${wrangler[@]}" deploy | tee "$deploy_log"
+          worker_url=$(grep -oE 'https://de-la-quadra-alertas\.[a-z0-9-]+\.workers\.dev' "$deploy_log" | sort -u || true)
+          if [[ ! "$worker_url" =~ ^https://de-la-quadra-alertas\.[a-z0-9-]+\.workers\.dev$ ]]; then
+            echo "::error::Habilite o subdomínio workers.dev na sua conta Cloudflare."
+            exit 1
+          fi
+          "${wrangler[@]}" secret list --format json > "$secret_file"
+          count=$(jq '[.[] | select(.name == "VAPID_PUBLIC_KEY" or .name == "VAPID_PRIVATE_KEY" or .name == "VAPID_SUBJECT")] | length' "$secret_file")
+          case "$count" in
+            0)
+              node -e 'const keys = require("web-push").generateVAPIDKeys(); process.stdout.write(JSON.stringify({VAPID_PUBLIC_KEY:keys.publicKey,VAPID_PRIVATE_KEY:keys.privateKey,VAPID_SUBJECT:process.env.SITE_URL}));' > "$secret_file"
+              "${wrangler[@]}" secret bulk "$secret_file"
+              ;;
+            3) ;;
+            *)
+              echo "::error::Configuração VAPID incompleta no Worker. Restaure as chaves existentes antes de publicar."
+              exit 1
+              ;;
+          esac
+          curl -fsS --retry 5 --retry-all-errors --max-time 10 -H "Origin: $SITE_ORIGIN" "$worker_url/key" |
+            jq -e '.publicKey | test("^[A-Za-z0-9_-]{87}$")' > /dev/null
+          printf '### Serviço Web Push publicado\n\n%s\n' "$worker_url" >> "$GITHUB_STEP_SUMMARY"

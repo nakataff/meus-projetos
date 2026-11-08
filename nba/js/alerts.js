@@ -5,6 +5,7 @@ import {PUSH_API} from './alerts-config.mjs?v=1';
 
 const INBOX_KEY = 'quadra_alert_inbox_v1';
 const DEVICE_KEY = 'quadra_push_device_v1';
+const PENDING_DEVICE_KEY = 'quadra_push_pending_v1';
 const CHECK_MS = 30000;
 const RULE_LABELS = {tv:'Transmissões no Brasil'};
 const broadcasts = parseTV();
@@ -102,7 +103,7 @@ function alertDialog(content) {
 function saveRules(next) {
  if (!write(ALERT_RULES_KEY, next)) return false;
  refreshGameBells(next);
- if (device()) syncDevice(next).catch(()=>toast('Preferências salvas aqui. Abra Notificações para tentar sincronizar o push.'));
+ if (device() && PUSH_API) syncDevice(next).catch(()=>toast('Preferências salvas aqui. Abra Notificações para tentar sincronizar o push.'));
  completed.clear();
  lastPoll=0;
  checkAlerts();
@@ -113,7 +114,8 @@ function openRule(target, gameButton) {
  const existing = rules().find(rule=>sameRule(rule,target));
  const defaults = target.kind === 'tv' ? Object.keys(TV_LABELS) : ['start','final'];
  const selected = existing?.events || defaults;
- const hint = gameButton && !device() ? 'Os avisos aparecem enquanto o De La Quadra estiver aberto em primeiro plano.' :
+ const hint = PUSH_API && !device() ?
+  'Salve suas preferências e ative os avisos no celular pelo sino no topo.' :
   'Escolha os avisos que quer receber neste dispositivo.';
  const leaveRule = () => {
   if (!gameButton) return openInbox();
@@ -155,9 +157,11 @@ function openInbox() {
  alertDialog('<h2>Notificações</h2><p class="small subtle">Use o sino da partida ou o botão no perfil de um time ou jogador. Os avisos por canal de TV ficam aqui.</p>' +
   '<div class="controls dlq-alert-controls"><button class="btn accent" id="dlqAlertTv" type="button">' +
   (tv?'Editar canais de TV':'Configurar alertas de TV')+'</button>' +
-  (PUSH_API?'<button class="btn ghost" id="dlqAlertPush" type="button">'+(device()?'Desativar avisos com o site fechado':'Ativar avisos com o site fechado')+'</button>':'')+
-  '</div><p class="small subtle" id="dlqPushStatus">'+
-  (device()?'Avisos com o site fechado ativados neste dispositivo.':'Os avisos aparecem enquanto o De La Quadra estiver aberto em primeiro plano.')+'</p>'+
+  (PUSH_API?'<button class="btn ghost" id="dlqAlertPush" type="button">'+(device()?'Desativar avisos no celular':'Ativar avisos no celular')+'</button>':'')+
+  (PUSH_API&&device()?'<button class="btn ghost" id="dlqAlertTest" type="button">Enviar aviso de teste</button>':'')+
+  '</div><p class="small subtle" id="dlqPushStatus" role="status">'+
+  (PUSH_API?(device()?'Avisos ativados neste dispositivo, inclusive com o app fechado.':'Ative os avisos para receber notificações com o app fechado.') :
+   'O envio ao celular aguarda a ativação do serviço. Por enquanto, os avisos aparecem com o app aberto.')+'</p>'+
   '<h3>Meus alertas</h3><div class="dlq-alert-list">'+(prefs.length?prefs.map((rule,index)=>
    '<button class="dlq-alert-item" type="button" data-alert-index="'+index+'"><strong>'+esc(ruleLabel(rule))+
    '</strong><small>'+esc(rule.events.map(event=>labels(rule)[event]).join(' · '))+'</small></button>').join(''):
@@ -172,13 +176,20 @@ function openInbox() {
   button.onclick=()=>openRule(prefs[Number(button.dataset.alertIndex)]);
  });
  const pushButton = document.getElementById('dlqAlertPush');
- if (pushButton) pushButton.onclick = ()=>changePush(pushButton);
+ if (pushButton) {
+  const status = document.getElementById('dlqPushStatus');
+  if (device()) {
+   pushButton.onclick = ()=>changePush(pushButton,status);
+   document.getElementById('dlqAlertTest').onclick = event=>testPush(event.currentTarget,status);
+   syncDevice(prefs).catch(()=>{status.textContent='Não foi possível sincronizar os alertas. Reabra este menu para tentar de novo.';});
+  } else preparePush(pushButton,status);
+ }
  document.querySelector('#modalRoot [data-close]')?.focus();
 }
 
 async function api(route, init) {
  const result = await fetch(PUSH_API.replace(/\/$/,'') + '/' + route, init);
- if (!result.ok) throw Error('HTTP ' + result.status);
+ if (!result.ok) throw Object.assign(Error('HTTP ' + result.status),{status:result.status});
  return result.status === 204 ? null : result.json();
 }
 function deviceRequest(method, token, body) {
@@ -191,8 +202,34 @@ function syncDevice(next) {
  syncQueue = request;
  return request;
 }
-async function changePush(button) {
- const status = document.getElementById('dlqPushStatus');
+let pushSetup;
+async function preparePush(button,status) {
+ if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+  button.disabled = true;
+  status.textContent = /iPhone|iPad|iPod/i.test(navigator.userAgent) ?
+   'Abra o De La Quadra pelo ícone na Tela de Início para ativar os avisos.' :
+   'Este navegador não oferece avisos com o app fechado.';
+  return;
+ }
+ button.disabled = true;
+ status.textContent = 'Preparando os avisos no celular…';
+ try {
+  pushSetup ||= Promise.all([
+   api('key'),
+   navigator.serviceWorker.register(path('sw.js'),{scope:path('')}).then(registration=>
+    registration.active ? registration : navigator.serviceWorker.ready)
+  ]);
+  const [{publicKey},registration] = await pushSetup;
+  button.onclick = ()=>changePush(button,status,{publicKey,registration});
+  status.textContent = 'Ative os avisos para receber notificações com o app fechado.';
+ } catch (error) {
+  pushSetup = null;
+  button.onclick = ()=>preparePush(button,status);
+  status.textContent = 'Serviço indisponível. Toque no botão para tentar de novo.';
+ } finally {button.disabled=false;}
+}
+
+async function changePush(button,status,setup) {
  button.disabled = true;
  try {
   if (device()) {
@@ -204,29 +241,36 @@ async function changePush(button) {
    await subscription?.unsubscribe().catch(()=>{});
    write(DEVICE_KEY,'');
   } else {
-   if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
-    status.textContent = /iPhone|iPad|iPod/i.test(navigator.userAgent) ?
-     'No iPhone ou iPad, adicione o De La Quadra à Tela de Início e abra pelo ícone para ativar.' :
-     'Este navegador não oferece avisos com o site fechado.';
-    return;
-   }
-   if (await Notification.requestPermission() !== 'granted') {
-    status.textContent = 'Autorize as notificações nas configurações do navegador e tente novamente.';
-    return;
-   }
-   const {publicKey} = await api('key');
-   const registration = await navigator.serviceWorker.register(path('sw.js'),{scope:path('')});
-   const active = registration.active ? registration : await navigator.serviceWorker.ready;
-   const existing = await active.pushManager.getSubscription();
-   const subscription = existing || await active.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:publicKey});
-   const token = Array.from(crypto.getRandomValues(new Uint8Array(32)),byte=>byte.toString(16).padStart(2,'0')).join('');
+   // A inscrição começa dentro do clique para preservar a permissão no iOS.
+   const {registration,publicKey} = setup;
+   const subscription = await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:publicKey});
+   const token = read(PENDING_DEVICE_KEY,'') ||
+    Array.from(crypto.getRandomValues(new Uint8Array(32)),byte=>byte.toString(16).padStart(2,'0')).join('');
+   if (!write(PENDING_DEVICE_KEY,token)) return;
    await api('device',deviceRequest('PUT',token,{subscription:subscription.toJSON(),rules:rules()}));
-   if (!write(DEVICE_KEY,token)) await api('device',deviceRequest('DELETE',token));
+   if (!write(DEVICE_KEY,token)) {
+    await api('device',deviceRequest('DELETE',token));
+    return;
+   }
+   write(PENDING_DEVICE_KEY,'');
   }
   if (button.isConnected) openInbox();
  } catch (error) {
   console.info('QUADRA: push indisponível',error);
-  status.textContent = 'Não foi possível configurar o envio. Tente novamente em instantes.';
+  status.textContent = globalThis.Notification?.permission==='denied' ?
+   'Autorize as notificações do De La Quadra nos Ajustes do dispositivo e tente de novo.' :
+   'Não foi possível configurar o envio. Tente novamente em instantes.';
+ } finally {button.disabled=false;}
+}
+
+async function testPush(button,status) {
+ button.disabled = true;
+ try {
+  await api('test',deviceRequest('POST',device()));
+  status.textContent = 'Teste enviado. Confira a Central de Notificações do celular.';
+ } catch (error) {
+  status.textContent = error.status===429 ? 'Aguarde um minuto para enviar outro teste.' :
+   'Não foi possível enviar o teste. Tente novamente em instantes.';
  } finally {button.disabled=false;}
 }
 

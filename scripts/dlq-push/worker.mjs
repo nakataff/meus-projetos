@@ -36,20 +36,24 @@ export default {
   if (request.headers.get('Origin') !== origin) return new Response(null,{status:403});
   const cors = {'Access-Control-Allow-Origin':origin,'Vary':'Origin','Cache-Control':'no-store'};
   if (request.method==='OPTIONS') return new Response(null,{status:204,headers:{
-   ...cors,'Access-Control-Allow-Methods':'GET, PUT, DELETE, OPTIONS',
+   ...cors,'Access-Control-Allow-Methods':'GET, PUT, POST, DELETE, OPTIONS',
    'Access-Control-Allow-Headers':'Authorization, Content-Type','Access-Control-Max-Age':'600'
   }});
   const {pathname}=new URL(request.url);
   let result;
   if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY || !env.VAPID_SUBJECT) result=json({error:'push_unavailable'},503);
   else if (pathname==='/key' && request.method==='GET') result=json({publicKey:env.VAPID_PUBLIC_KEY});
-  else if (pathname==='/device' && ['PUT','DELETE'].includes(request.method)) {
+  else if ((pathname==='/device' && ['PUT','DELETE'].includes(request.method)) ||
+           (pathname==='/test' && request.method==='POST')) {
    const token=/^Bearer ([0-9a-f]{64})$/.exec(request.headers.get('Authorization')||'')?.[1];
    if (!token) result=json({error:'invalid_token'},401);
    else {
     const id=await digest(token);
     const store=getStore(env);
-    if (request.method==='DELETE') {
+    if (pathname==='/test') {
+     const status=await store.test(id);
+     result=status===204?new Response(null,{status}):json({error:'test_unavailable'},status);
+    } else if (request.method==='DELETE') {
      await store.remove(id);
      result=new Response(null,{status:204});
     } else {
@@ -156,6 +160,24 @@ export class AlertStore extends DurableObject {
   else if (response.status===404 || response.status===410) this.remove(device.id);
   else if (response.status===400 || response.status===413) this.sql.exec('INSERT OR IGNORE INTO deliveries VALUES (?, ?, ?)',device.id,alert.id,Date.now());
   else console.warn('Falha no provedor Web Push',response.status);
+  return response.ok;
+ }
+ async test(id) {
+  const device=this.sql.exec('SELECT id,subscription FROM devices WHERE id = ?',id).toArray()[0];
+  if (!device) return 404;
+  const at=Date.now();
+  const accepted=this.sql.exec(
+   'INSERT INTO deliveries VALUES (?, ?, ?) ON CONFLICT(device,event) DO UPDATE SET at = excluded.at WHERE deliveries.at <= ? RETURNING at',
+   id,'test',at,at-60000
+  ).toArray().length;
+  if (!accepted) return 429;
+  try {
+   const alert={id:'test',at,title:'De La Quadra',body:'As notificações estão funcionando neste dispositivo.',link:'jogos/'};
+   return await this.send(device,alert)?204:502;
+  } catch (error) {
+   console.warn('Falha no teste de Web Push',error.message);
+   return 502;
+  }
  }
  async poll() {
   if (this.polling) return;
