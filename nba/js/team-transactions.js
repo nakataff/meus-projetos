@@ -51,6 +51,16 @@ function movementGroup(title, key, rows, roster, code, empty) {
        : sortMoves(rows).map(x => moveCard(x,roster,code,key))).join('') + '</div>'
     : '<p class="dlq-move-empty">' + empty + '</p>') + '</section>';
 }
+export function rosterMovementLabel(player, data) {
+  if (!data || !player) return '';
+  const matches = item => (item.id && String(item.id) === String(player.id)) || clean(item.name) === clean(player.name);
+  const drafted = (data.draft || []).find(matches);
+  if (drafted) return 'Draft 2026 • #' + drafted.pick;
+  const incoming = (data.arrivals || []).find(matches);
+  if (!incoming) return '';
+  const origin = incoming.from ? teamText(incoming.from) : (incoming.fromLabel || '');
+  return origin ? 'Última equipe: ' + origin : incoming.kind || 'Contratação';
+}
 export function transactionsPreview(data, roster, code) {
   if (!data) return '';
   const recent = sortMoves(data.arrivals || []).slice(0,3);
