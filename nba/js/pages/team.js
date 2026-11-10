@@ -1,4 +1,5 @@
 import {alertButton} from '../alerts.js?v=20261108-phone-push-v1';
+import {transactionsPreview,transactionsPanel,filterTransactions} from '../team-transactions.js?v=20261110-moves-v1';
 import {FRANCHISE_PLAYERS,isFranchise} from '../../data/franchises.js?v=20261024-franchise-v1';
 import {trackedTeams,teamFollowChange} from '../team-follows.mjs?v=20261103-home-v1';
 import {loadInjuries,injuryFor,injuryBadgeHTML,injuryReason,injuryReturnText} from '../injuries.js?v=20261108-game-bell-v1';
@@ -9,11 +10,11 @@ import {$,setupShared,TEAMS,EAST,WEST,name,logo,esc,qs,fetchRoster,loadGames,MON
 
 const code=(qs('id')||'BOS').toUpperCase(),root=$('#pageContent'),valid=!!TEAMS[code];
 setupShared('teams',valid?name(code):'Equipe não encontrada',
- 'Campanha, estatísticas coletivas e individuais, elenco, resultados recentes e próximos jogos.');
+ 'Campanha, movimentações, Draft, estatísticas, elenco, resultados e próximos jogos.');
 const groups={...EAST,...WEST};
 const division=Object.keys(groups).find(d=>groups[d].includes(code))||'';
 const conf=Object.values(EAST).some(list=>list.includes(code))?'Leste':'Oeste';
-let roster=[],teamStats=null,standings=null,games=[],active='resumo',injuryReport=null,
+let roster=[],teamStats=null,standings=null,games=[],active='resumo',injuryReport=null,transactions=null,transactionsReady=false,
  phase='regular',sortBy='pts',sortAsc=false,statError='',rosterReady=false,gamesLoaded=false,gamesError=false,gamesPromise=null,recentLimit=10;
 
 const n=x=>Number.isFinite(Number(x))?Number(x):0;
@@ -147,7 +148,7 @@ function overview(){
   '<p class="team-stats-footnote">Pontos, campanha e saldo: jogos finalizados nesta fase. Rebotes, assistências e aproveitamento de arremessos: apenas '+section().boxGames+
   ' jogos com box score importado. Dados sujeitos à disponibilidade da fonte.</p></section>'+
   leaderSummary():'')+
- recentResults()+
+ transactionsPreview(transactions,roster,code)+recentResults()+
  '<section class="section"><div class="section-title"><h2>Quinteto mais recente</h2>'+
  '<button type="button" class="btn ghost" data-tab="titulares">Ver escalações →</button></div>'+recentLineup()+'</section>'+
  '<section class="team-quick-links"><button type="button" class="btn" data-tab="estatisticas">Ranking dos jogadores →</button>'+
@@ -226,7 +227,7 @@ function ratingForm(player){
 function tabs(){
  return '<nav class="tabs team-tabs">'+[
   ['resumo','Resumo'],['estatisticas','Estatísticas'],['elenco','Elenco'],
-  ['titulares','Titulares'],['jogos','Jogos'],['notas','Minhas notas']
+  ['movimentacoes','Movimentações'],['titulares','Titulares'],['jogos','Jogos'],['notas','Minhas notas']
  ].map(([key,label])=>'<button class="tab '+(active===key?'active':'')+
  '" data-tab="'+key+'">'+label+'</button>').join('')+'</nav>';
 }
@@ -252,6 +253,8 @@ function draw(){
   '<span class="small subtle">Clique em um jogador para abrir seu perfil</span></div>'+
   (roster.length?'<div class="card team-roster-list">'+roster.map(playerRow).join('')+'</div>':
   '<div class="filler">'+(rosterReady?'Elenco indisponível nesta fonte.':'Carregando elenco…')+'</div>')+'</section>';
+ }else if(active==='movimentacoes'){
+  content+=transactionsPanel(transactions,roster,code,transactionsReady);
  }else if(active==='titulares'){
   const line=getData().extras.lineups?.[code]||[];
   content+=phaseControl()+'<section class="section"><h2>Último quinteto identificado</h2>'+recentLineup()+'</section>'+
@@ -293,7 +296,9 @@ root.addEventListener('click',e=>{
  if(e.target.closest('[data-more-results]')){recentLimit+=10;draw();return;}
  const tab=e.target.closest('[data-tab]');
  if(tab){active=tab.dataset.tab;draw();if(active==='jogos'&&!gamesLoaded)loadExtras();return;}
- const changePhase=e.target.closest('[data-phase]');
+ const movementFilter=e.target.closest('[data-move-filter]');
+  if(movementFilter){filterTransactions(root,movementFilter.dataset.moveFilter);return;}
+  const changePhase=e.target.closest('[data-phase]');
  if(changePhase){phase=changePhase.dataset.phase;draw();return;}
  if(e.target.closest('#teamSortDirection')){sortAsc=!sortAsc;draw();return;}
  const sort=e.target.closest('[data-team-stat]');
@@ -312,11 +317,14 @@ if(valid){
  Promise.allSettled([
   jsonFile('data/team-stats/'+code+'.json'),
   jsonFile('data/standings/2026-27.json'),
-  fetchRoster(code)
+  fetchRoster(code),
+   jsonFile('data/transactions/2026-27.json')
  ]).then(results=>{
   if(results[0].status==='fulfilled')teamStats=results[0].value;else statError=String(results[0].reason);
   standings=results[1].status==='fulfilled'?results[1].value:null;
   roster=results[2].status==='fulfilled'?results[2].value:[];
+   transactions=results[3].status==='fulfilled'?results[3].value?.teams?.[code]||null:null;
+   transactionsReady=true;
   rosterReady=true;draw();loadExtras();
  });
 }else draw();
