@@ -19,9 +19,12 @@ function moveCard(item, roster, code, direction) {
   const href = player && direction === 'arrivals' ? playerLink(player.id, code) : '';
   const label = item.kind || (direction === 'departures' ? 'Saída' : 'Contratação');
   const counterpart = direction === 'departures' ? item.to : item.from;
-  const heading = direction === 'departures' ? 'Destino' : 'Veio de';
+  const heading = direction === 'departures' ? 'Destino' : (item.kind === 'Agente livre' || item.fromBasis ? 'Última equipe' : 'Veio de');
+  const external = direction === 'departures' ? item.toLabel : item.fromLabel;
   const detail = counterpart
     ? '<span class="dlq-move-origin">' + esc(heading) + ': <img src="' + esc(logo(counterpart)) + '" width="20" height="20" loading="lazy" alt=""> <strong>' + esc(teamText(counterpart)) + '</strong></span>'
+    : external
+    ? '<span class="dlq-move-origin">' + esc(heading) + ': <strong>' + esc(external) + '</strong></span>'
     : '<span class="dlq-move-origin">' + (direction === 'arrivals' ? 'Equipe anterior não confirmada' : 'Destino não confirmado') + '</span>';
   const title = href ? '<a href="' + esc(href) + '">' + esc(item.name) + '</a>' : '<strong>' + esc(item.name) + '</strong>';
   return '<article class="dlq-move-card">' + rosterPhoto(player, code) +
