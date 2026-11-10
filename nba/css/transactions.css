@@ -1,0 +1,30 @@
+/* Mercado da NBA — leve, responsivo e alinhado aos cartões do DE LA QUADRA. */
+.dlq-move-preview-grid,.dlq-move-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.dlq-move-preview-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.dlq-transactions .section-title{align-items:start}
+.dlq-move-card{display:flex;gap:12px;align-items:center;background:var(--card,#111b2a);border:1px solid var(--border,rgba(255,255,255,.1));border-radius:15px;padding:14px;min-width:0}
+.dlq-move-photo{width:53px;height:53px;flex:0 0 53px;border-radius:12px;object-fit:contain;background:rgba(255,255,255,.04)}
+.dlq-move-body{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1}
+.dlq-move-top{display:flex;align-items:center;gap:8px;justify-content:space-between;min-width:0}
+.dlq-move-kind{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;border-radius:7px;padding:4px 7px;color:#b8d8ff;background:rgba(73,131,202,.15)}
+.dlq-move-kind.is-draft{color:#f6cb72;background:rgba(228,168,39,.13)}
+.dlq-move-top time{font-size:11px;color:var(--muted,#9caabd)}
+.dlq-move-name{font-size:14px;font-weight:800;overflow-wrap:anywhere;line-height:1.25}
+.dlq-move-name a{color:inherit;text-decoration:none}.dlq-move-name a:hover{text-decoration:underline}
+.dlq-move-origin{display:flex;flex-wrap:wrap;align-items:center;gap:5px;font-size:12px;color:var(--muted,#a5b4c5)}
+.dlq-move-origin strong{font-weight:650;color:inherit}
+.dlq-move-origin img{width:20px;height:20px;object-fit:contain}
+.dlq-move-group{margin-top:22px}.dlq-move-group .section-title{margin-bottom:11px}
+.dlq-move-count{display:inline-flex;align-items:center;justify-content:center;font-size:12px;vertical-align:middle;background:rgba(255,255,255,.08);border-radius:999px;padding:3px 8px;margin-left:5px;color:var(--muted,#a8b5c8)}
+.dlq-draft-pick{display:flex;flex:0 0 62px;min-height:53px;flex-direction:column;justify-content:center;align-items:center;border:1px solid rgba(230,181,75,.24);background:rgba(230,181,75,.08);color:#f1ce85;border-radius:11px;font-weight:900;font-size:23px}
+.dlq-draft-pick small{font-weight:700;letter-spacing:.04em;font-size:9px}
+.dlq-move-totals{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0}
+.dlq-move-totals span{display:flex;align-items:baseline;gap:6px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:9px 12px;font-size:12px;color:var(--muted,#9eb1c7)}
+.dlq-move-totals strong{font-size:19px;color:var(--text,#fff)}
+.dlq-move-filters{display:flex;gap:7px;flex-wrap:wrap;margin:15px 0 22px}
+.dlq-move-empty{border:1px dashed rgba(255,255,255,.15);border-radius:12px;padding:14px;color:var(--muted,#a3b0c5)}
+.dlq-move-note{margin-top:26px;line-height:1.65}
+.dlq-move-note a{color:inherit;text-decoration:underline}
+[data-move-section][hidden]{display:none!important}
+@media(max-width:850px){.dlq-move-preview-grid{grid-template-columns:1fr}.dlq-move-list{grid-template-columns:1fr}}
+@media(max-width:480px){.dlq-move-card{padding:11px;gap:10px}.dlq-move-photo{height:46px;width:46px;flex-basis:46px}.dlq-move-name{font-size:13px}.dlq-draft-pick{flex-basis:55px;min-height:49px}.dlq-move-totals span{padding:8px 10px}}
