@@ -1,5 +1,5 @@
 import {alertButton} from '../alerts.js?v=20261108-phone-push-v1';
-import {transactionsPreview,transactionsPanel,filterTransactions} from '../team-transactions.js?v=20261110-moves-v1';
+import {transactionsPreview,transactionsPanel,filterTransactions,rosterMovementLabel} from '../team-transactions.js?v=20261110-moves-v2';
 import {FRANCHISE_PLAYERS,isFranchise} from '../../data/franchises.js?v=20261024-franchise-v1';
 import {trackedTeams,teamFollowChange} from '../team-follows.mjs?v=20261103-home-v1';
 import {loadInjuries,injuryFor,injuryBadgeHTML,injuryReason,injuryReturnText} from '../injuries.js?v=20261108-game-bell-v1';
@@ -191,9 +191,11 @@ function playerRow(p){
  const saved=getData().extras,star=isFranchise(code,p.id),
  own=(saved.lineups?.[code]||[]).includes(String(p.id));
  const recent=Boolean(section()?.lastLineup?.players?.some(x=>String(x.id)===String(p.id)));
+ const movement=rosterMovementLabel(p,transactions);
  const badges=(star?'<span class="tag accent">★ Franchise</span>':'')+
   (own?'<span class="tag">Meu quinteto</span>':'')+
-  (recent?'<span class="tag finished">Último titular</span>':'');
+  (recent?'<span class="tag finished">Último titular</span>':'')+
+  (movement?'<span class="tag">'+esc(movement)+'</span>':'');
  return '<article class="player-row"><a href="'+playerLink(p.id,code)+'">'+playerImage(p)+'</a>'+
   '<div class="pname"><div class="dlq-player-name"><b><a href="'+playerLink(p.id,code)+'">'+esc(p.name)+'</a></b>'+injuryBadgeHTML(injuryFor(injuryReport,p.id,code),true)+'</div>'+
   '<small>#'+esc(p.number||'—')+' • '+esc(p.position||'—')+' '+badges+'</small></div>'+
