@@ -5,6 +5,8 @@ on:
     paths:
       - 'scripts/sync_nba.py'
       - 'scripts/nba_injuries.py'
+      - 'scripts/nba_transactions.py'
+      - 'scripts/tests/test_nba_transactions.py'
       - 'scripts/tests/test_nba_injuries.py'
       - '.github/workflows/nba-sync.yml'
   schedule:
