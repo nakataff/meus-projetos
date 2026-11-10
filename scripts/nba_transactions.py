@@ -86,12 +86,15 @@ def append_unique(entries, item):
     for current in entries:
         if player_key(current.get("name")) != key:
             continue
-        if current.get("from", "") != item.get("from", "") or current.get("to", "") != item.get("to", ""):
+        old_from, old_to = current.get("from") or "", current.get("to") or ""
+        new_from, new_to = item.get("from") or "", item.get("to") or ""
+        # O feed pode omitir a equipe anterior. Nesse caso, preservar a
+        # origem já confirmada no NBA.com e não duplicar a contratação.
+        if (old_from and new_from and old_from != new_from) or (old_to and new_to and old_to != new_to):
             continue
-        if item.get("id") and not current.get("id"):
-            current["id"] = item["id"]
-        if item.get("date") and not current.get("date"):
-            current["date"] = item["date"]
+        for field in ("id", "date", "from", "to"):
+            if item.get(field) and not current.get(field):
+                current[field] = item[field]
         return False
     entries.append(item)
     return True
@@ -162,7 +165,7 @@ def sync_transactions(get_json, read, save, root, now, logs):
             added += append_unique(teams[dest]["arrivals"], record.copy())
         if origin in teams:
             added += append_unique(teams[origin]["departures"], record.copy())
-    if not added:
+    if not added and teams == all_teams:
         logs.append(f"Mercado NBA: {len(records)} transações consultadas; nenhuma nova")
         return
     result = dict(before)
