@@ -677,6 +677,8 @@ def main():
     sync_injuries(get_json, read, save, ROOT, NOW, LOGS)
     sync_final_stats()
     if not recent:
+        from nba_transactions import sync_transactions
+        sync_transactions(get_json, read, save, ROOT, NOW, LOGS)
         sync_team_summaries()
     sync_player_leaders()
     from build_nba_search import build_search_index
