@@ -216,7 +216,21 @@ function recordAnswer(outcome,selected=null,reason='resposta'){
  if(state.settings.scoreboard&&p){if(outcome==='certo'){p.score++;p.correct=(p.correct||0)+1}else if(outcome==='errado'){if(state.settings.penalty)p.score--;p.wrong=(p.wrong||0)+1;if(state.settings.gameMode==='sobrevivencia')p.lives=Math.max(0,(p.lives??3)-1)}}
  if(!state.used.includes(g.queue[g.index]))state.used.push(g.queue[g.index]);g.answers.push({qid:g.queue[g.index],playerId:p?.id??null,outcome,reason,time:new Date().toISOString()});save();render();
 }
-function nextQuestion(){const g=state.game;if(!g||g.status!=='playing')return;if(isPassActive()){passNext();return}if(!g.resolved){recordAnswer('pulou',null,'pulo')}g.index++;
+function previousQuestion(){
+ const g=state.game;
+ if(!g||g.status!=='playing'||isPassActive()||!g.backHistory?.length)return;
+ stopTimer();
+ const snapshot=g.backHistory.pop();const history=g.backHistory;
+ state.game={...snapshot.game,backHistory:history};
+ state.players=snapshot.players;
+ state.used=snapshot.used;
+ save();render();window.scrollTo(0,0);
+}
+function nextQuestion(){const g=state.game;if(!g||g.status!=='playing')return;if(isPassActive()){passNext();return}if(!g.resolved){recordAnswer('pulou',null,'pulo')}
+ const backHistory=g.backHistory||[];
+ backHistory.push({game:JSON.parse(JSON.stringify({...g,backHistory:undefined})),players:JSON.parse(JSON.stringify(state.players)),used:[...state.used]});
+ if(backHistory.length>30)backHistory.shift();g.backHistory=backHistory;
+ g.index++;
  if(g.index>=g.queue.length){finishGame();return}
  if(state.settings.scoreboard&&state.players.length&&state.settings.gameMode==='sobrevivencia'){const alive=eligiblePlayers();if(alive.length<2&&state.players.length>1||alive.length===0){finishGame();return}}
  if(state.settings.scoreboard&&state.players.length){const players=state.players;let idx=players.findIndex(p=>p.id===g.playerId);let next=players[(idx+1+players.length)%players.length];if(state.settings.gameMode==='sobrevivencia'){for(let t=0;t<players.length;t++){let x=players[(idx+1+t+players.length)%players.length];if((x.lives??3)>0){next=x;break}}}g.playerId=next.id}
@@ -240,7 +254,7 @@ function renderGame(){
  ${options?`<div class="options">${optionsMarkup}</div>`:!showAnswer?`<div class="classic-center"><button class="reveal-btn" data-act="reveal">👁 Revelar resposta</button><div class="tiny" style="margin-top:12px">Dê a resposta em voz alta antes de revelar</div></div>`:`<div class="answer-box"><div class="answer-overline">RESPOSTA CORRETA</div><div class="answer-text">${escapeHTML(q.answer)}</div></div>${!g.resolved?`<div class="mark-actions"><button class="good-btn" data-act="mark" data-outcome="certo">✓ Acertou (+1)</button><button class="bad-btn" data-act="mark" data-outcome="errado">✕ Errou ${s.penalty?'(-1)':''}</button></div>`:''}`}
  ${options&&showAnswer?`<div class="result-note ${g.outcome==='certo'?'good':'bad'}">${outcomeText}</div>`:''}
  ${!options&&g.resolved?`<div class="result-note ${g.outcome==='certo'?'good':'bad'}">${outcomeText}</div>`:''}
- <div class="qfooter"><div>${timer?`<span class="timer ${g.timeLeft<=5?'danger':''}" id="timerBox">⏱ <span id="timerText">${g.timeLeft}s</span> <span class="timer-track"><span class="timer-fill" id="timerBar" style="display:block;width:${(g.timeLeft/s.timer*100)}%"></span></span></span>`:`<span class="section-muted">⏱ Sem cronômetro</span>`}</div><div style="display:flex;gap:9px;align-items:center"><button class="minor-btn" data-act="next">${g.resolved?'':'Pular'}</button><button class="primary-btn" data-act="next">${idx===total?'Encerrar partida':'Próxima pergunta →'}</button></div></div>
+ <div class="qfooter"><div>${timer?`<span class="timer ${g.timeLeft<=5?'danger':''}" id="timerBox">⏱ <span id="timerText">${g.timeLeft}s</span> <span class="timer-track"><span class="timer-fill" id="timerBar" style="display:block;width:${(g.timeLeft/s.timer*100)}%"></span></span></span>`:`<span class="section-muted">⏱ Sem cronômetro</span>`}</div><div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap"><button class="secondary-btn" data-act="previous" ${g.backHistory?.length?'':'disabled'}>← Voltar</button><button class="minor-btn" data-act="next">${g.resolved?'':'Pular'}</button><button class="primary-btn" data-act="next">${idx===total?'Encerrar partida':'Próxima pergunta →'}</button></div></div>
  </div></div>`;
  } else {body='<div class="box"><h2>Bem-vindo ao Quiz da Bola!</h2><p class="section-muted">Inicie uma partida para embaralhar as perguntas e começar.</p><button class="primary-btn" data-act="open-setup">Começar →</button></div>'}
  const hasActivePlayer=s.scoreboard&&state.players.length&&g?.status==='playing';const cur=currentPlayer();
@@ -319,6 +333,7 @@ function actions(e){const b=e.target.closest('[data-act]');if(!b)return;const ac
  case 'option':if(g&&!g.resolved){const q=gameQuestion(),choice=g.order[Number(b.dataset.answerIdx)];recordAnswer(choice===q.answer?'certo':'errado',choice)}break;
  case 'mark':recordAnswer(b.dataset.outcome);break;
  case 'next':nextQuestion();break;
+ case 'previous':previousQuestion();break;
  case 'toggle-score':state.settings.scoreboard=!state.settings.scoreboard;save();render();break;
  case 'change-score':changeScore(id,Number(b.dataset.delta));break;
  case 'select-player':if(g?.status==='playing'){g.playerId=id;save();render();toast('Agora é a vez de '+(currentPlayer()?.name||'jogador'))}else toast('Inicie uma partida para selecionar um participante.');break;
@@ -341,6 +356,7 @@ document.addEventListener('change',e=>{if(e.target.id==='bankCategory'){bankCat=
 document.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)||document.querySelector('dialog[open]'))return;if(page!=='jogo'||state.game?.status!=='playing'||isPassActive())return;
  if(e.code==='Space'&&state.settings.answerMode==='classico'&&!state.game.revealed){e.preventDefault();document.querySelector('[data-act="reveal"]')?.click()}
  else if(e.code==='ArrowRight'){e.preventDefault();nextQuestion()}
+ else if(e.code==='ArrowLeft'){e.preventDefault();previousQuestion()}
  else if(state.settings.answerMode==='alternativas'&&/^[1-4]$/.test(e.key)&&!state.game.resolved){document.querySelector(`[data-answer-idx="${Number(e.key)-1}"]`)?.click()}
  else if(e.key.toLowerCase()==='a'&&state.settings.answerMode==='classico'&&state.game.revealed&&!state.game.resolved){recordAnswer('certo')}
  else if(e.key.toLowerCase()==='e'&&state.settings.answerMode==='classico'&&state.game.revealed&&!state.game.resolved){recordAnswer('errado')}
