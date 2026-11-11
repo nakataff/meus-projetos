@@ -177,7 +177,7 @@ function passReveal(){
 function passNext(){const g=state.game;if(!isPassActive()||g.pass?.phase!=='results')return;g.index++;if(g.index>=g.queue.length||(state.settings.gameMode==='sobrevivencia'&&!eligiblePlayers().length)){finishGame();return}prepareQuestion();render();window.scrollTo(0,0)}
 function renderPass(){
  const g=state.game,p=g.pass,q=gameQuestion(),s=state.settings,category=CATEGORIES[q.category];
- const header=`<div class="pass-header"><div class="pass-brand"><span class="pass-ball">⚽</span> QUIZ DA BOLA</div><div class="pass-label">RODADA ${g.index+1} / ${g.queue.length}</div></div>`;
+ const header=`<div class="pass-header"><div class="pass-brand"><span class="pass-ball">⚽</span> QUIZ DA BOLA</div><div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:flex-end"><span class="pass-label">RODADA ${g.index+1} / ${g.queue.length}</span><button class="pass-smallbtn" data-act="pass-end-game" title="Finalizar a partida antes do fim">Encerrar</button></div></div>`;
  const progress=`<div class="pass-progress"><span style="width:${p.order.length?(Object.keys(p.votes).length/p.order.length*100):0}%"></span></div>`;
  const inside=(content)=>`<div class="pass-shell">${header}<section class="pass-card">${content}</section><p class="pass-note">🔒 Cada resposta fica escondida até o apresentador revelar o resultado. Nenhum jogador vê as escolhas dos outros.</p></div>`;
  if(p.phase==='lobby')return inside(`<div class="pass-subline">MODO PASSA O CELULAR</div><h1 class="pass-hero">Todo mundo responde.<br><span class="pass-name">Ninguém espia.</span></h1><p>Adicione as pessoas que vão jogar. Todos responderão à mesma pergunta, um de cada vez, sem descobrir o que os outros escolheram.</p><div class="pass-players">${state.players.map((x,i)=>`<div class="pass-person"><div><strong>${i+1}. ${escapeHTML(x.name)}</strong><br><small>${x.score} pontos</small></div><button class="pass-smallbtn" data-act="pass-remove" data-id="${escapeHTML(x.id)}" aria-label="Remover ${escapeHTML(x.name)}">Remover</button></div>`).join('')||'<div class="pass-safety">👥 Adicione pelo menos um participante para começar. O placar é opcional.</div>'}</div><form class="pass-add-form" id="passAdd"><input name="player" maxlength="28" required placeholder="Nome do participante" aria-label="Nome do participante"><button class="pass-smallbtn" type="submit">+ Adicionar</button></form><button class="pass-bigbtn" data-act="pass-start" ${passRoster().length?'':'disabled'}>Começar a rodada →</button><div class="pass-actions"><button class="pass-smallbtn" data-act="pass-setup">⚙ Configurações</button></div><p class="pass-muted">${s.hostPin?'🔐 PIN ativado para o apresentador.':'💡 Dica: defina um PIN nas configurações para impedir que alguém abra o gabarito antes da hora.'}</p>`);
@@ -204,7 +204,19 @@ function newGame(){
 }
 function prepareQuestion(){const g=state.game;if(!g||g.index>=g.queue.length){finishGame();return}const q=gameQuestion();if(!q){finishGame();return}
  g.revealed=false;g.resolved=false;g.selected=null;g.outcome=null;g.reason=null;g.order=shuffle([q.answer,...q.wrong]);g.timeLeft=state.settings.timer;if(state.settings.answerMode==='passa')initPassRound();save();}
-function finishGame(){const g=state.game;if(!g)return;g.status='finished';stopTimer();save();render();}
+function finishGame(early=false){const g=state.game;if(!g)return;g.status='finished';g.finishedEarly=early;stopTimer();save();render();}
+function endGameEarly(){
+ const g=state.game;
+ if(!g||g.status!=='playing')return;
+ if(isPassActive()&&state.settings.hostPin){
+  const entered=prompt('Para encerrar esta partida, informe o PIN do apresentador:');
+  if(entered===null)return;
+  if(entered.trim()!==state.settings.hostPin){toast('PIN incorreto. A partida continua.');return}
+ }
+ const detail=isPassActive()&&g.pass?.phase!=='results'?' A rodada atual ainda não revelada não será contabilizada.':'';
+ if(!confirm('Encerrar esta partida agora? Os pontos e as respostas já registrados serão preservados.'+detail))return;
+ finishGame(true);window.scrollTo(0,0);
+}
 function startTimer(){stopTimer();const g=state.game;if(!g||g.status!=='playing'||g.resolved||g.revealed||!state.settings.timer)return;if(isPassActive()&&g.pass?.phase!=='answering')return;
  timerHandle=setInterval(()=>{if(page!=='jogo')return;g.timeLeft=Math.max(0,g.timeLeft-1);const text=$('timerText'),bar=$('timerBar'),box=$('timerBox');if(text)text.textContent=g.timeLeft+'s';if(bar)bar.style.width=(g.timeLeft/state.settings.timer*100)+'%';if(box)box.classList.toggle('danger',g.timeLeft<=5);save();if(g.timeLeft<=0){stopTimer();if(isPassActive())passSubmit(null,false,'tempo');else recordAnswer('errado',null,'tempo')}},1000);
 }
@@ -244,7 +256,7 @@ function renderGame(){
  if(isPassActive())return renderPass();
  const g=state.game,s=state.settings,st=stats(),q=gameQuestion();const completed=g?.status==='finished';
  let body='';
- if(completed){const winner=getRankedPlayers()[0];body=`<div class="qcard"><div class="finish"><div class="cup">🏆</div><div class="eyebrow">FIM DE JOGO</div><h2>Fim da partida!</h2><p>${s.answerMode==='passa'?`Foram ${g.index} rodadas e ${g.answers.length} respostas registradas.`:`Você respondeu ${g.answers.length} perguntas.`} ${st.correct} acertos, ${st.wrong} erros e ${st.skip} puladas.</p>${s.scoreboard&&winner?`<div style="margin:20px 0;font-size:20px">🥇 ${escapeHTML(winner.name)} <strong style="color:var(--lime)">${winner.score} pontos</strong></div>`:''}<button class="primary-btn" data-act="open-setup">Jogar novamente →</button><button class="secondary-btn" style="margin:8px" data-act="nav" data-page="placar">Ver placar</button></div></div>`}
+ if(completed){const winner=getRankedPlayers()[0];body=`<div class="qcard"><div class="finish"><div class="cup">🏆</div><div class="eyebrow">FIM DE JOGO</div><h2>${g.finishedEarly?'Partida encerrada':'Fim da partida!'}</h2><p>${s.answerMode==='passa'?`Foram ${new Set(g.answers.map(a=>a.qid)).size} rodadas e ${g.answers.length} respostas registradas.`:`Você respondeu ${g.answers.length} perguntas.`} ${st.correct} acertos, ${st.wrong} erros e ${st.skip} puladas.</p>${s.scoreboard&&winner?`<div style="margin:20px 0;font-size:20px">🥇 ${escapeHTML(winner.name)} <strong style="color:var(--lime)">${winner.score} pontos</strong></div>`:''}<button class="primary-btn" data-act="open-setup">Jogar novamente →</button><button class="secondary-btn" style="margin:8px" data-act="nav" data-page="placar">Ver placar</button></div></div>`}
  else if(q){const category=CATEGORIES[q.category],idx=g.index+1,total=g.queue.length,timer=s.timer>0,options=s.answerMode==='alternativas';const showAnswer=g.revealed||g.resolved;
  const outcomeText=g.outcome==='certo'?'✅ Resposta certa!':g.outcome==='errado'?(g.reason==='tempo'?'⏰ Tempo esgotado!':'❌ Resposta errada!'):'⏭️ Pergunta pulada';
  const optionsMarkup=g.order.map((ans,i)=>{let cls='';if(showAnswer){cls=ans===q.answer?'correct':g.selected===ans?'wrong':'dim'}return `<button class="answer-option ${cls}" data-act="option" data-answer-idx="${i}" ${showAnswer?'disabled':''}><span class="letter">${'ABCD'[i]}</span><span>${escapeHTML(ans)}</span></button>`}).join('');
@@ -260,7 +272,7 @@ function renderGame(){
  const hasActivePlayer=s.scoreboard&&state.players.length&&g?.status==='playing';const cur=currentPlayer();
  return `<div class="topline"><div><div class="eyebrow">CENTRAL DO QUIZ</div><h1 class="page-title">Hora de mostrar que entende de bola.</h1></div><div class="toolbar-right"><button class="icon-btn" data-act="fullscreen" title="Tela cheia" aria-label="Ativar tela cheia">⛶</button><button class="icon-btn" data-act="open-setup" title="Nova partida" aria-label="Configurar nova partida">⚙</button></div></div>
  <div class="overview"><div class="mini-stat"><span>Perguntas no banco</span><strong>${questionDB().length}</strong></div><div class="mini-stat"><span>Inéditas nos filtros</span><strong>${totalAvailable()}</strong></div><div class="mini-stat"><span>Acertos na partida</span><strong>${st.correct}</strong></div></div>
- <div class="toolbar"><div class="switch"><button data-act="switch-answer" data-mode="classico" class="${s.answerMode==='classico'?'active':''}">👁 Clássico</button><button data-act="switch-answer" data-mode="alternativas" class="${s.answerMode==='alternativas'?'active':''}">☑ Alternativas</button><button data-act="switch-answer" data-mode="passa">📱 Passa o celular</button></div><div class="toolbar-right"><button class="secondary-btn" data-act="open-setup">⚙ Nova partida</button></div></div>
+ <div class="toolbar"><div class="switch"><button data-act="switch-answer" data-mode="classico" class="${s.answerMode==='classico'?'active':''}">👁 Clássico</button><button data-act="switch-answer" data-mode="alternativas" class="${s.answerMode==='alternativas'?'active':''}">☑ Alternativas</button><button data-act="switch-answer" data-mode="passa">📱 Passa o celular</button></div><div class="toolbar-right">${g?.status==='playing'?'<button class="secondary-btn" data-act="end-game">■ Encerrar partida</button>':''}<button class="secondary-btn" data-act="open-setup">⚙ Nova partida</button></div></div>
  ${hasActivePlayer?`<div class="notice" style="margin-bottom:14px">🎤 Vez de <strong style="color:var(--lime)">${escapeHTML(cur?.name||'selecionar um jogador')}</strong>${s.gameMode==='sobrevivencia'&&cur?` • ${cur.lives??3} vida(s)`:''}. Clique em outro nome no placar para trocar.</div>`:''}
  ${body}
  <div class="footer-note"><span class="keyboard-guide">Atalhos: <span class="kbd">Espaço</span> revelar • <span class="kbd">1–4</span> escolher alternativa • <span class="kbd">→</span> próxima</span> <br>100% offline • progresso salvo no navegador</div>`;
@@ -323,6 +335,7 @@ function actions(e){const b=e.target.closest('[data-act]');if(!b)return;const ac
  case 'pass-host-open':if(g?.pass?.phase==='hostlock'&&!state.settings.hostPin){g.pass.phase='host';save();render()}break;
  case 'pass-reveal':passReveal();break;
  case 'pass-next':passNext();break;
+ case 'pass-end-game':endGameEarly();break;
  case 'pass-score':if(g?.pass?.phase==='results')changeScore(id,Number(b.dataset.delta));break;
  case 'nav':setPage(b.dataset.page);break;
  case 'open-setup':openSetup();break;
@@ -333,6 +346,7 @@ function actions(e){const b=e.target.closest('[data-act]');if(!b)return;const ac
  case 'option':if(g&&!g.resolved){const q=gameQuestion(),choice=g.order[Number(b.dataset.answerIdx)];recordAnswer(choice===q.answer?'certo':'errado',choice)}break;
  case 'mark':recordAnswer(b.dataset.outcome);break;
  case 'next':nextQuestion();break;
+ case 'end-game':endGameEarly();break;
  case 'previous':previousQuestion();break;
  case 'toggle-score':state.settings.scoreboard=!state.settings.scoreboard;save();render();break;
  case 'change-score':changeScore(id,Number(b.dataset.delta));break;
