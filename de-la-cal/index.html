@@ -26,7 +26,25 @@ league.value=l;const nav=document.querySelector('nav');nav.replaceChildren();for
 view.replaceChildren();el('h2',tab==='home'?'Jogos perto de hoje':tabs[tab]||({match:'Raio-X do confronto',club:'Clube',player:'Jogador'})[tab]);const area=el('div','');const wait=el('p','Carregando dados…',area);
 try{if(tab==='home'||tab==='calendar'){const home=tab==='home';let date=selectedDate;if(!home){const label=el('label','Data de referência ',area);const picker=el('input','',label);picker.type='date';picker.value=date;picker.onchange=()=>{if(picker.value){selectedDate=picker.value;render()}}}else date=dateBR(Date.now());
 const ids=home?Object.keys(leagues):[l];await Promise.all(ids.map(async code=>{const box=el('article','',area);el('h3',leagues[code],box);const [start,end]=range(code),from=dayOffset(date,home?-2:-7),to=dayOffset(date,home?2:7);if(to<start||from>end){el('p','Fora da temporada selecionada.',box);return}
-try{const data=await json(base(code)+'scoreboard?limit=150&dates='+[from<start?start:from,to>end?end:to].join('-'));for(const e of data.events||[]){const c=e.competitions[0];const when=new Date(e.date).toLocaleString('pt-BR',{timeZone:tz,day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});link(when+' · '+title(c)+' · '+({pre:'Agendado',in:'Em andamento',post:'Encerrado'}[e.status?.type?.state]||''),route('match',code,e.id),box)}if(!data.events?.length)el('p','Sem partidas neste período.',box)}catch{el('p','Consulta indisponível.',box);link('Ver jogos na ESPN','https://www.espn.com.br/futebol/resultados/_/liga/'+code,box)}}));}
+try{const data=await json(base(code)+'scoreboard?limit=150&dates='+[from<start?start:from,to>end?end:to].join('-'));for(const e of data.events||[]){const c=e.competitions[0];const when=new Date(e.date).toLocaleString('pt-BR',{timeZone:tz,day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});link(when+' · '+title(c)+' · '+({pre:'Agendado',in:'Em andamento',post:'Encerrado'}[e.status?.type?.state]||''),route('match',code,e.id),box)}if(!data.events?.length)el('p','Sem partidas neste período.',box)}catch{
+ const files={'bra.1':'2026/br.1','eng.1':'2026-27/en.1','esp.1':'2026-27/es.1','ita.1':'2026-27/it.1'};
+ if(files[code]){
+   try{
+     const backup=await json('https://raw.githubusercontent.com/openfootball/football.json/master/'+files[code]+'.json');
+     const matches=backup.matches.filter(match=>{
+       const day=match.date.replaceAll('-','');
+       return day>=from && day<=to;
+     });
+     for(const match of matches){
+       const result=match.score?.ft;
+       el('p',match.date.split('-').reverse().join('/')+' · '+match.team1+' '+(result?result.join(' × '):'×')+' '+match.team2,box);
+     }
+     if(!matches.length)el('p','Sem partidas neste período.',box);
+     el('small','Fonte: OpenFootball · Calendário e resultados',box);
+     return;
+   }catch{}
+ }
+ el('p','Consulta indisponível.',box);link('Ver jogos na ESPN','https://www.espn.com.br/futebol/resultados/_/liga/'+code,box)}}));}
 else if(tab==='table'){const data=await json(api+'v2/sports/soccer/'+l+'/standings?season=2026');let count=0;function group(g){const rows=g.standings?.entries;if(rows?.length){count++;const box=el('article','',area);el('h3',g.name||leagues[l],box);const table=el('table','',box),head=el('tr','',table);for(const t of ['#','Clube','Pts','J','V','SG'])el('th',t,head);for(const row of rows){const tr=el('tr','',table);const stat=k=>row.stats.find(s=>s.name===k)?.displayValue??'–';el('td',stat('rank'),tr);link(row.team.displayName,route('club',l,row.team.id),el('td','',tr));for(const k of ['points','gamesPlayed','wins','pointDifferential'])el('td',stat(k),tr)}}for(const child of g.children||[])group(child)}group(data);if(!count)el('p','Tabela indisponível para esta fase.',area)}
 else if(tab==='clubs'){const data=await json(base(l)+'teams?limit=200&season=2026');const box=el('article','',area);for(const t of data.sports?.[0]?.leagues?.[0]?.teams||[])link(t.team.displayName,route('club',l,t.team.id),box);if(!box.children.length)el('p','Lista de clubes indisponível.',box)}
 else if(tab==='club'){const [d,r]=await Promise.all([json(base(l)+'teams/'+encodeURIComponent(id)),json(base(l)+'teams/'+encodeURIComponent(id)+'/roster?season=2026').catch(()=>({}))]);el('h3',d.team.displayName,area);const box=el('article','',area);el('h3','Elenco',box);for(const a of (r.athletes||[]).flatMap(a=>a.items||[a]))if(a.id)link(a.displayName+' · '+(a.position?.abbreviation||''),route('player',l,a.id),box);if(box.children.length===1)el('p','Elenco indisponível.',box)}
