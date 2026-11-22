@@ -207,12 +207,12 @@
       "mc0",
       "mc6",
       "mc5",
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
+      "mc29",
+      "mc9",
+      "mc16",
+      "mc21",
+      "mc2",
+      "mc26"
     ],
     "2": [
       null,
@@ -319,10 +319,17 @@
     "1-4": {
       "winnerId": "mc6",
       "loserScore": 1
+    },
+    "1-5": {
+      "winnerId": "mc29",
+      "loserScore": 0
+    },
+    "1-6": {
+      "winnerId": "mc16",
+      "loserScore": 1
     }
   },
   "app": "Duelo Nacional MD3",
-  "version": 2,
-  "updatedAt": null,
-  "source": "Backup enviado pelo organizador em 22/11/2026"
+  "version": 3,
+  "updatedAt": "2026-11-22T21:16:23.568Z"
 }
