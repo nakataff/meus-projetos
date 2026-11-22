@@ -164,3 +164,13 @@ No seletor do comparador, os atletas são ordenados por pontos decrescentes dent
 ### Busca e navegação NBA
 
 A lupa compartilhada abre a busca por equipes, jogadores, partidas e atalhos. `nba/data/search.json` é um índice compacto gerado dos JSON existentes por `scripts/build_nba_search.py`, também chamado ao final da sincronização NBA. O índice só é solicitado na primeira abertura da busca; as letras são filtradas localmente com debounce, sem consultas ao banco. O menu superior tem quatro atalhos e a barra inferior recolhível salva apenas a preferência local.
+
+
+## Duelo Nacional
+
+- `duelo-nacional/`: chave pública, com consulta ao JSON estático a cada 30 segundos enquanto a aba está visível. GitHub Pages pode levar alguns minutos para refletir publicações.
+- `duelo-nacional/admin/`: editor oficial. Autenticação de publicação pela API do GitHub, com token específico do repositório e Contents: Read and write, mantido apenas em memória. O painel verifica permissão e SHA antes de gravar para evitar sobrescrever outra publicação.
+- `duelo-nacional/minha-chave/`: chave pessoal independente, salva no navegador. Compartilhamento no fragmento da URL e exportação PNG/JPG/WebP/ZIP e JSON.
+- `duelo-nacional/dados.json`: fonte pública dos resultados, importada do backup do organizador. As fases com sorteio manual preservam os cruzamentos enviados.
+
+Sem serviço adicional ou banco de dados. Tokens nunca devem ser incluídos nos arquivos, backups ou links. Os palpites dos visitantes não alteram o JSON oficial.

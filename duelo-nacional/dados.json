@@ -1,0 +1,328 @@
+{
+  "people": [
+    {
+      "id": "mc0",
+      "name": "KAELL",
+      "uf": "RO"
+    },
+    {
+      "id": "mc1",
+      "name": "FOGUINHO",
+      "uf": "SE"
+    },
+    {
+      "id": "mc2",
+      "name": "SANTOZ",
+      "uf": "TO"
+    },
+    {
+      "id": "mc3",
+      "name": "HOGUE",
+      "uf": "PE"
+    },
+    {
+      "id": "mc4",
+      "name": "VITÚ",
+      "uf": "PE"
+    },
+    {
+      "id": "mc5",
+      "name": "BOBBY MÍDYA",
+      "uf": "PA"
+    },
+    {
+      "id": "mc6",
+      "name": "MCHARLES",
+      "uf": "CE"
+    },
+    {
+      "id": "mc7",
+      "name": "WL BXD",
+      "uf": "RJ"
+    },
+    {
+      "id": "mc8",
+      "name": "BLINK",
+      "uf": "AM"
+    },
+    {
+      "id": "mc9",
+      "name": "NETO",
+      "uf": "RR"
+    },
+    {
+      "id": "mc10",
+      "name": "VITU",
+      "uf": "SC"
+    },
+    {
+      "id": "mc11",
+      "name": "KAMUI",
+      "uf": "MS"
+    },
+    {
+      "id": "mc12",
+      "name": "STASH",
+      "uf": "PB"
+    },
+    {
+      "id": "mc13",
+      "name": "SUBENÊ",
+      "uf": "PR"
+    },
+    {
+      "id": "mc14",
+      "name": "NOVENTA",
+      "uf": "ES"
+    },
+    {
+      "id": "mc15",
+      "name": "MABRU",
+      "uf": "AL"
+    },
+    {
+      "id": "mc16",
+      "name": "HW",
+      "uf": "MA"
+    },
+    {
+      "id": "mc17",
+      "name": "APAXI",
+      "uf": "AC"
+    },
+    {
+      "id": "mc18",
+      "name": "MANEL",
+      "uf": "BA"
+    },
+    {
+      "id": "mc19",
+      "name": "NICK",
+      "uf": "RN"
+    },
+    {
+      "id": "mc20",
+      "name": "JEFFÊ",
+      "uf": "DF"
+    },
+    {
+      "id": "mc21",
+      "name": "IKE",
+      "uf": "MG"
+    },
+    {
+      "id": "mc22",
+      "name": "MIKA",
+      "uf": "GO"
+    },
+    {
+      "id": "mc23",
+      "name": "XAMUEL",
+      "uf": "RS"
+    },
+    {
+      "id": "mc24",
+      "name": "JOTAPÊ",
+      "uf": "SP"
+    },
+    {
+      "id": "mc25",
+      "name": "GAJO",
+      "uf": "PI"
+    },
+    {
+      "id": "mc26",
+      "name": "MANO GÊ",
+      "uf": "AP"
+    },
+    {
+      "id": "mc27",
+      "name": "JAYA",
+      "uf": "BA"
+    },
+    {
+      "id": "mc28",
+      "name": "RICO MESQUITA",
+      "uf": "RJ"
+    },
+    {
+      "id": "mc29",
+      "name": "MARTIN",
+      "uf": "CE"
+    },
+    {
+      "id": "mc30",
+      "name": "GR",
+      "uf": "MT"
+    },
+    {
+      "id": "mc31",
+      "name": "HAVEL",
+      "uf": "MT"
+    }
+  ],
+  "slots": [
+    "mc31",
+    "mc13",
+    "mc6",
+    "mc15",
+    "mc9",
+    "mc8",
+    "mc2",
+    "mc10",
+    "mc23",
+    "mc27",
+    "mc22",
+    "mc19",
+    "mc5",
+    "mc30",
+    "mc29",
+    "mc17",
+    "mc3",
+    "mc11",
+    "mc21",
+    "mc12",
+    "mc14",
+    "mc20",
+    "mc0",
+    "mc28",
+    "mc24",
+    "mc7",
+    "mc16",
+    "mc1",
+    "mc4",
+    "mc18",
+    "mc26",
+    "mc25"
+  ],
+  "manualRounds": {
+    "1": [
+      "mc22",
+      "mc24",
+      "mc14",
+      "mc31",
+      "mc4",
+      "mc3",
+      "mc23",
+      "mc0",
+      "mc6",
+      "mc5",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "2": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "3": [
+      null,
+      null,
+      null,
+      null
+    ],
+    "4": [
+      null,
+      null
+    ]
+  },
+  "results": {
+    "0-0": {
+      "winnerId": "mc31",
+      "loserScore": 1
+    },
+    "0-1": {
+      "winnerId": "mc6",
+      "loserScore": 0
+    },
+    "0-2": {
+      "winnerId": "mc9",
+      "loserScore": 0
+    },
+    "0-3": {
+      "winnerId": "mc2",
+      "loserScore": 0
+    },
+    "0-4": {
+      "winnerId": "mc23",
+      "loserScore": 0
+    },
+    "0-5": {
+      "winnerId": "mc22",
+      "loserScore": 1
+    },
+    "0-6": {
+      "winnerId": "mc5",
+      "loserScore": 0
+    },
+    "0-7": {
+      "winnerId": "mc29",
+      "loserScore": 0
+    },
+    "0-8": {
+      "winnerId": "mc3",
+      "loserScore": 1
+    },
+    "0-9": {
+      "winnerId": "mc21",
+      "loserScore": 0
+    },
+    "0-10": {
+      "winnerId": "mc14",
+      "loserScore": 1
+    },
+    "0-11": {
+      "winnerId": "mc0",
+      "loserScore": 0
+    },
+    "0-12": {
+      "winnerId": "mc24",
+      "loserScore": 1
+    },
+    "0-13": {
+      "winnerId": "mc16",
+      "loserScore": 1
+    },
+    "0-14": {
+      "winnerId": "mc4",
+      "loserScore": 0
+    },
+    "0-15": {
+      "winnerId": "mc26",
+      "loserScore": 0
+    },
+    "1-0": {
+      "winnerId": "mc24",
+      "loserScore": 0
+    },
+    "1-1": {
+      "winnerId": "mc14",
+      "loserScore": 0
+    },
+    "1-2": {
+      "winnerId": "mc3",
+      "loserScore": 1
+    },
+    "1-3": {
+      "winnerId": "mc23",
+      "loserScore": 0
+    },
+    "1-4": {
+      "winnerId": "mc6",
+      "loserScore": 1
+    }
+  },
+  "app": "Duelo Nacional MD3",
+  "version": 2,
+  "updatedAt": null,
+  "source": "Backup enviado pelo organizador em 22/11/2026"
+}
