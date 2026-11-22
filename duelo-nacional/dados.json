@@ -351,9 +351,13 @@
     "3-0": {
       "winnerId": "mc14",
       "loserScore": 0
+    },
+    "3-1": {
+      "winnerId": "mc24",
+      "loserScore": 0
     }
   },
   "app": "Duelo Nacional MD3",
   "version": 3,
-  "updatedAt": "2026-11-22T22:33:29.521Z"
+  "updatedAt": "2026-11-22T23:02:33.036Z"
 }
