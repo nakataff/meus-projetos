@@ -169,8 +169,8 @@ A lupa compartilhada abre a busca por equipes, jogadores, partidas e atalhos. `n
 ## Duelo Nacional
 
 - `duelo-nacional/`: chave pública, com consulta ao JSON estático a cada 30 segundos enquanto a aba está visível. GitHub Pages pode levar alguns minutos para refletir publicações.
-- `duelo-nacional/admin/`: editor oficial. Autenticação de publicação pela API do GitHub, com token específico do repositório e Contents: Read and write, mantido apenas em memória. O painel verifica permissão e SHA antes de gravar para evitar sobrescrever outra publicação.
+- `duelo-nacional/admin/`: editor oficial. Publica automaticamente cada alteração do estado após o login, com fila para cliques durante uma gravação, indicação de falha e nova tentativa manual. Autenticação de publicação pela API do GitHub, com token específico do repositório e Contents: Read and write, mantido apenas em memória. O painel verifica permissão e SHA antes de gravar para evitar sobrescrever outra publicação. A página pública usa o JSON bruto do repositório para receber resultados sem esperar uma nova publicação do Pages, com reserva no arquivo estático e proteção contra versões antigas.
 - `duelo-nacional/minha-chave/`: chave pessoal independente, salva no navegador. Compartilhamento no fragmento da URL e exportação PNG/JPG/WebP/ZIP e JSON.
-- `duelo-nacional/dados.json`: fonte pública dos resultados, importada do backup do organizador. As fases com sorteio manual preservam os cruzamentos enviados.
+- `duelo-nacional/dados.json`: fonte pública dos resultados, importada do backup do organizador. As fases com sorteio manual preservam os cruzamentos enviados. `core.js` alinha cópias visuais das rodadas aos vencedores sorteados, sem reordenar o JSON nem mudar IDs ou placares. Testes: `node --test duelo-nacional/core.test.cjs`.
 
 Sem serviço adicional ou banco de dados. Tokens nunca devem ser incluídos nos arquivos, backups ou links. Os palpites dos visitantes não alteram o JSON oficial.

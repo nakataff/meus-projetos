@@ -26,7 +26,10 @@ function sanitize(raw){
 let official=null,officialStamp=null;
 const status=document.getElementById('portalStatus');
 const setStatus=message=>{status.textContent=message};
-async function loadOfficial(){const url=new URL(DATA_URL);url.searchParams.set('v',Date.now());const res=await fetch(url,{cache:'no-store'});if(!res.ok)throw Error('Não foi possível carregar os resultados ('+res.status+').');const raw=await res.json();const clean=sanitize(raw);officialStamp=raw.updatedAt||null;return clean;}
+async function loadOfficial(){
+ const urls=location.hostname==='nakataff.github.io'?[new URL('https://raw.githubusercontent.com/nakataff/meus-projetos/main/duelo-nacional/dados.json'),new URL(DATA_URL)]:[new URL(DATA_URL)];
+ let lastError;for(const url of urls){try{url.searchParams.set('v',Date.now());const res=await fetch(url,{cache:'no-store'});if(!res.ok)throw Error('Não foi possível carregar os resultados ('+res.status+').');const raw=await res.json(),clean=sanitize(raw);if(official&&officialStamp&&(!raw.updatedAt||raw.updatedAt<officialStamp))return official;officialStamp=raw.updatedAt||null;official=clean;return clean}catch(e){lastError=e}}throw lastError;
+}
 let state;try{official=await loadOfficial();state=official;setStatus(officialStamp?'Resultados publicados em '+new Date(officialStamp).toLocaleString('pt-BR'):'Resultados do backup enviado em 22/11. Atualizações publicadas pelo organizador aparecem aqui.')}catch(e){setStatus(e.message+' Recarregue para tentar novamente.');document.querySelector('.layout').hidden=true;return;}
 if(!PUBLIC){try{const draft=JSON.parse(localStorage.getItem(KEY));if(draft)state=sanitize(draft)}catch{}}
 
@@ -67,7 +70,8 @@ function invertMatch(m){const a=m*2,b=a+1;if(!state.slots[a]&&!state.slots[b])re
 let view='all',toastTimer=null;
 const $=x=>document.getElementById(x);
 const esc=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const persist=()=>{if(PUBLIC)return;try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){setStatus('Não foi possível salvar neste navegador. Baixe um Backup JSON antes de sair.')}};
+let onStateChange=()=>{};
+const persist=()=>{if(PUBLIC)return;onStateChange(state);try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){setStatus('Não foi possível salvar neste navegador. Baixe um Backup JSON antes de sair.')}};
 function toast(msg){const el=$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3300)}
 function rounds(){
  let arr=state.slots.slice();const out=[];
@@ -488,16 +492,14 @@ function uiMatch(m,x,y){const a=byId(m.a),b=byId(m.b),has=!!m.winner;
 const fighter=(p,idx)=>{let score='–';if(has)score=m.winner===p?.id?'2':String(m.result.loserScore);const winner=has&&p&&m.winner===p.id,loser=has&&p&&!winner;return `<button class="fighter ${winner?'winner':loser?'loser':''}" data-win="${p?esc(p.id):''}" data-r="${m.r}" data-m="${m.m}" ${p&&a&&b?'':'disabled'} title="${p?'Clique para dar a vitória por 2–0':'Aguardando definição'}"><span class="fighter-name">${p?esc(p.name):'A definir'}</span><span class="uf">${p?esc(p.uf||'UF'):'—'}</span><span class="score">${score}</span></button>`};
 return `<div class="match ${has?'has-result':''} ${m.r===4?'highlight':''}" style="left:${x}px;top:${y}px"><div class="match-hd"><span>#${String(m.m+1).padStart(2,'0')} · ${['1ª FASE','OITAVAS','QUARTAS','SEMIFINAL','FINAL'][m.r]}</span><span class="${has?'done':''}">${has?'● ENCERRADA':'MD3'}</span></div><div class="fighters">${fighter(a,0)}<div class="fight-divider"></div>${fighter(b,1)}</div><div class="match-bottom"><span>${has?'VENCEDOR DEFINIDO':a&&b?'TOQUE NO VENCEDOR':'AGUARDANDO DUELO'}</span>${has?`<button class="score-toggle" data-close="1" data-r="${m.r}" data-m="${m.m}" title="Alternar entre 2–0 e 2–1">${m.result.loserScore===1?'2–1 ↔':'2–0 ↔'}</button>`:'<span class="pick-tip">● ● ○</span>'}</div></div>`}
 function renderFinal(){const m=rounds()[4][0],a=byId(m.a),b=byId(m.b),winner=byId(m.winner);$('arena').style.width='min(100%,760px)';$('arena').style.height='auto';$('arena').style.minHeight='0';$('arena').innerHTML=`<div class="champion-panel"><div class="eyebrow">A ÚLTIMA BATALHA · MELHOR DE TRÊS</div><h3>GRANDE FINAL</h3><div class="final-duel"><div class="finalist"><strong>${esc(a?.name||'A definir')}</strong><small>${esc(a?.uf||'—')}${m.result?' · '+(winner?.id===a?.id?'2':m.result.loserScore):''}</small></div><div class="versus">VS</div><div class="finalist"><strong>${esc(b?.name||'A definir')}</strong><small>${esc(b?.uf||'—')}${m.result?' · '+(winner?.id===b?.id?'2':m.result.loserScore):''}</small></div></div><div class="champion-banner"><small>${winner?'CAMPEÃO NACIONAL':'O TRONO ESTÁ VAGO'}</small><b>${esc(winner?.name||'QUEM LEVA ESSA?')}</b></div><p class="final-hint">${a&&b?`Escolha o vencedor clicando em um dos finalistas acima pelo mapa completo, ou use o duelo abaixo.`:'Complete as semifinais de cada lado para definir os finalistas.'}</p>${a&&b?`<div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:20px"><button class="btn softgold" data-final-win="${esc(a.id)}">${esc(a.name)} vence 2–0</button><button class="btn softgold" data-final-win="${esc(b.id)}">${esc(b.name)} vence 2–0</button>${winner?`<button class="btn" data-close="1" data-r="4" data-m="0">Alterar placar para 2–${m.result.loserScore===1?'0':'1'}</button>`:''}</div>`:''}</div>`}
-function renderArena(){const v=view;const el=$('arena');if(v==='final'){renderFinal();return}const blocks=matchesForView(v,rounds());const n=blocks.length,round0=blocks[0].length;const slot=v==='all'||v==='first'?144:155,top=66,w=233,gap=75,sidePad=30,height=round0*slot+top+42,width=n*w+(n-1)*gap+2*sidePad;const x=r=>sidePad+r*(w+gap);const y=(r,i)=>top+slot*(2**r*(i+.5)) - 58;const center=(r,i)=>top+slot*(2**r*(i+.5));let lines='';for(let r=0;r<n-1;r++)for(let i=0;i<blocks[r].length;i++){const target=Math.floor(i/2);const from=blocks[r][i],destination=blocks[r+1][target];
- // Nunca desenhar uma linha até um adversário inventado quando houve sorteio manual.
- const manualDestination=Array.isArray(state.manualRounds?.[destination.r]);
- const targetId=i%2===0?destination.a:destination.b;
- if(manualDestination&&(!from.winner||from.winner!==targetId))continue;
- const c=from.winner?'#ffc85b9b':'#45556c83';const x1=x(r)+w,x2=x(r+1),mid=(x1+x2)/2;lines+=`<path d="M${x1} ${center(r,i)} H${mid} V${center(r+1,target)} H${x2}" fill="none" stroke="${c}" stroke-width="1.7"/>`};let html=`<svg class="bracket-lines" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${lines}</svg>`;let labels=['PRIMEIRA FASE','OITAVAS','QUARTAS','SEMIFINAIS','GRANDE FINAL'];for(let r=0;r<n;r++){html+=`<div class="round-label" style="left:${x(r)}px">${String(blocks[r][0].r+1).padStart(2,'0')} / ${labels[blocks[r][0].r]}</div>`;for(let i=0;i<blocks[r].length;i++)html+=uiMatch(blocks[r][i],x(r),y(r,i))}el.style.width=width+'px';el.style.height=height+'px';el.style.minHeight='0';el.innerHTML=html}
+function renderArena(){const v=view;const el=$('arena');if(v==='final'){renderFinal();return}const blocks=matchesForView(v,DueloCore.layoutRounds(rounds(),state.manualRounds));const n=blocks.length,round0=blocks[0].length;const slot=v==='all'||v==='first'?144:155,top=66,w=233,gap=75,sidePad=30,height=round0*slot+top+42,width=n*w+(n-1)*gap+2*sidePad;const x=r=>sidePad+r*(w+gap);const y=(r,i)=>top+slot*(2**r*(i+.5)) - 58;const center=(r,i)=>top+slot*(2**r*(i+.5));let lines='';for(let r=0;r<n-1;r++)for(const edge of DueloCore.roundEdges(blocks[r],blocks[r+1],Array.isArray(state.manualRounds?.[blocks[r+1][0].r]))){
+ const from=blocks[r][edge.from],c=from.winner?'#ffc85b9b':'#45556c83';const x1=x(r)+w,x2=x(r+1),mid=(x1+x2)/2;
+ lines+=`<path data-source-round="${from.r}" data-source-match="${from.m}" data-target-match="${blocks[r+1][edge.to].m}" d="M${x1} ${center(r,edge.from)} H${mid} V${center(r+1,edge.to)} H${x2}" fill="none" stroke="${c}" stroke-width="1.7"/>`}
+;let html=`<svg class="bracket-lines" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${lines}</svg>`;let labels=['PRIMEIRA FASE','OITAVAS','QUARTAS','SEMIFINAIS','GRANDE FINAL'];for(let r=0;r<n;r++){html+=`<div class="round-label" style="left:${x(r)}px">${String(blocks[r][0].r+1).padStart(2,'0')} / ${labels[blocks[r][0].r]}</div>`;for(let i=0;i<blocks[r].length;i++)html+=uiMatch(blocks[r][i],x(r),y(r,i))}el.style.width=width+'px';el.style.height=height+'px';el.style.minHeight='0';el.innerHTML=html}
 function renderProgress(){
  const num=completed();$('progressText').innerHTML=`<strong>${num}</strong> / 31 duelos definidos`;$('progressFill').style.width=(num/31*100)+'%';$('mcCount').textContent=state.people.length;
  document.querySelectorAll('[data-view]').forEach(t=>t.classList.toggle('selected',t.dataset.view===view));
- $('viewNote').textContent=view==='oitavas'?'Oitavas: escolha os confrontos no editor de fases, mesmo que só o próximo duelo esteja confirmado.':view==='quartas'?'Quartas: combine os vencedores das oitavas.':view==='semis'?'Semifinais: escolha os cruzamentos dos classificados.':view==='final'?'A final reúne quem avançou pelas duas metades do mapa. Todos os duelos são MD3.':view==='first'?'Primeira fase: 16 confrontos. Use o editor acima para escolher os MCs e mudar a posição das batalhas.':view==='all'?'A chave completa acompanha os confrontos sorteados que você cadastrou. Use “Encaixar sorteio na chave” para alinhar os blocos da primeira fase e as conexões.':`Metade ${view==='a'?'1':'2'}: visualização de 8 confrontos. Você pode mover qualquer batalha para a outra metade no editor.`;
+ $('viewNote').textContent=view==='oitavas'?'Oitavas: escolha os confrontos no editor de fases, mesmo que só o próximo duelo esteja confirmado.':view==='quartas'?'Quartas: combine os vencedores das oitavas.':view==='semis'?'Semifinais: escolha os cruzamentos dos classificados.':view==='final'?'A final reúne quem avançou pelas duas metades do mapa. Todos os duelos são MD3.':view==='first'?'Primeira fase: 16 confrontos. Use o editor acima para escolher os MCs e mudar a posição das batalhas.':view==='all'?'A chave completa acompanha os confrontos sorteados que você cadastrou. O mapa encaixa automaticamente os vencedores nos confrontos sorteados, preservando os números das batalhas.':`Metade ${view==='a'?'1':'2'}: visualização de 8 confrontos. Você pode mover qualquer batalha para a outra metade no editor.`;
 }
 function render(){dropInvalid();renderProgress();renderArena();renderQuickStage();persist()}
 function win(r,m,id){if(PUBLIC)return;const all=rounds();const match=all[r]?.[m];if(!match||!match.a||!match.b||!id||!(match.a===id||match.b===id))return;const key=`${r}-${m}`;if(match.winner===id){state.results[key].loserScore=state.results[key].loserScore?0:1}else{state.results[key]={winnerId:id,loserScore:0}}dropInvalid();render();}
@@ -632,7 +634,7 @@ function artMatch(ctx,m,x,top,cw,ch){
  });
 }
 function getArtSections(v){
- const all=rounds();
+ const all=DueloCore.layoutRounds(rounds(),state.manualRounds);
  if(v==='first'||v==='all-first')return [{title:'PRIMEIRA FASE',matches:all[0]}];
  if(v==='oitavas')return [{title:'OITAVAS DE FINAL',matches:all[1]}];
  if(v==='quartas')return [{title:'QUARTAS DE FINAL',matches:all[2]}];
@@ -777,15 +779,41 @@ if(PUBLIC){
  document.getElementById('useOfficial').onclick=()=>{if(!confirm('Substituir sua chave pelos resultados oficiais atuais?'))return;state=structuredClone(official);undoStack.length=0;renderRoster();renderBuilder();render();toast('Chave oficial copiada. Continue seus palpites!')};
  document.getElementById('startBlank').onclick=()=>{if(!confirm('Começar uma chave vazia? A chave atual será substituída.'))return;state=initial();undoStack.length=0;renderRoster();renderBuilder();render()};
 }else{
- let token='',remoteSha='',baseStamp=officialStamp,busy=false;
+ let token='',publisher=null;
+ onStateChange=current=>publisher?.changed(sanitize(current));
  const publish=document.getElementById('publishOfficial');
  const api='https://api.github.com/repos/nakataff/meus-projetos';
  const file='/contents/duelo-nacional/dados.json';
- async function request(path,options={}){const res=await fetch(api+path,{...options,headers:{Accept:'application/vnd.github+json',Authorization:'Bearer '+token,'Content-Type':'application/json',...options.headers}});const body=await res.json();if(!res.ok)throw Error(res.status===401?'Token inválido ou expirado.':res.status===403?'Sem permissão. Use um token com Contents: Read and write apenas no repositório meus-projetos.':res.status===409?'Os resultados mudaram em outra sessão. Recarregue antes de publicar.':body.message||'Falha no GitHub.');return body}
+ async function request(path,options={}){const res=await fetch(api+path,{cache:'no-store',signal:AbortSignal.timeout(20000),...options,headers:{Accept:'application/vnd.github+json',Authorization:'Bearer '+token,'Content-Type':'application/json',...options.headers}});const body=await res.json();if(!res.ok)throw Error(res.status===401?'Token inválido ou expirado.':res.status===403?'Sem permissão. Use um token com Contents: Read and write apenas no repositório meus-projetos.':res.status===409?'Os resultados mudaram em outra sessão. Recarregue antes de publicar.':body.message||'Falha no GitHub.');return body}
  function decodeFile(data){return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(data.content.replace(/\s/g,'')),c=>c.charCodeAt(0))))}
- document.getElementById('connectGithub').onclick=async()=>{const input=document.getElementById('githubToken');token=input.value.trim();input.value='';if(!token){setStatus('Informe um token do GitHub para entrar.');return}try{setStatus('Validando acesso ao repositório…');const repo=await request('');if(!repo.permissions?.push)throw Error('Esta conta não tem permissão para publicar no repositório.');const data=await request(file+'?ref=main');const raw=decodeFile(data);remoteSha=data.sha;baseStamp=raw.updatedAt||null;official=sanitize(raw);state=structuredClone(official);renderRoster();renderBuilder();render();document.body.classList.remove('admin-locked');publish.disabled=false;document.getElementById('connectGithub').hidden=true;input.hidden=true;document.getElementById('disconnectGithub').hidden=false;setStatus('Conectado. Altere os duelos e clique em Publicar resultados. O token fica apenas na memória desta aba.')}catch(e){token='';setStatus(e.message)}};
- publish.onclick=async()=>{if(busy||!token)return;busy=true;publish.disabled=true;try{setStatus('Publicando resultados…');const live=await request(file+'?ref=main');const raw=decodeFile(live);if(live.sha!==remoteSha||(raw.updatedAt||null)!==baseStamp)throw Error('Outra sessão publicou resultados. Faça um Backup JSON do seu rascunho e recarregue antes de continuar.');const payload={...sanitize(state),app:'Duelo Nacional MD3',version:3,updatedAt:new Date().toISOString()};const bytes=new TextEncoder().encode(JSON.stringify(payload,null,2)+'\n');let binary='';for(const b of bytes)binary+=String.fromCharCode(b);const saved=await request(file,{method:'PUT',body:JSON.stringify({message:'duelo: atualizar resultados oficiais',content:btoa(binary),sha:remoteSha,branch:'main'})});remoteSha=saved.content.sha;baseStamp=payload.updatedAt;official=structuredClone(state);setStatus('Publicado no GitHub. A página pública recebe os resultados após a atualização do GitHub Pages (pode levar alguns minutos).');toast('Resultados publicados!')}catch(e){setStatus('Não publicado: '+e.message)}finally{busy=false;publish.disabled=false}};
- document.getElementById('disconnectGithub').onclick=()=>{token='';document.body.classList.add('admin-locked');publish.disabled=true;document.getElementById('connectGithub').hidden=false;document.getElementById('githubToken').hidden=false;document.getElementById('disconnectGithub').hidden=true;setStatus('Sessão encerrada. O rascunho permanece neste navegador.')};
+ function syncStatus(kind,error){
+  publish.disabled=kind==='publishing';
+  if(kind==='publishing')setStatus('Publicando resultado automaticamente…');
+  else if(kind==='pending')setStatus('Alteração salva neste navegador · publicação automática em andamento…');
+  else if(kind==='saved')setStatus('Resultado publicado automaticamente. A página pública consulta os resultados a cada 30 segundos.');
+  else setStatus('Não publicado: '+error.message+' O rascunho está salvo neste navegador. Clique em Publicar agora para tentar novamente.');
+ }
+ document.getElementById('connectGithub').onclick=async()=>{
+  const input=document.getElementById('githubToken');token=input.value.trim();input.value='';if(!token){setStatus('Informe um token do GitHub para entrar.');return}
+  document.getElementById('connectGithub').disabled=true;
+  try{
+   setStatus('Validando acesso ao repositório…');const repo=await request('');if(!repo.permissions?.push)throw Error('Esta conta não tem permissão para publicar no repositório.');
+   const data=await request(file+'?ref=main'),raw=decodeFile(data);official=sanitize(raw);state=structuredClone(official);renderRoster();renderBuilder();render();
+   publisher=DueloCore.createPublisher({read:()=>request(file+'?ref=main'),write:async({state:snapshot,sha})=>{
+    const payload={...snapshot,app:'Duelo Nacional MD3',version:4,updatedAt:new Date().toISOString()},bytes=new TextEncoder().encode(JSON.stringify(payload,null,2)+'\n');
+    let binary='';for(const b of bytes)binary+=String.fromCharCode(b);
+    const saved=await request(file,{method:'PUT',body:JSON.stringify({message:'duelo: publicar resultado automaticamente',content:btoa(binary),sha,branch:'main'})});
+    return {sha:saved.content.sha,updatedAt:payload.updatedAt};
+   },onStatus:syncStatus,onCommitted:snapshot=>{official=structuredClone(snapshot)}});
+   publisher.initialize({sha:data.sha,state:sanitize(state)});
+   document.body.classList.remove('admin-locked');publish.disabled=false;document.getElementById('connectGithub').hidden=true;input.hidden=true;document.getElementById('disconnectGithub').hidden=false;
+   setStatus('Conectado · publicação automática ativada. Clique no vencedor ou salve um duelo para publicar. O token fica apenas na memória desta aba.');
+  }catch(e){token='';setStatus(e.message)}finally{document.getElementById('connectGithub').disabled=false}
+ };
+ publish.onclick=()=>publisher?.flush();
+ document.getElementById('disconnectGithub').onclick=()=>{if(publisher?.hasPending()&&!confirm('Ainda há uma publicação pendente. Sair e manter apenas o rascunho neste navegador?'))return;publisher?.dispose();publisher=null;token='';document.body.classList.add('admin-locked');publish.disabled=true;document.getElementById('connectGithub').hidden=false;document.getElementById('githubToken').hidden=false;document.getElementById('disconnectGithub').hidden=true;setStatus('Sessão encerrada. O rascunho permanece neste navegador.')};
+ window.addEventListener('beforeunload',e=>{if(publisher?.hasPending()){e.preventDefault();e.returnValue=''}});
+ window.addEventListener('online',()=>publisher?.flush());
  setStatus('Entre com acesso de escrita ao repositório para editar e publicar os resultados.');
 }
 
