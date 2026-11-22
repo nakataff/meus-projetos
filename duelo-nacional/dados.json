@@ -221,8 +221,8 @@
       "mc5",
       "mc24",
       "mc21",
-      null,
-      null
+      "mc3",
+      "mc2"
     ],
     "3": [
       null,
@@ -343,9 +343,13 @@
     "2-2": {
       "winnerId": "mc24",
       "loserScore": 1
+    },
+    "2-3": {
+      "winnerId": "mc3",
+      "loserScore": 0
     }
   },
   "app": "Duelo Nacional MD3",
   "version": 3,
-  "updatedAt": "2026-11-22T22:13:27.842Z"
+  "updatedAt": "2026-11-22T22:21:54.859Z"
 }
