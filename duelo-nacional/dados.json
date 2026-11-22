@@ -225,10 +225,10 @@
       "mc2"
     ],
     "3": [
-      null,
-      null,
-      null,
-      null
+      "mc14",
+      "mc3",
+      "mc23",
+      "mc24"
     ],
     "4": [
       null,
@@ -351,5 +351,5 @@
   },
   "app": "Duelo Nacional MD3",
   "version": 3,
-  "updatedAt": "2026-11-22T22:21:54.859Z"
+  "updatedAt": "2026-11-22T22:28:33.570Z"
 }
