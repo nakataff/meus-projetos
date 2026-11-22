@@ -21,6 +21,12 @@
    if(toIndex>=0)edges.push({from:fromIndex,to:toIndex});
   });return edges;
  }
+ function roundsForView(rounds,manualRounds,view){
+  // Individual stages keep their recorded duel order; bracket views trace advancement.
+  return ['first','oitavas','quartas','semis','final'].includes(view)
+   ?rounds.map(round=>round.slice())
+   :layoutRounds(rounds,manualRounds);
+ }
  function createPublisher({read,write,onStatus=()=>{},onCommitted=()=>{},delay=250}){
   let sha='',published='',latest='',running=false,timer=null,disposed=false,conflict=false;
   const pending=()=>!!latest&&latest!==published;
@@ -46,6 +52,7 @@
    dispose(){disposed=true;clearTimeout(timer)}
   };
  }
- const api={layoutRounds,roundEdges,createPublisher};
+ const api={layoutRounds,roundsForView,roundEdges,createPublisher};
  if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.DueloCore=api;
 })(globalThis);
+

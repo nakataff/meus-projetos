@@ -1,6 +1,6 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const {layoutRounds,roundEdges,createPublisher}=require('./core.js');
+const {layoutRounds,roundsForView,roundEdges,createPublisher}=require('./core.js');
 const sample={slots:['mc31','mc13','mc6','mc15','mc9','mc8','mc2','mc10','mc23','mc27','mc22','mc19','mc5','mc30','mc29','mc17','mc3','mc11','mc21','mc12','mc14','mc20','mc0','mc28','mc24','mc7','mc16','mc1','mc4','mc18','mc26','mc25'],manualRounds:{1:['mc22','mc24','mc14','mc31','mc4','mc3','mc23','mc0','mc6','mc5','mc29','mc9','mc16','mc21','mc2','mc26'],2:Array(8).fill(null),3:Array(4).fill(null),4:Array(2).fill(null)},results:{}};
 ['mc31','mc6','mc9','mc2','mc23','mc22','mc5','mc29','mc3','mc21','mc14','mc0','mc24','mc16','mc4','mc26'].forEach((winnerId,i)=>sample.results['0-'+i]={winnerId});
 ['mc24','mc14','mc3','mc23','mc6','mc29','mc21'].forEach((winnerId,i)=>sample.results['1-'+i]={winnerId});
@@ -15,6 +15,21 @@ function rounds(state){
  }return out;
 }
 const wait=()=>new Promise(resolve=>setImmediate(resolve));
+test('cada fase mantém 01 até o último duelo mesmo com sorteios posteriores',()=>{
+ const data=structuredClone(sample);data.manualRounds[2]=['mc21','mc24',null,null,null,null,null,null];
+ const original=rounds(data),before=JSON.stringify(original);
+ for(const view of ['first','oitavas','quartas','semis','final']){
+  const display=roundsForView(original,data.manualRounds,view);
+  assert.deepEqual(display,original);
+  for(const stage of display)assert.deepEqual(stage.map(m=>m.m),Array.from({length:stage.length},(_,i)=>i));
+ }
+ for(const view of ['all','a','b','all-first','all-round16','all-last']){
+  const display=roundsForView(original,data.manualRounds,view);
+  assert.deepEqual(display,layoutRounds(original,data.manualRounds));
+  assert.equal(display[1][0].winner,'mc21');assert.equal(display[1][1].winner,'mc24');
+ }
+ assert.equal(JSON.stringify(original),before);
+});
 test('sorteio alinha as 16 origens sem alterar participantes, IDs ou resultados',()=>{
  const original=rounds(sample),before=JSON.stringify(original),layout=layoutRounds(original,sample.manualRounds);
  assert.equal(JSON.stringify(original),before);
@@ -62,3 +77,4 @@ test('outra sessão não é sobrescrita; desconectar cancela publicações agend
  p.initialize({sha:'old',state:{score:0}});p.changed({score:1});await p.flush();await p.flush();assert.equal(writes,0);assert.equal(p.hasPending(),true);p.dispose();
  const q=createPublisher({read:async()=>({sha:'a'}),write:async()=>{writes++}});q.initialize({sha:'a',state:{score:0}});q.changed({score:1});q.dispose();await q.flush();assert.equal(writes,0);
 });
+

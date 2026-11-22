@@ -359,53 +359,9 @@ function refreshAlignUi(){
  label.className='qr-align-info warn';label.textContent=`${summary.incorrect} confronto(s) sorteado(s) ainda não estão alinhados no diagrama. Clique em “Encaixar sorteio na chave” para organizar as batalhas anteriores.`;
 }
 function alignBracketToDraw(){
- const original=JSON.stringify(state),report={pairs:0,moved:0,unresolved:[],blocked:[]};
- for(let targetRound=4;targetRound>=1;targetRound--){
-  const manualTarget=state.manualRounds?.[targetRound];
-  if(!Array.isArray(manualTarget))continue;
-  const sourceRound=targetRound-1;
-  if(sourceRound>0&&!Array.isArray(state.manualRounds?.[sourceRound])){
-   if(manualTarget.some(Boolean))report.blocked.push(ROUND_LABELS[targetRound]);
-   continue;
-  }
-  const current=rounds()[sourceRound];
-  const len=matchNum(sourceRound),assigned=Array(len).fill(null),pinned=new Set();
-  // Freeze the already announced pairings into source positions. Unannounced duels keep their relative order.
-  for(let m=0;m<matchNum(targetRound);m++){
-   const a=manualTarget[2*m],b=manualTarget[2*m+1];
-   if(!a||!b)continue;
-   const left=current.findIndex(src=>src.winner===a),right=current.findIndex(src=>src.winner===b);
-   if(left<0||right<0||left===right||pinned.has(left)||pinned.has(right)){
-    report.unresolved.push(`${ROUND_LABELS[targetRound]} #${m+1}`);continue;
-   }
-   assigned[2*m]=left;assigned[2*m+1]=right;
-   pinned.add(left);pinned.add(right);report.pairs++;
-  }
-  let next=0;
-  for(let i=0;i<len;i++)if(assigned[i]===null){while(pinned.has(next))next++;assigned[i]=next++;}
-  if(assigned.every((src,i)=>src===i))continue;
-  // Save both full MC slots and their respective result objects as an inseparable block.
-  const slots=sourceRound===0?state.slots:state.manualRounds[sourceRound];
-  const oldSlots=slots.slice();
-  const oldResults=Array.from({length:len},(_,i)=>state.results[`${sourceRound}-${i}`]);
-  const reordered=assigned.flatMap(i=>oldSlots.slice(2*i,2*i+2));
-  if(sourceRound===0)state.slots=reordered;else state.manualRounds[sourceRound]=reordered;
-  for(let i=0;i<len;i++){
-   const key=`${sourceRound}-${i}`,r=oldResults[assigned[i]];
-   if(r)state.results[key]={winnerId:r.winnerId,loserScore:r.loserScore};else delete state.results[key];
-   if(assigned[i]!==i)report.moved++;
-  }
- }
- if(JSON.stringify(state)!==original){undoStack.push(original);if(undoStack.length>25)undoStack.shift();dropInvalid();renderRoster();renderBuilder();render();}
- const remain=countMisalignedLinks().incorrect;
- if(report.moved){toast(`${report.pairs} confronto(s) encaixado(s); resultados preservados.`);}
- else if(report.pairs&&!remain){toast('Os confrontos já estão encaixados na chave!');}
- else if(report.unresolved.length||report.blocked.length){toast('Ainda há duelos sem encaixe. Confira os classificados das fases anteriores.');}
- else toast('Cadastre os duelos sorteados com os dois classificados para encaixar.');
- if(report.unresolved.length||report.blocked.length){
-  const label=$('alignInfo');label.className='qr-align-info warn';
-  label.textContent=`${report.pairs} pares avaliados. Sem encaixe: ${[...report.unresolved,...report.blocked].join(', ')}. Confira os resultados e se as rodadas anteriores estão em modo manual.`;
- }
+ // Alignment belongs to the display only. Keep each phase's recorded duel order intact.
+ const summary=countMisalignedLinks();
+ toast(summary.incorrect?'Confira os classificados das fases anteriores para completar as conexões.':'Chave completa encaixada. A ordem dos confrontos em cada fase foi preservada.');
 }
 $('alignBracketBtn').addEventListener('click',()=>{alignBracketToDraw();view='all';render();$('arenaScroll').scrollTop=0;});
 $('alignUndoBtn').addEventListener('click',()=>{if(!undoStack.length)return;state=sanitize(JSON.parse(undoStack.pop()));renderRoster();renderBuilder();render();toast('Organização anterior restaurada.');});
@@ -492,14 +448,14 @@ function uiMatch(m,x,y){const a=byId(m.a),b=byId(m.b),has=!!m.winner;
 const fighter=(p,idx)=>{let score='–';if(has)score=m.winner===p?.id?'2':String(m.result.loserScore);const winner=has&&p&&m.winner===p.id,loser=has&&p&&!winner;return `<button class="fighter ${winner?'winner':loser?'loser':''}" data-win="${p?esc(p.id):''}" data-r="${m.r}" data-m="${m.m}" ${p&&a&&b?'':'disabled'} title="${p?'Clique para dar a vitória por 2–0':'Aguardando definição'}"><span class="fighter-name">${p?esc(p.name):'A definir'}</span><span class="uf">${p?esc(p.uf||'UF'):'—'}</span><span class="score">${score}</span></button>`};
 return `<div class="match ${has?'has-result':''} ${m.r===4?'highlight':''}" style="left:${x}px;top:${y}px"><div class="match-hd"><span>#${String(m.m+1).padStart(2,'0')} · ${['1ª FASE','OITAVAS','QUARTAS','SEMIFINAL','FINAL'][m.r]}</span><span class="${has?'done':''}">${has?'● ENCERRADA':'MD3'}</span></div><div class="fighters">${fighter(a,0)}<div class="fight-divider"></div>${fighter(b,1)}</div><div class="match-bottom"><span>${has?'VENCEDOR DEFINIDO':a&&b?'TOQUE NO VENCEDOR':'AGUARDANDO DUELO'}</span>${has?`<button class="score-toggle" data-close="1" data-r="${m.r}" data-m="${m.m}" title="Alternar entre 2–0 e 2–1">${m.result.loserScore===1?'2–1 ↔':'2–0 ↔'}</button>`:'<span class="pick-tip">● ● ○</span>'}</div></div>`}
 function renderFinal(){const m=rounds()[4][0],a=byId(m.a),b=byId(m.b),winner=byId(m.winner);$('arena').style.width='min(100%,760px)';$('arena').style.height='auto';$('arena').style.minHeight='0';$('arena').innerHTML=`<div class="champion-panel"><div class="eyebrow">A ÚLTIMA BATALHA · MELHOR DE TRÊS</div><h3>GRANDE FINAL</h3><div class="final-duel"><div class="finalist"><strong>${esc(a?.name||'A definir')}</strong><small>${esc(a?.uf||'—')}${m.result?' · '+(winner?.id===a?.id?'2':m.result.loserScore):''}</small></div><div class="versus">VS</div><div class="finalist"><strong>${esc(b?.name||'A definir')}</strong><small>${esc(b?.uf||'—')}${m.result?' · '+(winner?.id===b?.id?'2':m.result.loserScore):''}</small></div></div><div class="champion-banner"><small>${winner?'CAMPEÃO NACIONAL':'O TRONO ESTÁ VAGO'}</small><b>${esc(winner?.name||'QUEM LEVA ESSA?')}</b></div><p class="final-hint">${a&&b?`Escolha o vencedor clicando em um dos finalistas acima pelo mapa completo, ou use o duelo abaixo.`:'Complete as semifinais de cada lado para definir os finalistas.'}</p>${a&&b?`<div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:20px"><button class="btn softgold" data-final-win="${esc(a.id)}">${esc(a.name)} vence 2–0</button><button class="btn softgold" data-final-win="${esc(b.id)}">${esc(b.name)} vence 2–0</button>${winner?`<button class="btn" data-close="1" data-r="4" data-m="0">Alterar placar para 2–${m.result.loserScore===1?'0':'1'}</button>`:''}</div>`:''}</div>`}
-function renderArena(){const v=view;const el=$('arena');if(v==='final'){renderFinal();return}const blocks=matchesForView(v,DueloCore.layoutRounds(rounds(),state.manualRounds));const n=blocks.length,round0=blocks[0].length;const slot=v==='all'||v==='first'?144:155,top=66,w=233,gap=75,sidePad=30,height=round0*slot+top+42,width=n*w+(n-1)*gap+2*sidePad;const x=r=>sidePad+r*(w+gap);const y=(r,i)=>top+slot*(2**r*(i+.5)) - 58;const center=(r,i)=>top+slot*(2**r*(i+.5));let lines='';for(let r=0;r<n-1;r++)for(const edge of DueloCore.roundEdges(blocks[r],blocks[r+1],Array.isArray(state.manualRounds?.[blocks[r+1][0].r]))){
+function renderArena(){const v=view;const el=$('arena');if(v==='final'){renderFinal();return}const blocks=matchesForView(v,DueloCore.roundsForView(rounds(),state.manualRounds,v));const n=blocks.length,round0=blocks[0].length;const slot=v==='all'||v==='first'?144:155,top=66,w=233,gap=75,sidePad=30,height=round0*slot+top+42,width=n*w+(n-1)*gap+2*sidePad;const x=r=>sidePad+r*(w+gap);const y=(r,i)=>top+slot*(2**r*(i+.5)) - 58;const center=(r,i)=>top+slot*(2**r*(i+.5));let lines='';for(let r=0;r<n-1;r++)for(const edge of DueloCore.roundEdges(blocks[r],blocks[r+1],Array.isArray(state.manualRounds?.[blocks[r+1][0].r]))){
  const from=blocks[r][edge.from],c=from.winner?'#ffc85b9b':'#45556c83';const x1=x(r)+w,x2=x(r+1),mid=(x1+x2)/2;
  lines+=`<path data-source-round="${from.r}" data-source-match="${from.m}" data-target-match="${blocks[r+1][edge.to].m}" d="M${x1} ${center(r,edge.from)} H${mid} V${center(r+1,edge.to)} H${x2}" fill="none" stroke="${c}" stroke-width="1.7"/>`}
 ;let html=`<svg class="bracket-lines" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${lines}</svg>`;let labels=['PRIMEIRA FASE','OITAVAS','QUARTAS','SEMIFINAIS','GRANDE FINAL'];for(let r=0;r<n;r++){html+=`<div class="round-label" style="left:${x(r)}px">${String(blocks[r][0].r+1).padStart(2,'0')} / ${labels[blocks[r][0].r]}</div>`;for(let i=0;i<blocks[r].length;i++)html+=uiMatch(blocks[r][i],x(r),y(r,i))}el.style.width=width+'px';el.style.height=height+'px';el.style.minHeight='0';el.innerHTML=html}
 function renderProgress(){
  const num=completed();$('progressText').innerHTML=`<strong>${num}</strong> / 31 duelos definidos`;$('progressFill').style.width=(num/31*100)+'%';$('mcCount').textContent=state.people.length;
  document.querySelectorAll('[data-view]').forEach(t=>t.classList.toggle('selected',t.dataset.view===view));
- $('viewNote').textContent=view==='oitavas'?'Oitavas: escolha os confrontos no editor de fases, mesmo que só o próximo duelo esteja confirmado.':view==='quartas'?'Quartas: combine os vencedores das oitavas.':view==='semis'?'Semifinais: escolha os cruzamentos dos classificados.':view==='final'?'A final reúne quem avançou pelas duas metades do mapa. Todos os duelos são MD3.':view==='first'?'Primeira fase: 16 confrontos. Use o editor acima para escolher os MCs e mudar a posição das batalhas.':view==='all'?'A chave completa acompanha os confrontos sorteados que você cadastrou. O mapa encaixa automaticamente os vencedores nos confrontos sorteados, preservando os números das batalhas.':`Metade ${view==='a'?'1':'2'}: visualização de 8 confrontos. Você pode mover qualquer batalha para a outra metade no editor.`;
+ $('viewNote').textContent=view==='oitavas'?'Oitavas: confrontos na ordem cadastrada, do 01 ao 08.':view==='quartas'?'Quartas: confrontos na ordem cadastrada, do 01 ao 04.':view==='semis'?'Semifinais: confrontos na ordem cadastrada, do 01 ao 02.':view==='final'?'A final reúne quem avançou pelas duas metades do mapa. Todos os duelos são MD3.':view==='first'?'Primeira fase: 16 confrontos na ordem cadastrada, do 01 ao 16.':view==='all'?'A chave completa acompanha os confrontos sorteados que você cadastrou. O mapa encaixa automaticamente os vencedores nos confrontos sorteados, preservando os números das batalhas.':`Metade ${view==='a'?'1':'2'}: visualização de 8 confrontos. Você pode mover qualquer batalha para a outra metade no editor.`;
 }
 function render(){dropInvalid();renderProgress();renderArena();renderQuickStage();persist()}
 function win(r,m,id){if(PUBLIC)return;const all=rounds();const match=all[r]?.[m];if(!match||!match.a||!match.b||!id||!(match.a===id||match.b===id))return;const key=`${r}-${m}`;if(match.winner===id){state.results[key].loserScore=state.results[key].loserScore?0:1}else{state.results[key]={winnerId:id,loserScore:0}}dropInvalid();render();}
@@ -634,7 +590,7 @@ function artMatch(ctx,m,x,top,cw,ch){
  });
 }
 function getArtSections(v){
- const all=DueloCore.layoutRounds(rounds(),state.manualRounds);
+ const all=DueloCore.roundsForView(rounds(),state.manualRounds,v);
  if(v==='first'||v==='all-first')return [{title:'PRIMEIRA FASE',matches:all[0]}];
  if(v==='oitavas')return [{title:'OITAVAS DE FINAL',matches:all[1]}];
  if(v==='quartas')return [{title:'QUARTAS DE FINAL',matches:all[2]}];
@@ -769,7 +725,7 @@ if(!PUBLIC&&!ADMIN)importHash();renderRoster();renderBuilder();render();
 if(PUBLIC){
  document.querySelector('.hero p').textContent='Acompanhe os confrontos e os resultados do Duelo Nacional. Escolha uma fase abaixo ou crie sua própria chave.';
  $('arena').addEventListener('click',e=>{e.stopImmediatePropagation();e.preventDefault()},true);
- const publicRender=()=>{document.querySelectorAll('#arena .fighter').forEach(b=>{b.removeAttribute('title');b.setAttribute('aria-disabled','true')});$('viewNote').textContent='Resultados cadastrados pelo organizador. Arraste para os lados para acompanhar a chave completa.';};
+ const publicRender=()=>{document.querySelectorAll('#arena .fighter').forEach(b=>{b.removeAttribute('title');b.setAttribute('aria-disabled','true')});$('viewNote').textContent=['first','oitavas','quartas','semis','final'].includes(view)?'Confrontos na ordem da fase, do primeiro ao último. Resultados cadastrados pelo organizador.':'A chave completa conecta os participantes conforme avançam. Arraste para os lados para acompanhar.';};
  publicRender();new MutationObserver(publicRender).observe($('arena'),{childList:true});
  let refreshing=false;async function refresh(){if(refreshing||document.hidden)return;refreshing=true;try{const next=await loadOfficial();if(JSON.stringify(next)!==JSON.stringify(state)){state=next;render();}setStatus('Chave oficial · conferida às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+' · atualização automática a cada 30 s.');}catch{setStatus('Sem conexão para atualizar. Exibindo a última chave carregada.')}finally{refreshing=false}}
  document.getElementById('refreshOfficial').onclick=refresh;setInterval(refresh,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
@@ -819,3 +775,4 @@ if(PUBLIC){
 
 if(window.matchMedia('(min-width:801px)').matches){$('rosterPanel').classList.remove('collapsed')}
 })();
+
