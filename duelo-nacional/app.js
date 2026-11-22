@@ -335,12 +335,12 @@ function quickPhaseText(){
 }
 // Ajustar o desenho da chave às disputas sorteadas, sem alterar os resultados das batalhas.
 function countMisalignedLinks(){
- const all=rounds();let incorrect=0,confirmed=0;
+ const all=DueloCore.layoutRounds(rounds(),state.manualRounds);let incorrect=0,confirmed=0;
  for(let r=1;r<=4;r++){
   if(!Array.isArray(state.manualRounds?.[r]))continue;
-  for(const target of all[r]){
+  for(const [position,target] of all[r].entries()){
    if(!target.a||!target.b)continue;
-   const left=all[r-1][2*target.m],right=all[r-1][2*target.m+1];
+   const left=all[r-1][2*position],right=all[r-1][2*position+1];
    if(left?.winner===target.a&&right?.winner===target.b)confirmed++;
    else incorrect++;
   }
