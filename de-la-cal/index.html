@@ -55,7 +55,9 @@ else if(tab==='match'){const d=await json(base(l)+'summary?event='+encodeURIComp
 window.addEventListener('hashchange',render);render();
 async function refreshEdition(){
  try {
-  const response=await fetch('./brasileirao.json',{cache:'no-cache'});
+  let response;
+  try {response=await fetch('https://raw.githubusercontent.com/nakataff/meus-projetos/main/de-la-cal/brasileirao.json',{cache:'no-cache',signal:AbortSignal.timeout(5000)})} catch {}
+  if(!response?.ok)response=await fetch('./brasileirao.json',{cache:'no-cache'});
   if(!response.ok)return;
   const data=await response.json();
   if(data.table?.length!==20||!data.goals?.length||!data.games?.length)return;
