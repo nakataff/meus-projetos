@@ -1,0 +1,1354 @@
+{
+  "Chapecoense": {
+    "players": [
+      {
+        "name": "Marcinho",
+        "goals": 5
+      },
+      {
+        "name": "Garcez",
+        "goals": 3
+      },
+      {
+        "name": "Túlio Eduardo",
+        "goals": 3
+      },
+      {
+        "name": "Walter Clar",
+        "goals": 3
+      },
+      {
+        "name": "Bolasie",
+        "goals": 2
+      },
+      {
+        "name": "Giovanni Augusto",
+        "goals": 2
+      },
+      {
+        "name": "Jean Carlos",
+        "goals": 2
+      },
+      {
+        "name": "Kauan",
+        "goals": 2
+      },
+      {
+        "name": "Neto Pessoa",
+        "goals": 2
+      },
+      {
+        "name": "Rafael Carvalheira",
+        "goals": 2
+      },
+      {
+        "name": "Bruno Pacheco",
+        "goals": 1
+      },
+      {
+        "name": "Camilo",
+        "goals": 1
+      },
+      {
+        "name": "Eduardo Doma",
+        "goals": 1
+      },
+      {
+        "name": "Higor Meritão",
+        "goals": 1
+      },
+      {
+        "name": "João Paulo",
+        "goals": 1
+      },
+      {
+        "name": "Max",
+        "goals": 1
+      },
+      {
+        "name": "Miguel Carvalho",
+        "goals": 1
+      },
+      {
+        "name": "Rubens",
+        "goals": 1
+      },
+      {
+        "name": "Ênio",
+        "goals": 1
+      }
+    ],
+    "gf": 37,
+    "ga": 74,
+    "logo": "https://images.fotmob.com/image_resources/logo/teamlogo/197693.png"
+  },
+  "Palmeiras": {
+    "players": [
+      {
+        "name": "Flaco López",
+        "goals": 10
+      },
+      {
+        "name": "Maurício",
+        "goals": 10
+      },
+      {
+        "name": "Arias",
+        "goals": 7
+      },
+      {
+        "name": "Ramón Sosa",
+        "goals": 5
+      },
+      {
+        "name": "Vitor Roque",
+        "goals": 5
+      },
+      {
+        "name": "Allan",
+        "goals": 4
+      },
+      {
+        "name": "Gustavo Gómez",
+        "goals": 4
+      },
+      {
+        "name": "Felipe Anderson",
+        "goals": 3
+      },
+      {
+        "name": "Giay",
+        "goals": 3
+      },
+      {
+        "name": "Alexander Barboza",
+        "goals": 2
+      },
+      {
+        "name": "Marlon Freitas",
+        "goals": 2
+      },
+      {
+        "name": "Murilo",
+        "goals": 2
+      },
+      {
+        "name": "Paulinho",
+        "goals": 2
+      },
+      {
+        "name": "Andreas Pereira",
+        "goals": 1
+      },
+      {
+        "name": "Piquerez",
+        "goals": 1
+      }
+    ],
+    "gf": 64,
+    "ga": 29,
+    "logo": "https://images.fotmob.com/image_resources/logo/teamlogo/10283.png"
+  },
+  "Botafogo": {
+    "players": [
+      {
+        "name": "Danilo",
+        "goals": 11
+      },
+      {
+        "name": "Arthur Cabral",
+        "goals": 7
+      },
+      {
+        "name": "Edenílson",
+        "goals": 6
+      },
+      {
+        "name": "Alex Telles",
+        "goals": 4
+      },
+      {
+        "name": "Matheus Martins",
+        "goals": 4
+      },
+      {
+        "name": "Santi Rodríguez",
+        "goals": 2
+      },
+      {
+        "name": "Tiquinho Soares",
+        "goals": 2
+      },
+      {
+        "name": "Barrera",
+        "goals": 1
+      },
+      {
+        "name": "Ferraresi",
+        "goals": 1
+      },
+      {
+        "name": "Huguinho",
+        "goals": 1
+      },
+      {
+        "name": "Justino",
+        "goals": 1
+      },
+      {
+        "name": "Júnior Santos",
+        "goals": 1
+      },
+      {
+        "name": "Kadir",
+        "goals": 1
+      },
+      {
+        "name": "Lucas Emanuel",
+        "goals": 1
+      },
+      {
+        "name": "Medina",
+        "goals": 1
+      },
+      {
+        "name": "Montoro",
+        "goals": 1
+      }
+    ],
+    "gf": 47,
+    "ga": 58,
+    "logo": "https://images.fotmob.com/image_resources/logo/teamlogo/8517.png"
+  },
+  "Bahia": {
+    "players": [
+      {
+        "name": "Luciano Juba",
+        "goals": 11
+      },
+      {
+        "name": "Erick Pulga",
+        "goals": 5
+      },
+      {
+        "name": "Alejo Véliz",
+        "goals": 4
+      },
+      {
+        "name": "Everaldo",
+        "goals": 4
+      },
+      {
+        "name": "Jean Lucas",
+        "goals": 4
+      },
+      {
+        "name": "David Duarte",
+        "goals": 3
+      },
+      {
+        "name": "Willian José",
+        "goals": 3
+      },
+      {
+        "name": "Cristian Olivera",
+        "goals": 2
+      },
+      {
+        "name": "Rodrigo Nestor",
+        "goals": 2
+      },
+      {
+        "name": "Sanabria",
+        "goals": 2
+      },
+      {
+        "name": "Acevedo",
+        "goals": 1
+      },
+      {
+        "name": "Ademir",
+        "goals": 1
+      },
+      {
+        "name": "Marcos Victor",
+        "goals": 1
+      },
+      {
+        "name": "Román Gómez",
+        "goals": 1
+      }
+    ],
+    "gf": 50,
+    "ga": 46,
+    "logo": "https://images.fotmob.com/image_resources/logo/teamlogo/7877.png"
+  },
+  "São Paulo": {
+    "players": [
+      {
+        "name": "Calleri",
+        "goals": 10
+      },
+      {
+        "name": "Luciano",
+        "goals": 9
+      },
+      {
+        "name": "Artur",
+        "goals": 4
+      },
+      {
+        "name": "Ferreira",
+        "goals": 4
+      },
+      {
+        "name": "Lucas Moura",
+        "goals": 2
+      },
+      {
+        "name": "Pedro Lima",
+        "goals": 2
+      },
+      {
+        "name": "Bobadilla",
+        "goals": 1
+      },
+      {
+        "name": "Cauly",
+        "goals": 1
+      },
+      {
+        "name": "Danielzinho",
+        "goals": 1
+      },
+      {
+        "name": "Dória",
+        "goals": 1
+      },
+      {
+        "name": "Gustavo Santana",
+        "goals": 1
+      },
+      {
+        "name": "Iago",
+        "goals": 1
+      },
+      {
+        "name": "Pablo Maia",
+        "goals": 1
+      },
+      {
+        "name": "Sabino",
+        "goals": 1
+      }
+    ],
+    "gf": 40,
+    "ga": 41,
+    "logo": "https://images.fotmob.com/image_resources/logo/teamlogo/10277.png"
+  },
+  "Cruzeiro": {
+    "players": [
+      {
+        "name": "Kaio Jorge",
+        "goals": 14
+      },
+      {
+        "name": "Matheus Pereira",
+        "goals": 11
+      },
+      {
+        "name": "Christian",
+        "goals": 5
+      },
+      {
+        "name": "Arroyo",
+        "goals": 4
+      },
+      {
+        "name": "Villarreal",
+        "goals": 3
+      },
+      {
+        "name": "Bruno Rodrigues",
+        "goals": 2
+      },
+      {
+        "name": "João Marcelo",
+        "goals": 2
+      },
+      {
+        "name": "Kauã Moraes",
+        "goals": 2
+      },
+      {
+        "name": "Lucas Romero",
+        "goals": 2
+      },
+      {
+        "name": "Villalba",
+        "goals": 2
+      },
+      {
+        "name": "Wanderson",
+        "goals": 2
+      },
+      {
+        "name": "Wesley",
+        "goals": 2
+      },
+      {
+        "name": "Zé Lucas",
+        "goals": 2
+      },
+      {
+        "name": "Fabrício Bruno",
+        "goals": 1
+      },
+      {
+        "name": "Felipe Morais",
+        "goals": 1
+      },
+      {
+        "name": "Japa",
+        "goals": 1
+      },
+      {
+        "name": "Kaique Kenji",
+        "goals": 1
+      },
+      {
+        "name": "Matheus Henrique",
+        "goals": 1
+      },
+      {
+        "name": "Sinisterra",
+        "goals": 1
+      }
+    ],
+    "gf": 59,
+    "ga": 50,
+    "logo": "https://images.fotmob.com/image_resources/logo/teamlogo/9781.png"
+  },
+  "Bragantino": {
+    "players": [
+      {
+        "name": "Lucas Barbosa",
+        "goals": 7
+      },
+      {
+        "name": "Isidro Pitta",
+        "goals": 5
+      },
+      {
+        "name": "Eduardo Sasha",
+        "goals": 3
+      },
+      {
+        "name": "Fernando",
+        "goals": 3
+      },
+      {
+        "name": "Juninho Capixaba",
+        "goals": 3
+      },
+      {
+        "name": "Wallace Yan",
+        "goals": 3
+      },
+      {
+        "name": "Henry Mosquera",
+        "goals": 2
+      },
+      {
+        "name": "Herrera",
+        "goals": 2
+      },
+      {
+        "name": "Rodriguinho",
+        "goals": 2
+      },
+      {
+        "name": "Tiago Volpi",
+        "goals": 2
+      },
+      {
+        "name": "Andrés Hurtado",
+        "goals": 1
+      },
+      {
+        "name": "Eric Ramires",
+        "goals": 1
+      },
+      {
+        "name": "Gustavinho",
+        "goals": 1
+      },
+      {
+        "name": "Gustavo Marques",
+        "goals": 1
+      },
+      {
+        "name": "Ignacio Sosa",
+        "goals": 1
+      },
+      {
+        "name": "Pedro Henrique",
+        "goals": 1
+      }
+    ],
+    "gf": 46,
+    "ga": 41,
+    "logo": "https://images.fotmob.com/image_resources/logo/teamlogo/109705.png"
+  },
+  "Atlético-MG": {
+    "players": [
+      {
+        "name": "Cuello",
+        "goals": 6
+      },
+      {
+        "name": "Bernard",
+        "goals": 5
+      },
+      {
+        "name": "Dudu",
+        "goals": 4
+      },
+      {
+        "name": "Reinier",
+        "goals": 4
+      },
+      {
+        "name": "Victor Hugo",
+        "goals": 4
+      },
+      {
+        "name": "Cassierra",
+        "goals": 3
+      },
+      {
+        "name": "Vitor Hugo",
+        "goals": 3
+      },
+      {
+        "name": "Igor Gomes",
+        "goals": 2
+      },
+      {
+        "name": "Maycon",
+        "goals": 2
+      },
+      {
+        "name": "Minda",
+        "goals": 2
+      },
+      {
+        "name": "Ruan",
+        "goals": 2
+      },
+      {
+        "name": "Thiago Borbas",
+        "goals": 2
+      },
+      {
+        "name": "Cissé",
+        "goals": 1
+      },
+      {
+        "name": "Gustavo Scarpa",
+        "goals": 1
+      },
+      {
+        "name": "Iván Román",
+        "goals": 1
+      },
+      {
+        "name": "Lyanco",
+        "goals": 1
+      },
+      {
+        "name": "Renan Lodi",
+        "goals": 1
+      },
+      {
+        "name": "Vitão",
+        "goals": 1
+      }
+    ],
+    "gf": 45,
+    "ga": 41,
+    "logo": "https://images.fotmob.com/image_resources/logo/teamlogo/10272.png"
+  },
+  "Vasco": {
+    "players": [
+      {
+        "name": "Thiago Mendes",
+        "goals": 6
+      },
+      {
+        "name": "Andrés Gómez",
+        "goals": 5
+      },
+      {
+        "name": "Bruno Duarte",
+        "goals": 4
+      },
+      {
+        "name": "Colidio",
+        "goals": 4
+      },
+      {
+        "name": "David",
+        "goals": 4
+      },
+      {
+        "name": "Barros",
+        "goals": 3
+      },
+      {
+        "name": "Lescano",
+        "goals": 3
+      },
+      {
+        "name": "Puma Rodríguez",
+        "goals": 3
+      },
+      {
+        "name": "Marino Hinestroza",
+        "goals": 2
+      },
+      {
+        "name": "Tchê Tchê",
+        "goals": 2
+      },
+      {
+        "name": "Brenner",
+        "goals": 1
+      },
+      {
+        "name": "Cuiabano",
+        "goals": 1
+      },
+      {
+        "name": "Gabriel Pereira",
+        "goals": 1
+      },
+      {
+        "name": "Hugo Moura",
+        "goals": 1
+      },
+      {
+        "name": "Lucas Freitas",
+        "goals": 1
+      },
+      {
+        "name": "Nuno Moreira",
+        "goals": 1
+      },
+      {
+        "name": "Ramon Rique",
+        "goals": 1
+      },
+      {
+        "name": "Robert Renan",
+        "goals": 1
+      },
+      {
+        "name": "Spinelli",
+        "goals": 1
+      }
+    ],
+    "gf": 47,
+    "ga": 52,
+    "logo": "https://images.fotmob.com/image_resources/logo/teamlogo/10276.png"
+  },
+  "Remo": {
+    "players": [
+      {
+        "name": "Jajá",
+        "goals": 10
+      },
+      {
+        "name": "Alef Manga",
+        "goals": 5
+      },
+      {
+        "name": "Gabriel Taliari",
+        "goals": 4
+      },
+      {
+        "name": "Vitor Bueno",
+        "goals": 4
+      },
+      {
+        "name": "Picco",
+        "goals": 3
+      },
+      {
+        "name": "Yago Pikachu",
+        "goals": 3
+      },
+      {
+        "name": "David Braga",
+        "goals": 2
+      },
+      {
+        "name": "Marcelinho",
+        "goals": 2
+      },
+      {
+        "name": "Marllon",
+        "goals": 2
+      },
+      {
+        "name": "Galeano",
+        "goals": 1
+      },
+      {
+        "name": "José Welison",
+        "goals": 1
+      },
+      {
+        "name": "Patrick",
+        "goals": 1
+      },
+      {
+        "name": "Zé Ricardo",
+        "goals": 1
+      }
+    ],
+    "gf": 41,
+    "ga": 61,
+    "logo": "https://images.fotmob.com/image_resources/logo/teamlogo/1626.png"
+  },
+  "Mirassol": {
+    "players": [
+      {
+        "name": "Eduardo",
+        "goals": 7
+      },
+      {
+        "name": "Igor Formiga",
+        "goals": 4
+      },
+      {
+        "name": "André Luis",
+        "goals": 3
+      },
+      {
+        "name": "Bruno Santos",
+        "goals": 3
+      },
+      {
+        "name": "Edson Carioca",
+        "goals": 3
+      },
+      {
+        "name": "João Victor",
+        "goals": 2
+      },
+      {
+        "name": "Nathan Fogaça",
+        "goals": 2
+      },
+      {
+        "name": "Negueba",
+        "goals": 2
+      },
+      {
+        "name": "Reinaldo",
+        "goals": 2
+      },
+      {
+        "name": "Shaylon",
+        "goals": 2
+      },
+      {
+        "name": "Carlos Eduardo",
+        "goals": 1
+      },
+      {
+        "name": "Denilson",
+        "goals": 1
+      },
+      {
+        "name": "Gustavo Mosquito",
+        "goals": 1
+      },
+      {
+        "name": "Lucas Oliveira",
+        "goals": 1
+      },
+      {
+        "name": "Neto Moura",
+        "goals": 1
+      },
+      {
+        "name": "Willian Machado",
+        "goals": 1
+      }
+    ],
+    "gf": 39,
+    "ga": 49,
+    "logo": "https://images.fotmob.com/image_resources/logo/teamlogo/163782.png"
+  },
+  "Coritiba": {
+    "players": [
+      {
+        "name": "Breno Lopes",
+        "goals": 9
+      },
+      {
+        "name": "Pedro Rocha",
+        "goals": 9
+      },
+      {
+        "name": "Lavega",
+        "goals": 5
+      },
+      {
+        "name": "Tiago Cóser",
+        "goals": 4
+      },
+      {
+        "name": "Rodrigo Moledo",
+        "goals": 3
+      },
+      {
+        "name": "Paulo Roberto",
+        "goals": 2
+      },
+      {
+        "name": "Bruno Melo",
+        "goals": 1
+      },
+      {
+        "name": "Fabinho",
+        "goals": 1
+      },
+      {
+        "name": "Jacy",
+        "goals": 1
+      },
+      {
+        "name": "Josué",
+        "goals": 1
+      },
+      {
+        "name": "Lucas Ronier",
+        "goals": 1
+      },
+      {
+        "name": "Tinga",
+        "goals": 1
+      }
+    ],
+    "gf": 41,
+    "ga": 52,
+    "logo": "https://images.fotmob.com/image_resources/logo/teamlogo/9767.png"
+  },
+  "Athletico-PR": {
+    "players": [
+      {
+        "name": "Viveros",
+        "goals": 21
+      },
+      {
+        "name": "Mendoza",
+        "goals": 7
+      },
+      {
+        "name": "Leozinho",
+        "goals": 6
+      },
+      {
+        "name": "Luiz Gustavo",
+        "goals": 4
+      },
+      {
+        "name": "Vargas",
+        "goals": 4
+      },
+      {
+        "name": "Julimar",
+        "goals": 3
+      },
+      {
+        "name": "Esquivel",
+        "goals": 2
+      },
+      {
+        "name": "Jorge Rivaldo",
+        "goals": 2
+      },
+      {
+        "name": "João Cruz",
+        "goals": 2
+      },
+      {
+        "name": "Arthur Dias",
+        "goals": 1
+      },
+      {
+        "name": "Benavídez",
+        "goals": 1
+      }
+    ],
+    "gf": 56,
+    "ga": 47
+  },
+  "Flamengo": {
+    "players": [
+      {
+        "name": "Pedro",
+        "goals": 20,
+        "games": 36,
+        "assists": 6
+      },
+      {
+        "name": "Samuel Lino",
+        "goals": 13
+      },
+      {
+        "name": "Carrascal",
+        "goals": 8
+      },
+      {
+        "name": "Lucas Paquetá",
+        "goals": 7
+      },
+      {
+        "name": "Arrascaeta",
+        "goals": 4
+      },
+      {
+        "name": "Bruno Henrique",
+        "goals": 4
+      },
+      {
+        "name": "Jorginho",
+        "goals": 4
+      },
+      {
+        "name": "Plata",
+        "goals": 4
+      },
+      {
+        "name": "Erick Pulgar",
+        "goals": 2
+      },
+      {
+        "name": "Luiz Araújo",
+        "goals": 2
+      },
+      {
+        "name": "Léo Pereira",
+        "goals": 2
+      },
+      {
+        "name": "Everton",
+        "goals": 1
+      },
+      {
+        "name": "Lorran",
+        "goals": 1
+      },
+      {
+        "name": "Léo Ortiz",
+        "goals": 1
+      },
+      {
+        "name": "Varela",
+        "goals": 1
+      }
+    ],
+    "gf": 74,
+    "ga": 31,
+    "logo": "https://images.fotmob.com/image_resources/logo/teamlogo/9770.png"
+  },
+  "Grêmio": {
+    "players": [
+      {
+        "name": "Carlos Vinícius",
+        "goals": 11
+      },
+      {
+        "name": "Amuzu",
+        "goals": 3
+      },
+      {
+        "name": "Gustavo Martins",
+        "goals": 3
+      },
+      {
+        "name": "Pavón",
+        "goals": 3
+      },
+      {
+        "name": "Braithwaite",
+        "goals": 2
+      },
+      {
+        "name": "Gabriel Mec",
+        "goals": 2
+      },
+      {
+        "name": "Marlon",
+        "goals": 2
+      },
+      {
+        "name": "Tetê",
+        "goals": 2
+      },
+      {
+        "name": "Wallace",
+        "goals": 2
+      },
+      {
+        "name": "Balbuena",
+        "goals": 1
+      },
+      {
+        "name": "Diego Caito",
+        "goals": 1
+      },
+      {
+        "name": "Jovane Cabral",
+        "goals": 1
+      },
+      {
+        "name": "Kannemann",
+        "goals": 1
+      },
+      {
+        "name": "Nardoni",
+        "goals": 1
+      },
+      {
+        "name": "Noriega",
+        "goals": 1
+      },
+      {
+        "name": "Viery",
+        "goals": 1
+      },
+      {
+        "name": "Villasanti",
+        "goals": 1
+      }
+    ],
+    "gf": 40,
+    "ga": 47,
+    "logo": "https://images.fotmob.com/image_resources/logo/teamlogo/9769.png"
+  },
+  "Corinthians": {
+    "players": [
+      {
+        "name": "Kaio César",
+        "goals": 7
+      },
+      {
+        "name": "Matheus Bidu",
+        "goals": 5
+      },
+      {
+        "name": "André",
+        "goals": 4
+      },
+      {
+        "name": "Gustavo Henrique",
+        "goals": 4
+      },
+      {
+        "name": "Yuri Alberto",
+        "goals": 4
+      },
+      {
+        "name": "Garro",
+        "goals": 3
+      },
+      {
+        "name": "Breno Bidon",
+        "goals": 2
+      },
+      {
+        "name": "João Pedro",
+        "goals": 2
+      },
+      {
+        "name": "Raniele",
+        "goals": 2
+      },
+      {
+        "name": "Angileri",
+        "goals": 1
+      },
+      {
+        "name": "Dieguinho",
+        "goals": 1
+      },
+      {
+        "name": "Gabriel Paulista",
+        "goals": 1
+      },
+      {
+        "name": "Gui Negão",
+        "goals": 1
+      },
+      {
+        "name": "Labyad",
+        "goals": 1
+      },
+      {
+        "name": "Memphis Depay",
+        "goals": 1
+      },
+      {
+        "name": "Pedro Raul",
+        "goals": 1
+      }
+    ],
+    "gf": 41,
+    "ga": 43,
+    "logo": "https://images.fotmob.com/image_resources/logo/teamlogo/9808.png"
+  },
+  "Santos": {
+    "players": [
+      {
+        "name": "Gabriel",
+        "goals": 18
+      },
+      {
+        "name": "Neymar",
+        "goals": 8
+      },
+      {
+        "name": "Barreal",
+        "goals": 5
+      },
+      {
+        "name": "Rollheiser",
+        "goals": 4
+      },
+      {
+        "name": "Philippe Coutinho",
+        "goals": 3
+      },
+      {
+        "name": "Luan Peres",
+        "goals": 2
+      },
+      {
+        "name": "Moisés",
+        "goals": 2
+      },
+      {
+        "name": "Oliva",
+        "goals": 2
+      },
+      {
+        "name": "Thaciano",
+        "goals": 2
+      },
+      {
+        "name": "Adonis Frías",
+        "goals": 1
+      },
+      {
+        "name": "Gabriel Menino",
+        "goals": 1
+      },
+      {
+        "name": "Lautaro Díaz",
+        "goals": 1
+      },
+      {
+        "name": "Miguelito",
+        "goals": 1
+      },
+      {
+        "name": "Rony",
+        "goals": 1
+      },
+      {
+        "name": "Willian Arão",
+        "goals": 1
+      },
+      {
+        "name": "Zé Rafael",
+        "goals": 1
+      }
+    ],
+    "gf": 51,
+    "ga": 51,
+    "logo": "https://images.fotmob.com/image_resources/logo/teamlogo/8514.png"
+  },
+  "Internacional": {
+    "players": [
+      {
+        "name": "Carbonero",
+        "goals": 7
+      },
+      {
+        "name": "Alan Patrick",
+        "goals": 6
+      },
+      {
+        "name": "Vitinho",
+        "goals": 6
+      },
+      {
+        "name": "Alerrandro",
+        "goals": 5
+      },
+      {
+        "name": "Bernabei",
+        "goals": 5
+      },
+      {
+        "name": "Aguirre",
+        "goals": 3
+      },
+      {
+        "name": "Borré",
+        "goals": 2
+      },
+      {
+        "name": "Juninho",
+        "goals": 2
+      },
+      {
+        "name": "Félix Torres",
+        "goals": 1
+      },
+      {
+        "name": "Matheus Bahia",
+        "goals": 1
+      },
+      {
+        "name": "Mercado",
+        "goals": 1
+      },
+      {
+        "name": "Ronaldo",
+        "goals": 1
+      }
+    ],
+    "gf": 41,
+    "ga": 49,
+    "logo": "https://images.fotmob.com/image_resources/logo/teamlogo/8702.png"
+  },
+  "Fluminense": {
+    "players": [
+      {
+        "name": "John Kennedy",
+        "goals": 9
+      },
+      {
+        "name": "Hulk",
+        "goals": 7
+      },
+      {
+        "name": "Savarino",
+        "goals": 7
+      },
+      {
+        "name": "Canobbio",
+        "goals": 6
+      },
+      {
+        "name": "Lucho Acosta",
+        "goals": 6
+      },
+      {
+        "name": "Rodrigo Castillo",
+        "goals": 6
+      },
+      {
+        "name": "Hércules",
+        "goals": 5
+      },
+      {
+        "name": "Serna",
+        "goals": 4
+      },
+      {
+        "name": "Ignácio",
+        "goals": 3
+      },
+      {
+        "name": "Cano",
+        "goals": 1
+      },
+      {
+        "name": "Guga",
+        "goals": 1
+      },
+      {
+        "name": "Guilherme Arana",
+        "goals": 1
+      },
+      {
+        "name": "Nonato",
+        "goals": 1
+      },
+      {
+        "name": "Riquelme Felipe",
+        "goals": 1
+      }
+    ],
+    "gf": 57,
+    "ga": 42,
+    "logo": "https://images.fotmob.com/image_resources/logo/teamlogo/9863.png"
+  },
+  "Vitória": {
+    "players": [
+      {
+        "name": "Renê",
+        "goals": 12
+      },
+      {
+        "name": "Erick",
+        "goals": 9
+      },
+      {
+        "name": "Matheuzinho",
+        "goals": 6
+      },
+      {
+        "name": "Renato Kayzer",
+        "goals": 6
+      },
+      {
+        "name": "Baralhas",
+        "goals": 3
+      },
+      {
+        "name": "Ramon",
+        "goals": 3
+      },
+      {
+        "name": "Tarzia",
+        "goals": 3
+      },
+      {
+        "name": "Brítez",
+        "goals": 1
+      },
+      {
+        "name": "Cacá",
+        "goals": 1
+      },
+      {
+        "name": "Emmanuel Martínez",
+        "goals": 1
+      },
+      {
+        "name": "Zé Vitor",
+        "goals": 1
+      }
+    ],
+    "gf": 42,
+    "ga": 54
+  }
+}
