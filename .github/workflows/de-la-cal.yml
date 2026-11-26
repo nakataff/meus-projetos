@@ -1,0 +1,31 @@
+name: Atualizar DE LA CAL
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+  push:
+    paths:
+      - 'de-la-cal/sync.py'
+      - '.github/workflows/de-la-cal.yml'
+permissions:
+  contents: write
+concurrency:
+  group: de-la-cal-sync
+  cancel-in-progress: false
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install beautifulsoup4==4.12.3
+      - run: python de-la-cal/sync.py
+      - name: Salvar edição
+        run: |
+          git diff --quiet -- de-la-cal/brasileirao.json && exit 0
+          git config user.name github-actions
+          git config user.email github-actions@users.noreply.github.com
+          git add de-la-cal/brasileirao.json
+          git commit -m "Atualizar dados do Brasileirão"
+          git pull --rebase
+          git push
