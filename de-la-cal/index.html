@@ -24,7 +24,9 @@ league.onchange=()=>{location.hash=route('calendar',league.value)};
 function clubKey(s){return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-')}
 function portrait(parent,url,size){
  if(!url)return;
- const img=document.createElement('img');img.alt='';img.width=size;img.height=size;img.loading='lazy';img.style='vertical-align:middle;object-fit:contain;margin-right:8px';img.onerror=()=>img.remove();img.src=url;parent.prepend(img);
+ const existing=parent.querySelector('img');
+ if(existing){if(existing.src!==url)existing.dataset.alternate=url;return}
+ const img=document.createElement('img');img.alt='';img.width=size;img.height=size;img.loading='lazy';img.style='vertical-align:middle;object-fit:contain;margin-right:8px';img.onerror=()=>{const alternate=img.dataset.alternate;if(alternate){delete img.dataset.alternate;img.src=alternate}else img.remove()};img.src=url;parent.prepend(img);
 }
 async function showBrazilClub(area,id){
  const clubs=await json('./clubes-2026.json');
@@ -43,7 +45,7 @@ async function showBrazilClub(area,id){
  const table=el('table','',box),head=el('tr','',table);for(const h of ['Jogador','Jogos','Gols','Assist.'])el('th',h,head);
  const players=new Map();
  function add(p){const tr=el('tr','',table);const cells=[p.name,p.games,p.goals,p.assists].map(v=>el('td',v??'—',tr));players.set(clubKey(p.name),cells);return cells}
- for(const p of club.players){const cells=add(p);if(name==='Flamengo'&&p.name==='Pedro')portrait(cells[0],'https://images.fotmob.com/image_resources/playerimages/750067.png',40)}
+ for(const p of club.players){const cells=add(p);portrait(cells[0],p.photo,40)}
  el('small','— indica dado indisponível. Base de gols consultada em 26/11/2026.',box);
  if(!team)team=(await teams().catch(()=>[])).find(t=>key(t)===clubKey(name));
  if(!team)return;
@@ -51,7 +53,7 @@ async function showBrazilClub(area,id){
  for(const a of (roster.athletes||[]).flatMap(x=>x.items||[x])){
   if(!a.id||!a.displayName)continue;
   const cells=[a.displayName,a.shortName,a.fullName].map(n=>players.get(clubKey(n))).find(Boolean)||add({name:a.displayName});
-  if(!cells[0].querySelector('img'))portrait(cells[0],a.headshot?.href||'https://a.espncdn.com/i/headshots/soccer/players/full/'+a.id+'.png',40);
+  portrait(cells[0],a.headshot?.href||'https://a.espncdn.com/i/headshots/soccer/players/full/'+a.id+'.png',40);
   const anchor=link(cells[0].lastChild.textContent,route('player','bra.1',a.id),document.createDocumentFragment());cells[0].lastChild.replaceWith(anchor);
   // Load season totals only when the visitor asks for the player's numbers.
   const b=el('button','Consultar',cells[3]);b.onclick=async()=>{b.disabled=true;
