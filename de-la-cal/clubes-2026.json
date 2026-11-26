@@ -15,7 +15,8 @@
       },
       {
         "name": "Walter Clar",
-        "goals": 3
+        "goals": 3,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/497408.png"
       },
       {
         "name": "Bolasie",
@@ -55,11 +56,13 @@
       },
       {
         "name": "Higor Meritão",
-        "goals": 1
+        "goals": 1,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/1033100.png"
       },
       {
         "name": "João Paulo",
-        "goals": 1
+        "goals": 1,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/1257289.png"
       },
       {
         "name": "Max",
@@ -106,7 +109,8 @@
       },
       {
         "name": "Allan",
-        "goals": 4
+        "goals": 4,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/1721789.png"
       },
       {
         "name": "Gustavo Gómez",
@@ -181,7 +185,8 @@
       },
       {
         "name": "Barrera",
-        "goals": 1
+        "goals": 1,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/1477851.png"
       },
       {
         "name": "Ferraresi",
@@ -315,7 +320,8 @@
       },
       {
         "name": "Cauly",
-        "goals": 1
+        "goals": 1,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/575733.png"
       },
       {
         "name": "Danielzinho",
@@ -323,7 +329,8 @@
       },
       {
         "name": "Dória",
-        "goals": 1
+        "goals": 1,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/320686.png"
       },
       {
         "name": "Gustavo Santana",
@@ -335,7 +342,8 @@
       },
       {
         "name": "Pablo Maia",
-        "goals": 1
+        "goals": 1,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/1313924.png"
       },
       {
         "name": "Sabino",
@@ -410,7 +418,8 @@
       },
       {
         "name": "Japa",
-        "goals": 1
+        "goals": 1,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/1570656.png"
       },
       {
         "name": "Kaique Kenji",
@@ -445,7 +454,8 @@
       },
       {
         "name": "Fernando",
-        "goals": 3
+        "goals": 3,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/896256.png"
       },
       {
         "name": "Juninho Capixaba",
@@ -560,7 +570,8 @@
       },
       {
         "name": "Iván Román",
-        "goals": 1
+        "goals": 1,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/1434500.png"
       },
       {
         "name": "Lyanco",
@@ -599,7 +610,8 @@
       },
       {
         "name": "David",
-        "goals": 4
+        "goals": 4,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/656526.png"
       },
       {
         "name": "Barros",
@@ -623,7 +635,8 @@
       },
       {
         "name": "Brenner",
-        "goals": 1
+        "goals": 1,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/856464.png"
       },
       {
         "name": "Cuiabano",
@@ -635,7 +648,8 @@
       },
       {
         "name": "Hugo Moura",
-        "goals": 1
+        "goals": 1,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/1028036.png"
       },
       {
         "name": "Lucas Freitas",
@@ -903,47 +917,58 @@
         "name": "Pedro",
         "goals": 20,
         "games": 36,
-        "assists": 6
+        "assists": 6,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/750067.png"
       },
       {
         "name": "Samuel Lino",
-        "goals": 13
+        "goals": 13,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/1082941.png"
       },
       {
         "name": "Carrascal",
-        "goals": 8
+        "goals": 8,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/784834.png"
       },
       {
         "name": "Lucas Paquetá",
-        "goals": 7
+        "goals": 7,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/766435.png"
       },
       {
         "name": "Arrascaeta",
-        "goals": 4
+        "goals": 4,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/438647.png"
       },
       {
         "name": "Bruno Henrique",
-        "goals": 4
+        "goals": 4,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/638778.png"
       },
       {
         "name": "Jorginho",
-        "goals": 4
+        "goals": 4,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/282775.png"
       },
       {
         "name": "Plata",
-        "goals": 4
+        "goals": 4,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/980311.png"
       },
       {
         "name": "Erick Pulgar",
-        "goals": 2
+        "goals": 2,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/335606.png"
       },
       {
         "name": "Luiz Araújo",
-        "goals": 2
+        "goals": 2,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/750913.png"
       },
       {
         "name": "Léo Pereira",
-        "goals": 2
+        "goals": 2,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/523801.png"
       },
       {
         "name": "Everton",
@@ -951,15 +976,18 @@
       },
       {
         "name": "Lorran",
-        "goals": 1
+        "goals": 1,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/1435445.png"
       },
       {
         "name": "Léo Ortiz",
-        "goals": 1
+        "goals": 1,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/845976.png"
       },
       {
         "name": "Varela",
-        "goals": 1
+        "goals": 1,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/465614.png"
       }
     ],
     "gf": 74,
@@ -1148,7 +1176,8 @@
       },
       {
         "name": "Thaciano",
-        "goals": 2
+        "goals": 2,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/687496.png"
       },
       {
         "name": "Adonis Frías",
@@ -1160,7 +1189,8 @@
       },
       {
         "name": "Lautaro Díaz",
-        "goals": 1
+        "goals": 1,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/1111937.png"
       },
       {
         "name": "Miguelito",
@@ -1176,7 +1206,8 @@
       },
       {
         "name": "Zé Rafael",
-        "goals": 1
+        "goals": 1,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/319796.png"
       }
     ],
     "gf": 51,
@@ -1266,7 +1297,8 @@
       },
       {
         "name": "Hércules",
-        "goals": 5
+        "goals": 5,
+        "photo": "https://images.fotmob.com/image_resources/playerimages/1354485.png"
       },
       {
         "name": "Serna",
