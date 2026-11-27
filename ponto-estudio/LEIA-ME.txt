@@ -1,0 +1,23 @@
+PONTO ESTÚDIO 02 — PLAYLIST
+
+1. Extraia todos os arquivos do ZIP para uma mesma pasta.
+2. Abra index.html no Chrome ou Edge. Não é necessário instalar nada.
+3. Os arquivos banco.js, gerador.js, studio.js e os dois CSS devem permanecer ao lado do HTML.
+
+COMO USAR
+- BPM e número de compassos (1 a 128) no topo. A duração é calculada em 4/4.
+- Clique em Desenhar para inserir notas na playlist. Arraste para alongar.
+- Em Selecionar, arraste a partir de um espaço vazio para selecionar várias notas; Shift + clique também seleciona.
+- Duplo clique no nome da linha ou na grade para abrir o piano roll. Use o seletor de oitavas para navegar pelas alturas.
+- Botão direito sobre uma nota para alterar a altura e ouvir o resultado.
+- Ctrl+C / Ctrl+V: copiar / colar. Clique na régua para escolher a posição e selecione a faixa de destino. Ctrl+D: duplicar a seleção nos compassos seguintes. Delete: excluir. Ctrl+Z / Ctrl+Y: desfazer / refazer.
+- A miniatura no topo mostra o arranjo inteiro. Arraste-a para navegar ou escolha o zoom (quantidade de compassos visíveis).
+- Importar instrumento: carregue WAV/MP3 compatível com o navegador, selecione a nota original e um trecho de nota isolada. O timbre será transposto pelo piano roll.
+- Importar áudio inteiro: cria uma faixa de áudio. Arraste o clipe para mover e puxe a borda direita para cortar. Você também pode arrastar o arquivo sobre a playlist.
+- Referência: escolha do banco original ou importe a sua. Arraste a onda na playlist para alinhá-la; ajuste o BPM de origem e a posição em segundos. Por padrão, a referência não entra no WAV. Marque a caixa para incluí-la.
+- Gerador: mantém a ferramenta anterior de criação de frases e permite enviar o resultado para uma faixa da playlist.
+- Salvar projeto: salva o arranjo e os áudios importados em JSON. Abrir recupera o projeto; projetos v2 antigos são convertidos em uma linha do tempo, limitados a 128 compassos.
+- Exportar WAV: mono, PCM 16 bits, 44,1 kHz. O áudio tem a duração exata do arranjo, inclusive silêncios.
+
+OBSERVAÇÕES
+A transposição de samples e a mudança de BPM da referência usam alteração de velocidade/reprodução; não há time-stretch independente de pitch. Formatos de áudio dependem do navegador. Projetos longos com muitos áudios podem usar bastante memória.
