@@ -20,7 +20,7 @@ const forms=[
  ['Repique melódico',[0,4,5,7,10,14],[3,1,2,2,3,2],[0,2,1,3,4,1]]
 ];
 forms.push(['Fraseado do ponto']);
-const builtin=Object.keys(data.tones),custom='Corte do pacote';[...builtin,custom].forEach(n=>add($('inst'),n,n));forms.forEach((f,i)=>add($('form'),i,f[0]));labels.forEach((n,i)=>add($('root'),i,n));Object.keys(scales).forEach(n=>add($('scale'),n,n));for(let i=36;i<=96;i++){add($('pitch'),i,name(i));add($('origin'),i,name(i))}data.bank.forEach((v,i)=>add($('src'),i,v.n));
+const builtin=[...Object.keys(data.tones),...timbresPonto.names],custom='Corte do pacote';[...builtin,custom].forEach(n=>add($('inst'),n,n));forms.forEach((f,i)=>add($('form'),i,f[0]));labels.forEach((n,i)=>add($('root'),i,n));Object.keys(scales).forEach(n=>add($('scale'),n,n));for(let i=36;i<=96;i++){add($('pitch'),i,name(i));add($('origin'),i,name(i))}data.bank.forEach((v,i)=>add($('src'),i,v.n));
 const saxId=data.bank.findIndex(s=>s.n.toLowerCase()==='pontinho - sax foda');$('src').value=saxId;$('origin').value=74;$('from').value=.52;$('ref').src='data:audio/mpeg;base64,'+data.ref;
 let p={version:2,bpm:130,bars:2,root:2,scale:'Frígia',form:0,inst:'Sax do seu ponto',cut:{id:saxId,a:.52,len:.30,base:74},notes:[]},sel=0,hist=[],phraseState=0,playing=false,source=null,ctx=null,genId=0,epoch=0,preview=null;
 const size=()=>p.bars*16,dt=()=>15/p.bpm,msg=t=>$('status').textContent=t,remember=()=>{const q={...p};delete q.studio;hist.push(copy(q));if(hist.length>40)hist.shift();$('undo').disabled=false};
@@ -234,7 +234,7 @@ p.refTempos=readTempos();p.guide=12;p.used=12;loadPatch(0);
 const pcmCache=new Map();function pcm(str){if(!pcmCache.has(str)){let raw=atob(str),arr=new Float32Array(raw.length/2);for(let i=0;i<arr.length;i++){let v=raw.charCodeAt(2*i)+256*raw.charCodeAt(2*i+1);arr[i]=(v>32767?v-65536:v)/32768}pcmCache.set(str,arr)}return pcmCache.get(str)}
 function audio(){return ctx??=new AudioContext()}let decodedKey=-1,buf=null;
 async function decode(id){if(decodedKey===id&&buf)return buf;const b=await audio().decodeAudioData(Uint8Array.from(atob(data.bank[id].d),c=>c.charCodeAt(0)).buffer);decodedKey=id;buf=b;return b}
-function instrumentSounds(inst){return Object.entries(data.tones[inst]).map(([k,v])=>({k:+k,y:pcm(v),sr:24000,loop:['Sax do seu ponto','Sax alto','Flauta','Clarinete','Metais','Lead quadrado'].includes(inst)}))}async function sampleSet(){if(p.inst!==custom)return instrumentSounds(p.inst);let c=copy(p.cut),b=await decode(c.id),sr=b.sampleRate,y=b.getChannelData(0),a=clamp(Math.floor(c.a*sr),0,y.length-2),end=clamp(Math.round((c.a+c.len)*sr),a+2,y.length);return [{k:c.base,y:y.subarray(a,end),sr,loop:true}]}
+function instrumentSounds(inst){if(timbresPonto.has(inst))return timbresPonto.sounds(inst);return Object.entries(data.tones[inst]).map(([k,v])=>({k:+k,y:pcm(v),sr:24000,loop:['Sax do seu ponto','Sax alto','Flauta','Clarinete','Metais','Lead quadrado'].includes(inst)}))}async function sampleSet(){if(p.inst!==custom)return instrumentSounds(p.inst);let c=copy(p.cut),b=await decode(c.id),sr=b.sampleRate,y=b.getChannelData(0),a=clamp(Math.floor(c.a*sr),0,y.length-2),end=clamp(Math.round((c.a+c.len)*sr),a+2,y.length);return [{k:c.base,y:y.subarray(a,end),sr,loop:true}]}
 const RATE=44100;
 function render(notes,sounds,secs,bpm){let out=new Float32Array(Math.round(secs*RATE));for(let n of notes){let sound=sounds.reduce((best,x)=>Math.abs(n.k-x.k)<Math.abs(n.k-best.k)?x:best),{y,sr,loop}=sound;let ratio=sr/RATE*2**((n.k-sound.k)/12),offset=Math.round(n.s*15/bpm*RATE),count=Math.min(out.length-offset,Math.round(n.l*15/bpm*RATE));let L=y.length,xf=Math.min(Math.floor(L*.16),Math.round(.022*sr)),lo=Math.floor(L*.32),cycle=L-lo-xf;for(let j=0;j<count;j++){let ix=j*ratio;if(loop&&ix>=L)ix=lo+xf+(ix-L)%cycle;if(ix>=L-1&&!loop)break;let k=Math.min(Math.floor(ix),L-2),f=ix-k,v=y[k]+(y[k+1]-y[k])*f;if(loop&&ix>=L-xf){let z=(ix-L+xf)/xf,idx=Math.min(L-1,lo+Math.floor(z*xf));v=v*(1-z)+y[idx]*z}let env=Math.min(1,j/(RATE*.006),(count-1-j)/(RATE*.027));out[offset+j]+=v*env*n.v*.008}}return out}
 function performed(notes){
@@ -276,7 +276,7 @@ $('scale').onchange=e=>{remember();if(p.method==='preset')p.method='edited';p.sc
 $('bars').onchange=e=>{remember();if(p.method==='preset')p.method='clean';p.fullLength=e.target.value==='full';if(!p.fullLength)p.bars=+e.target.value;p.notes=compose();sel=0;changed();msg('Frase refeita para a duração escolhida. Desfazer recupera a edição anterior.')};
 function saveBlob(bytes,filename,type){let url=URL.createObjectURL(new Blob([bytes],{type})),a=document.createElement('a');a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),60000)}
 function wav(y){let bytes=new Uint8Array(44+y.length*2),v=new DataView(bytes.buffer),txt=(i,s)=>bytes.set(new TextEncoder().encode(s),i);txt(0,'RIFF');v.setUint32(4,bytes.length-8,true);txt(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,RATE,true);v.setUint32(28,RATE*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);txt(36,'data');v.setUint32(40,y.length*2,true);for(let i=0;i<y.length;i++)v.setInt16(44+i*2,Math.round(clamp(y[i],-1,1)*32767),true);return bytes}
-function midi(){let track=[],put=(...b)=>track.push(...b),varlen=x=>{let a=[x&127];while(x>>=7)a.unshift(128|x&127);return a},us=Math.round(60000000/p.bpm),programs=[0,4,27,28,24,65,73,71,61,80,65],pc=programs[builtin.indexOf(p.inst)]??0;put(0,255,81,3,us>>16,(us>>8)&255,us&255,0,255,88,4,4,2,24,8,0,192,pc);let tick=0;for(let n of performed(p.notes)){let s=Math.round(n.s*120),l=Math.round(n.l*120);put(...varlen(s-tick),144,n.k,Math.round(n.v*1.27),...varlen(l),128,n.k,0);tick=s+l}put(...varlen(size()*120-tick),255,47,0);let l=track.length;return Uint8Array.from([77,84,104,100,0,0,0,6,0,0,0,1,1,224,77,84,114,107,l>>>24,l>>>16,l>>>8,l,...track])}
+function midi(){let track=[],put=(...b)=>track.push(...b),varlen=x=>{let a=[x&127];while(x>>=7)a.unshift(128|x&127);return a},us=Math.round(60000000/p.bpm),programs=[0,4,27,28,24,65,73,71,61,80,65],pc=timbresPonto.has(p.inst)?timbresPonto.program(p.inst):(programs[builtin.indexOf(p.inst)]??0);put(0,255,81,3,us>>16,(us>>8)&255,us&255,0,255,88,4,4,2,24,8,0,192,pc);let tick=0;for(let n of performed(p.notes)){let s=Math.round(n.s*120),l=Math.round(n.l*120);put(...varlen(s-tick),144,n.k,Math.round(n.v*1.27),...varlen(l),128,n.k,0);tick=s+l}put(...varlen(size()*120-tick),255,47,0);let l=track.length;return Uint8Array.from([77,84,104,100,0,0,0,6,0,0,0,1,1,224,77,84,114,107,l>>>24,l>>>16,l>>>8,l,...track])}
 const fname=()=>'Pontinho - '+p.inst+' - '+p.bpm+' BPM - '+p.bars+' comp';
 $('wav').onclick=async()=>{if(!p.notes.length)return msg('Adicione uma nota antes de exportar.');let fn=fname();saveBlob(wav(await mix()),fn+'.wav','audio/wav');msg('Loop WAV exportado em 44,1 kHz, com a duração exata dos compassos.')};$('mid').onclick=()=>{saveBlob(midi(),fname()+'.mid','audio/midi');msg('MIDI exportado com notas, durações e andamento.')};
 $('save').onclick=()=>saveBlob(JSON.stringify(p),'Pontinho-projeto.json','application/json');$('open').onclick=()=>$('file').click();
@@ -293,7 +293,13 @@ const elements=[
  ['Chamada longa',[[0,6,0],[16,6,0]]],['Resposta curta',[[9,3,2],[26,4,1]]],
  ['Contratempo',[[2,3,2],[10,2,0],[18,3,2],[26,2,1]]],['Frase de volta',[[21,3,2],[27,4,0]]],
  ['Nota sustentada',[[0,9,0],[18,7,1]]],['Toque de passagem',[[13,2,1],[29,2,2]]],
- ['Pergunta de piano',[[0,4,0],[6,4,2],[16,4,0],[22,4,2]]]
+ ['Pergunta de piano',[[0,4,0],[6,4,2],[16,4,0],[22,4,2]]],
+ ['Corda em síncope',[[0,3,0],[6,2,1],[16,3,0],[23,2,2]]],
+ ['Resposta de metal',[[10,3,2],[28,3,0]]],
+ ['Assovio sustentado',[[0,7,2],[16,8,1]]],
+ ['Toque de madeira',[[9,2,0],[13,1,1],[26,2,0],[30,1,2]]],
+ ['Chamada de fole',[[1,5,0],[9,3,1],[17,6,0]]],
+ ['Volta dedilhada',[[13,2,2],[25,3,1],[30,1,0]]]
 ];
 const arrangements=[
  ['Chão e resposta',2,[[0,'Clarinete'],[1,'Guitarra limpa']]],
@@ -301,7 +307,13 @@ const arrangements=[
  ['Cordas de baile',4,[[2,'Violão de nylon'],[5,'Guitarra abafada']]],
  ['Sax e teclas',2,[[0,'Sax alto'],[1,'Piano acústico']]],
  ['Metais no corte',7,[[6,'Metais'],[5,'Clarinete']]],
- ['Mesa vazia',2,[]]
+ ['Mesa vazia',2,[]],
+ ['Cavaco e sino',2,[[7,'Cavaquinho dedilhado'],[8,'Sino de vidro']]],
+ ['Assovio e marimba',7,[[9,'Assovio suave'],[10,'Marimba']]],
+ ['Sanfona e bandolim',4,[[11,'Sanfona curta'],[12,'Bandolim dobrado']]],
+ ['Órgão e kalimba',5,[[0,'Órgão de baile'],[1,'Kalimba']]],
+ ['Bambu e vibrafone',9,[[4,'Flauta de bambu'],[5,'Vibrafone']]],
+ ['Lead e pluck',2,[[0,'Lead nasal'],[1,'Pluck elástico']]]
 ];
 const kits=arrangements,sections=['Intro','Base','Virada','Pausa','Volta','Final'];
 function elementNotes(el,root){return elements[el][1].map(([s,l,k])=>({s,l,k:60+root+[0,3,5][k],v:88}))}
