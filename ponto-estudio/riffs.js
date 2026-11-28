@@ -34,10 +34,21 @@ const GROOVES={
  sparse:[[0,6,8],[0,6,14],[2,4,10],[2,10,12],[0,6,8,14],[2,4,10,12]],
  normal:[[0,6,8,14],[2,4,10,12],[0,3,6,8,14],[2,4,7,10,12],[0,6,8,11,14],[2,4,10,12,15]],
  dense:[[0,2,6,7,8,10,14,15],[2,3,4,6,10,11,12,14],[0,1,6,7,8,9,14,15],[1,2,4,5,9,10,12,13],[0,3,5,6,8,11,13,14],[1,2,4,7,9,10,12,15]]}},
+ pickup:{label:'Anacruse · resolução no kick',desc:'Notas curtas e leves antes da batida, seguidas de uma nota forte no kick. O kick guia destaca as chegadas do motivo.',patterns:{
+ sparse:[[2,4,10,12],[3,4,11,12],[1,4,9,12],[2,4,6,8],[5,8,10,12],[6,8,11,12],[1,4,11,12],[3,4,9,12],[2,4,9,10,12]],
+ normal:[[1,3,4,9,11,12],[2,3,4,10,11,12],[1,2,4,9,10,12],[1,2,3,4,10,12],[2,4,9,10,11,12],[5,6,8,9,11,12],[5,7,8,10,11,12],[1,3,4,5,7,8],[1,3,4,7,8,11,12]],
+ dense:[[1,2,3,4,9,10,11,12],[1,2,3,4,6,7,8,10,11,12],[2,3,4,5,6,7,8,10,11,12],[1,2,4,5,6,7,8,9,10,11,12],[1,2,3,4,5,7,8,9,11,12],[2,3,4,5,7,8,9,10,11,12],[1,3,4,5,6,7,8,10,11,12],[1,2,3,4,5,6,8,9,10,11,12]]}},
  behind:{label:'Levemente atrasado · behind the beat',desc:'Mesmo motivo livre, atrasado 18% de uma semicolcheia (cerca de 21 ms a 130 BPM).'}
 };
 function grooveRhythm(on,gate,closing,groove){
  if(!groove||groove==='original')return rhythmFor(on,gate,closing);
+ if(groove==='pickup')return on.map((s,i)=>{
+  let gap=(on[i+1]??16)-s,strong=s%4===0;
+  // Accent hierarchy: preparations are short and get louder toward the landing.
+  let v=strong?(i===on.length-1?100:96):62+(s%4)*6;
+  let l=strong?Math.max(1,Math.min(gap,i===on.length-1&&closing?gap:Math.max(2,Math.round(gap*gate)))):Math.min(gap,1);
+  return {s,l,v};
+ });
  if(groove==='behind')return rhythmFor(on,gate,closing).map(n=>({...n,s:n.s+.18,l:Math.min(n.l,16-n.s-.18)}));
  let a=on.slice(),space=groove==='offbeat'||groove==='after',phase=a[0]%4===2||a[0]%4===1&&groove==='alternate'?1:0;
  return a.map((s,i)=>{
@@ -64,7 +75,8 @@ function tonalBar(mode,shape,rhythm,chord,prev,opening,closing,answer,groove){
   let c=chord;
   if(closing&&n.s>=8)c=0;
   let local=deg.map(d=>{
-   if(opening&&i===0&&d!==0)return Infinity;
+   if(opening&&i===0&&d!==0&&groove!=='pickup')return Infinity;
+   if(groove==='pickup'&&strong&&!chordTone(d,c)&&!(closing&&i===N-1))return Infinity;
    if(closing&&i===N-1&&d!==0)return Infinity;
    let cost=1.8*(d-desired)**2+(chordTone(d,c)?0:strong?11:2.5);
    if(closing&&i===N-2)cost+=Math.min(Math.abs(d-1),Math.abs(d+1))*3;
@@ -80,6 +92,7 @@ function tonalBar(mode,shape,rhythm,chord,prev,opening,closing,answer,groove){
     if(answer)wanted=-wanted;
     let transition=distance*.42+Math.max(0,distance-4)**2*2+(distance===0&&Math.abs(wanted)>.3?1.2:0)+(direction*wanted<0?1.5:0);
     if(!strong&&!chordTone(d,c)&&Math.abs(direction)>1)transition+=4;
+    if(groove==='pickup'&&strong&&rhythm[i-1].v<88){transition+=Math.abs(direction)===1?-3:direction===0?3:Math.abs(direction)>2?6:0}
     let cost=layers[i-1][k].cost+transition+local[j];if(cost<best.cost)best={cost,from:k};
    }return best;
   });layers.push(current);
@@ -98,7 +111,7 @@ function makeRiff(seed,opt){
   if(mode.kind==='neighbor'){
    // A repeated tonic–neighbor–tonic cell, with the dissonant note resolving immediately.
    const pattern=choose(r,[[0,1,0,0],[0,0,1,0],[0,1,0,1],[0,0,1,1]]);if(bar===0)previous=pattern;
-   let pat=previous,heights=rhythm.map((n,i)=>i===0||i===rhythm.length-1?0:pat[i%pat.length]);for(let i=1;i<heights.length;i++)if(heights[i-1]===1)heights[i]=0;if(!heights.includes(1)&&heights.length>2)heights[1]=1;for(let i=0;i<rhythm.length;i++){let n=rhythm[i];base.push({...n,s:bar*16+n.s,k:root+heights[i]})}
+   let pat=previous,heights=rhythm.map((n,i)=>groove==='pickup'?(n.v>=88?0:rhythm[i+1]?.v>=88?1:0):i===0||i===rhythm.length-1?0:pat[i%pat.length]);for(let i=1;i<heights.length;i++)if(heights[i-1]===1)heights[i]=0;if(!heights.includes(1)&&heights.length>2)heights[1]=1;for(let i=0;i<rhythm.length;i++){let n=rhythm[i];base.push({...n,s:bar*16+n.s,k:root+heights[i]})}
   }else{
    let chord=phraseLen===1?0:phraseLen===2?(bar===0?0:4):progression[bar];if(closing&&phraseLen>=4)chord=0;
    let degrees=tonalBar(mode,shape,rhythm,chord,previous,opening,closing,answer,groove);previous=degrees.at(-1);
@@ -127,14 +140,14 @@ const say=s=>el('riffStatus').textContent=s;
 function settings(){return {mode:el('riffMode').value,root:+el('riffRoot').value,bars:+el('riffBars').value,density:el('riffDensity').value,variation:+el('riffVar').value,groove:el('riffGroove').value}}
 function halt(){previewToken++;stopAudition()}
 function newSeed(){let a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]}
-function generate(randomize){halt();if(randomize)el('riffSeed').value=newSeed();let seed=Math.max(0,Math.min(4294967295,Math.floor(Number(el('riffSeed').value)||0)))>>>0;el('riffSeed').value=seed;generatedOpt=settings();el('riffGrooveHint').textContent=GROOVES[generatedOpt.groove].desc+' O kick guia marca os quatro tempos; não entra no arranjo.';items=batch(seed,generatedOpt);draw();say(items.length+' riffs gerados · '+p.bpm+' BPM')}
+function generate(randomize){halt();if(randomize)el('riffSeed').value=newSeed();let seed=Math.max(0,Math.min(4294967295,Math.floor(Number(el('riffSeed').value)||0)))>>>0;el('riffSeed').value=seed;generatedOpt=settings();el('riffGrooveHint').textContent=GROOVES[generatedOpt.groove].desc+(generatedOpt.groove==='pickup'?' O kick guia toca nas notas de resolução; não entra no arranjo.':' O kick guia marca os quatro tempos; não entra no arranjo.');items=batch(seed,generatedOpt);draw();say(items.length+' riffs gerados · '+p.bpm+' BPM')}
 function draw(){const box=el('riffResults');box.replaceChildren();items.forEach((item,i)=>{
  let card=document.createElement('div');card.className='riffCard';let head=document.createElement('div');head.className='row';let t=document.createElement('strong');t.textContent='Riff '+String(i+1).padStart(2,'0');let info=document.createElement('small');info.textContent=item.notes.length+' notas · '+new Set(item.notes.map(n=>n.k)).size+' alturas';head.append(t,info);
- let canvas=document.createElement('canvas');canvas.width=640;canvas.height=96;let g=canvas.getContext('2d'),w=640,h=96,steps=generatedOpt.bars*16,lo=Math.min(...item.notes.map(n=>n.k)),hi=Math.max(...item.notes.map(n=>n.k));for(let j=0;j<=steps;j+=4){g.fillStyle=j%16===0?'#647783':'#35434c';g.fillRect(j/steps*w,0,1,h)}for(let n of item.notes){g.fillStyle=generatedOpt.groove!=='original'&&n.v<88?'#819eaa':n.k===generatedOpt.root?'#a7d977':'#e5ae79';let y=hi===lo?40:8+(hi-n.k)/(hi-lo)*65;g.fillRect(n.s/steps*w+1,y,Math.max(2,n.l/steps*w-2),12)}
+ let canvas=document.createElement('canvas');canvas.width=640;canvas.height=96;let g=canvas.getContext('2d'),w=640,h=96,steps=generatedOpt.bars*16,lo=Math.min(...item.notes.map(n=>n.k)),hi=Math.max(...item.notes.map(n=>n.k));for(let j=0;j<=steps;j+=4){g.fillStyle=j%16===0?'#647783':'#35434c';g.fillRect(j/steps*w,0,1,h)}for(let n of item.notes){g.fillStyle=generatedOpt.groove==='pickup'?(n.v>=88?'#a7d977':'#819eaa'):generatedOpt.groove!=='original'&&n.v<88?'#819eaa':n.k===generatedOpt.root?'#a7d977':'#e5ae79';let y=hi===lo?40:8+(hi-n.k)/(hi-lo)*65;g.fillRect(n.s/steps*w+1,y,Math.max(2,n.l/steps*w-2),12)}
  let tools=document.createElement('div');tools.className='toolbar';let listen=uiButton('▶ Ouvir',()=>hear(item)),insert=uiButton('＋ Usar riff',()=>insertRiff(item));insert.className='primary';tools.append(listen,insert);card.append(head,canvas,tools);box.append(card);
 })}
-function addKickGuide(y,bpm){let beat=60/bpm,len=Math.round(RATE*.12);for(let i=0;i<y.length;i++)y[i]*=.78;for(let b=0;b*beat*RATE<y.length;b++){let offset=Math.round(b*beat*RATE);for(let i=0;i<len&&offset+i<y.length;i++){let t=i/RATE,phase=2*Math.PI*(47*t+3.3*(1-Math.exp(-t*40))),kick=Math.sin(phase)*Math.exp(-t*34)*Math.min(1,t*1200)*.22;y[offset+i]=Math.max(-1,Math.min(1,y[offset+i]+kick))}}}
-async function hear(item){halt();let ticket=previewToken,inst=el('riffInst').value,bpm=p.bpm;try{stopLive();stop();stopPreview();let ac=audio();await ac.resume();let sounds=await getSounds(inst);if(ticket!==previewToken||!dlg.open)return;let y=render(item.notes,sounds,generatedOpt.bars*240/bpm,bpm);if(el('riffKickGuide').checked)addKickGuide(y,bpm);auditionNode=node(y,false);auditionNode.start();say('Ouvindo · '+instName(inst)+' · '+bpm+' BPM')}catch(e){say('Falha ao ouvir: '+e.message)}}
+function addKickGuide(y,bpm,notes,groove){let beat=60/bpm,len=Math.round(RATE*.12);for(let i=0;i<y.length;i++)y[i]*=.78;let hits=groove==='pickup'?notes.filter(n=>n.v>=88&&n.s%4===0).map(n=>n.s/4):Array.from({length:Math.ceil(y.length/(beat*RATE))},(_,i)=>i);for(let b of hits){let offset=Math.round(b*beat*RATE);for(let i=0;i<len&&offset+i<y.length;i++){let t=i/RATE,phase=2*Math.PI*(47*t+3.3*(1-Math.exp(-t*40))),kick=Math.sin(phase)*Math.exp(-t*34)*Math.min(1,t*1200)*.22;y[offset+i]=Math.max(-1,Math.min(1,y[offset+i]+kick))}}}
+async function hear(item){halt();let ticket=previewToken,inst=el('riffInst').value,bpm=p.bpm;try{stopLive();stop();stopPreview();let ac=audio();await ac.resume();let sounds=await getSounds(inst);if(ticket!==previewToken||!dlg.open)return;let y=render(item.notes,sounds,generatedOpt.bars*240/bpm,bpm);if(el('riffKickGuide').checked)addKickGuide(y,bpm,item.notes,generatedOpt.groove);auditionNode=node(y,false);auditionNode.start();say('Ouvindo · '+instName(inst)+' · '+bpm+' BPM')}catch(e){say('Falha ao ouvir: '+e.message)}}
 function insertRiff(item){let inst=el('riffInst').value,opt=generatedOpt,at=el('riffPosition').value==='cursor'?Math.min(127,Math.floor(cursor/16))*16:0,end=at+opt.bars*16;if(end>2048){say('O riff ultrapassa 128 compassos. Escolha outra posição.');return}let target=el('riffDestination').value==='active'?tracks().find(t=>t.id===activeTrack&&t.kind==='notes'):null;if(el('riffDestination').value==='active'&&!target){say('Selecione uma faixa de instrumento na playlist.');return}if(target&&target.notes.some(n=>n.s<end&&n.s+n.l>at)&&!confirm('Substituir as notas nesse trecho da faixa?'))return;if(target&&target.inst!==inst&&!confirm('Trocar o instrumento de toda a faixa selecionada?'))return;if(!target&&tracks().length>=128){say('Limite de 128 faixas.');return}halt();editStudio(()=>{studio().bars=Math.max(studio().bars,Math.ceil(end/16));let ns=item.notes.map(n=>({...n,s:n.s+at,id:uid()}));if(target){target.inst=inst;let kept=[];for(let n of target.notes){if(n.s+n.l<=at||n.s>=end)kept.push(n);else{if(n.s<at)kept.push({...n,l:at-n.s});if(n.s+n.l>end)kept.push({...n,id:uid(),s:end,l:n.s+n.l-end})}}target.notes=[...kept,...ns].sort((a,b)=>a.s-b.s)}else{target=track(inst);target.label=instName(inst)+' · Riff';target.notes=ns;tracks().push(target)}activeTrack=target.id;selection.clear();for(let n of ns)selection.add(n.id);view=Math.floor(at/16);cursor=at});dlg.close();status('Riff inserido · '+opt.bars+' compassos · '+instName(inst))}
 function open(){let inst=el('riffInst'),old=inst.value,t=tracks().find(t=>t.id===activeTrack&&t.kind==='notes');inst.replaceChildren();for(let k of [...new Set([...allInst(),custom])])option('riffInst',k,instName(k));inst.value=old&&[...inst.options].some(o=>o.value===old)?old:t?.inst??allInst()[0];el('riffPosition').value='start';dlg.showModal();if(!items.length)generate(true);else draw()}
 el('riffClose').onclick=()=>dlg.close();dlg.addEventListener('close',halt);el('riffStop').onclick=()=>{halt();say('Prévia parada.')};el('riffGenerate').onclick=()=>generate(true);el('riffRegenerate').onclick=()=>generate(false);el('riffVar').oninput=()=>el('riffVarText').textContent=el('riffVar').value+'%';for(let id of ['riffMode','riffRoot','riffBars','riffDensity','riffVar','riffGroove'])el(id).addEventListener('change',()=>generate(false));el('riffInst').onchange=()=>{halt();say('Instrumento trocado. Ouça a mesma frase.')};
