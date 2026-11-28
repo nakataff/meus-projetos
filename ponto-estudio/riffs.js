@@ -62,11 +62,11 @@ function makeRiff(seed,opt){
  const base=[];let previous=null;
  for(let bar=0;bar<phraseLen;bar++){
   let closing=bar===phraseLen-1,opening=bar===0,answer=bar===2&&phraseLen===4;
-  let rhythm=rhythmFor(on,gate,closing);
+  let rhythm=rhythmFor(on,closing?Math.max(.55,gate-variation*.22):gate,closing);
   if(mode.kind==='neighbor'){
    // A repeated tonic–neighbor–tonic cell, with the dissonant note resolving immediately.
    const pattern=choose(r,[[0,1,0,0],[0,0,1,0],[0,1,0,1],[0,0,1,1]]);if(bar===0)previous=pattern;
-   let pat=previous;for(let i=0;i<rhythm.length;i++){let n=rhythm[i],k=pat[i%pat.length];if(i===0||i===rhythm.length-1)k=0;if(k===1&&i>0&&pat[(i-1)%pat.length]===1)k=0;base.push({...n,s:bar*16+n.s,k:root+k})}
+   let pat=previous,heights=rhythm.map((n,i)=>i===0||i===rhythm.length-1?0:pat[i%pat.length]);for(let i=1;i<heights.length;i++)if(heights[i-1]===1)heights[i]=0;if(!heights.includes(1)&&heights.length>2)heights[1]=1;for(let i=0;i<rhythm.length;i++){let n=rhythm[i];base.push({...n,s:bar*16+n.s,k:root+heights[i]})}
   }else{
    let chord=phraseLen===1?0:phraseLen===2?(bar===0?0:4):progression[bar];if(closing&&phraseLen>=4)chord=0;
    let degrees=tonalBar(mode,shape,rhythm,chord,previous,opening,closing,answer);previous=degrees.at(-1);
