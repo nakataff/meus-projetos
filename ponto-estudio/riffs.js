@@ -2,62 +2,89 @@
 (function(){
 'use strict';
 const MODES={
- chromatic:{label:'Cromático · 2 notas',intervals:[0,1],weight:[5,4],jump:1},
- dark:{label:'Sombrio · Frígio',intervals:[0,1,3,5],weight:[6,4,3,1],jump:3},
- bounce:{label:'Ritmado · 3 notas',intervals:[0,2,3],weight:[5,3,4],jump:3},
- minor:{label:'Melódico · Menor',intervals:[0,3,5,7],weight:[6,3,3,2],jump:5},
- tense:{label:'Tenso · Trítono',intervals:[0,1,6],weight:[6,4,1],jump:6},
- fifth:{label:'Marcante · Quinta',intervals:[0,2,7],weight:[6,3,2],jump:7}
+ major:{label:'Harmônico · Maior',scale:[0,2,4,5,7,9,11],progressions:[[0,3,4,0],[0,5,4,0],[0,3,0,0]],contours:[[0,1,2,1],[0,2,1,0],[0,1,2,3]],kind:'tonal'},
+ minor:{label:'Harmônico · Menor',scale:[0,2,3,5,7,8,10],progressions:[[0,5,3,0],[0,3,4,0],[0,5,4,0]],contours:[[0,1,2,1],[0,2,1,0],[0,-1,0,2]],kind:'tonal'},
+ dark:{label:'Sombrio · Frígio',scale:[0,1,3,5,7,8,10],progressions:[[0,1,0,0],[0,3,1,0]],contours:[[0,1,0,-1],[0,2,1,0],[0,1,2,1]],kind:'tonal'},
+ bounce:{label:'Ritmado · Menor',scale:[0,2,3,5,7,8,10],progressions:[[0,0,3,0],[0,5,4,0]],contours:[[0,2,1,0],[0,1,0,2],[0,0,2,1]],kind:'tonal'},
+ fifth:{label:'Marcante · Quinta',scale:[0,2,4,5,7,9,11],progressions:[[0,3,4,0],[0,4,3,0]],contours:[[0,2,4,2],[0,4,3,2],[0,2,1,0]],kind:'tonal'},
+ tense:{label:'Tensão e resolução · Menor harmônica',scale:[0,2,3,5,7,8,11],progressions:[[0,3,4,0],[0,5,4,0]],contours:[[0,1,2,1],[0,2,3,2],[0,-1,0,2]],kind:'tonal'},
+ chromatic:{label:'Cromático · 2 notas',scale:[0,1],kind:'neighbor'}
 };
 const TEMPLATES={
- sparse:[[0,4,8,12],[0,3,8,14],[0,6,10,14],[0,4,10,13],[0,5,8,12,14],[0,3,7,11,14]],
- normal:[[0,3,6,8,12,14],[0,4,7,10,12,15],[0,2,6,9,12,14],[0,3,5,8,11,14],[0,2,4,8,10,13,15],[0,3,6,9,11,14,15],[0,4,6,8,11,13,15]],
- dense:[[0,2,3,5,8,10,12,14],[0,1,4,6,8,9,12,14],[0,2,4,6,8,10,13,15],[0,3,4,6,8,11,12,14,15],[0,2,5,6,8,10,11,13,15],[0,1,3,5,7,8,10,12,14,15]]
+ sparse:[[0,4,12],[0,6,12],[0,8,12],[0,4,8,12],[0,3,8,12],[0,6,10,12]],
+ normal:[[0,3,6,8,12],[0,4,7,8,12],[0,2,4,8,12],[0,4,8,10,12],[0,3,8,11,12],[0,4,6,10,12]],
+ dense:[[0,2,4,6,8,10,12],[0,3,4,6,8,11,12],[0,2,4,7,8,10,12],[0,3,5,8,10,11,12],[0,2,5,6,8,10,12],[0,2,4,6,8,12,14]]
 };
 function rng(seed){let a=seed>>>0;return ()=>{a=(a+0x6D2B79F5)|0;let t=Math.imul(a^(a>>>15),1|a);t^=t+Math.imul(t^(t>>>7),61|t);return ((t^(t>>>14))>>>0)/4294967296}}
 function choose(r,a){return a[Math.floor(r()*a.length)]}
-function weighted(r,weights){let x=r()*weights.reduce((a,b)=>a+b,0);for(let i=0;i<weights.length;i++){x-=weights[i];if(x<0)return i}return weights.length-1}
-function shape(r,density,variant){let arr=choose(r,TEMPLATES[density]).slice();if(variant&&r()<.55){let i=1+Math.floor(r()*(arr.length-2)),shift=r()<.5?-1:1;arr[i]=Math.max(arr[i-1]+1,Math.min(arr[i+1]-1,arr[i]+shift))}return arr}
+const mod=(a,b)=>((a%b)+b)%b;
+const tone=(scale,d)=>scale[mod(d,7)]+12*Math.floor(d/7);
+function shapeAt(shape,i,n){let x=i*(shape.length-1)/Math.max(1,n-1),j=Math.floor(x);return shape[j]+(shape[Math.min(j+1,shape.length-1)]-shape[j])*(x-j)}
+function chordTone(d,chord){return [0,2,4].includes(mod(d-chord,7))}
+function rhythmFor(on,gate,closing){let a=on.slice();if(closing&&a.at(-1)>12)a.pop();return a.map((s,i)=>{let gap=(a[i+1]??16)-s;let l=i===a.length-1&&closing?gap:Math.max(1,Math.round(gap*gate));return {s,l,v:s%8===0?94:s%4===0?88:80}})}
+function tonalBar(mode,shape,rhythm,chord,prev,opening,closing,answer){
+ const scale=mode.scale,deg=Array.from({length:11},(_,i)=>i-4),N=rhythm.length;
+ // Dynamic programming: minimum cumulative cost of melodic contour, harmonic stability and voice leading.
+ let layers=[];
+ for(let i=0;i<N;i++){
+  let n=rhythm[i],strong=n.s%4===0||n.l>=4,desired=shapeAt(shape,i,N);
+  if(answer)desired=shapeAt(shape,N-1-i,N)*.65;
+  let c=chord;
+  if(closing&&n.s>=8)c=0;
+  let local=deg.map(d=>{
+   if(opening&&i===0&&d!==0)return Infinity;
+   if(closing&&i===N-1&&d!==0)return Infinity;
+   let cost=1.8*(d-desired)**2+(chordTone(d,c)?0:strong?11:2.5);
+   if(closing&&i===N-2)cost+=Math.min(Math.abs(d-1),Math.abs(d+1))*3;
+   if(i===0&&c!==0&&!chordTone(d,c))cost+=9;
+   return cost;
+  });
+  let current=deg.map((d,j)=>{
+   if(!Number.isFinite(local[j]))return {cost:Infinity,from:-1};
+   let best={cost:Infinity,from:-1};
+   if(i===0){let dist=prev===null?0:Math.abs(tone(scale,d)-tone(scale,prev));return {cost:local[j]+dist*.65+Math.max(0,dist-5)**2*4,from:-1}}
+   for(let k=0;k<deg.length;k++){
+    let distance=Math.abs(tone(scale,d)-tone(scale,deg[k])),direction=d-deg[k],wanted=shapeAt(shape,i,N)-shapeAt(shape,i-1,N);
+    if(answer)wanted=-wanted;
+    let transition=distance*.42+Math.max(0,distance-4)**2*2+(distance===0&&Math.abs(wanted)>.3?1.2:0)+(direction*wanted<0?1.5:0);
+    if(!strong&&!chordTone(d,c)&&Math.abs(direction)>1)transition+=4;
+    let cost=layers[i-1][k].cost+transition+local[j];if(cost<best.cost)best={cost,from:k};
+   }return best;
+  });layers.push(current);
+ }
+ let idx=layers.at(-1).reduce((best,x,i,a)=>x.cost<a[best].cost?i:best,0),result=[];
+ for(let i=N-1;i>=0;i--){result[i]=deg[idx];idx=layers[i][idx].from}
+ return result;
+}
 function makeRiff(seed,opt){
  const r=rng(seed),mode=MODES[opt.mode],root=opt.root,bars=opt.bars,variation=opt.variation/100;
- const motif=[];let prev=0,repeat=0;
- for(let bar=0;bar<Math.min(2,bars);bar++){
-  const on=shape(r,opt.density,true);
-  for(let i=0;i<on.length;i++){
-   const s=on[i],gap=(on[i+1]??16)-s,last=bar===Math.min(2,bars)-1&&i===on.length-1;
-   let weights=mode.intervals.map((n,j)=>{
-    let diff=Math.abs(n-mode.intervals[prev]);return diff>mode.jump?0:mode.weight[j]*(j===prev?(repeat>=2?.25:1.25):1.5)*(s%4===0&&j===0?1.4:1)
-   });
-   let idx=last?0:weighted(r,weights);
-   if(bar===0&&i===0&&r()<.65)idx=mode.intervals.length>1?1:0;
-   repeat=idx===prev?repeat+1:0;prev=idx;
-   let max=Math.max(1,gap-(r()<.75?1:0)),l=last?Math.max(1,gap-(r()<.4?1:0)):r()<.46?max:1+Math.floor(r()*max);
-   let v=Math.round(76+(s%4===0?11:0)+r()*10);
-   motif.push({s:bar*16+s,l,k:root+mode.intervals[idx],v});
+ const on=choose(r,TEMPLATES[opt.density]),gate=choose(r,[.72,.85,1]),phraseLen=Math.min(4,bars),shape=mode.contours?choose(r,mode.contours):null,progression=mode.progressions?choose(r,mode.progressions):null;
+ const base=[];let previous=null;
+ for(let bar=0;bar<phraseLen;bar++){
+  let closing=bar===phraseLen-1,opening=bar===0,answer=bar===2&&phraseLen===4;
+  let rhythm=rhythmFor(on,gate,closing);
+  if(mode.kind==='neighbor'){
+   // A repeated tonic–neighbor–tonic cell, with the dissonant note resolving immediately.
+   const pattern=choose(r,[[0,1,0,0],[0,0,1,0],[0,1,0,1],[0,0,1,1]]);if(bar===0)previous=pattern;
+   let pat=previous;for(let i=0;i<rhythm.length;i++){let n=rhythm[i],k=pat[i%pat.length];if(i===0||i===rhythm.length-1)k=0;if(k===1&&i>0&&pat[(i-1)%pat.length]===1)k=0;base.push({...n,s:bar*16+n.s,k:root+k})}
+  }else{
+   let chord=phraseLen===1?0:phraseLen===2?(bar===0?0:4):progression[bar];if(closing&&phraseLen>=4)chord=0;
+   let degrees=tonalBar(mode,shape,rhythm,chord,previous,opening,closing,answer);previous=degrees.at(-1);
+   rhythm.forEach((n,i)=>base.push({...n,s:bar*16+n.s,k:root+tone(mode.scale,degrees[i])}));
   }
  }
- let notes=[],period=Math.min(2,bars)*16;
- for(let off=0;off<bars*16;off+=period){
-  let cycle=off/period,part=motif.map(n=>({...n,s:n.s+off}));
-  if(cycle>0&&variation>0){
-   for(let i=0;i<part.length;i++){
-    let n=part[i],end=Math.min(bars*16,off+period),next=part[i+1]?.s??end;
-    if(n.s>=end)continue;
-    if(i>0&&i<part.length-1&&r()<variation*.32){let lo=part[i-1].s+part[i-1].l,hi=next-n.l;n.s=Math.max(lo,Math.min(hi,n.s+(r()<.5?-1:1)))}
-    if(i>0&&i<part.length-1&&r()<variation*.5){let candidates=mode.intervals.filter(x=>Math.abs(root+x-part[i-1].k)<=mode.jump&&Math.abs(root+x-part[i+1].k)<=mode.jump);if(candidates.length)n.k=root+choose(r,candidates)}
-    if(r()<variation*.35)n.l=Math.max(1,Math.min(next-n.s,n.l+(r()<.5?-1:1)));
-   }
-  }
-  notes.push(...part.filter(n=>n.s<bars*16).map(n=>({...n,l:Math.min(n.l,bars*16-n.s)})));
- }
- // Always resolve the final onset to the root; preserve safe range and monophony.
- if(notes.length)notes[notes.length-1].k=root;
- return notes;
+ let result=[],period=phraseLen*16;
+ for(let off=0;off<bars*16;off+=period){let cycle=off/period;for(let n of base){let at=n.s+off;if(at>=bars*16)break;let l=n.l;
+   // Alter articulation of the answer only, never scatter new random pitches.
+   if(cycle>0&&variation>0&&n.s>=period-16&&n.s%4!==0&&r()<variation*.65)l=Math.max(1,l-1);
+   result.push({...n,s:at,l:Math.min(l,bars*16-at)});
+ }}
+ return result;
 }
 function signature(ns){return ns.map(n=>[n.s,n.l,n.k].join(':')).join('|')}
-function batch(seed,opt){let a=[],seen=new Set();for(let i=0;i<96&&a.length<8;i++){let id=(seed+Math.imul(i+1,2654435761))>>>0,ns=makeRiff(id,opt),sig=signature(ns);if(seen.has(sig))continue;seen.add(sig);a.push({seed:id,notes:ns})}return a}
+function batch(seed,opt){let a=[],seen=new Set();for(let i=0;i<192&&a.length<8;i++){let id=(seed+Math.imul(i+1,2654435761))>>>0,ns=makeRiff(id,opt),sig=signature(ns);if(seen.has(sig))continue;seen.add(sig);a.push({seed:id,notes:ns})}return a}
 const dlg=document.createElement('dialog');dlg.id='riffStudioDialog';dlg.style.cssText='width:min(900px,94vw);max-height:88vh;overflow:auto';
-dlg.innerHTML='<div class="dialogHeader"><div><div class="eyebrow">GERADOR PROCEDURAL · PONTINHOS</div><h2>Riffs ritmados</h2></div><button id="riffClose">✕ Fechar</button></div><p style="margin:0 0 12px;color:#aebbc7">Motivos originais com poucas notas, síncopes, pausas e variações controladas. Use o BPM atual da playlist.</p><div class="riffSettings"><label>Estilo<select id="riffMode"></select></label><label>Instrumento<select id="riffInst"></select></label><label>Nota central<select id="riffRoot"></select></label><label>Compassos<select id="riffBars"><option>1</option><option>2</option><option selected>4</option><option>8</option><option>16</option></select></label><label>Densidade<select id="riffDensity"><option value="sparse">Espaçado</option><option value="normal" selected>Equilibrado</option><option value="dense">Acelerado</option></select></label><label>Variação <span id="riffVarText">35%</span><input id="riffVar" type="range" min="0" max="100" value="35"></label><label>Semente<input id="riffSeed" type="number" min="0" max="4294967295" step="1" value="1"></label><div class="toolbar"><button id="riffGenerate" class="primary">Gerar 8 novos</button><button id="riffRegenerate">Usar semente</button></div></div><div id="riffResults" class="riffResults"></div><div class="riffFooter"><label>Inserir em <select id="riffDestination"><option value="new">Nova faixa</option><option value="active">Faixa selecionada (substituir trecho)</option></select></label><label>Posição <select id="riffPosition"><option value="start">Início do arranjo</option><option value="cursor">Compasso da agulha</option></select></label><button id="riffStop">■ Parar</button><span id="riffStatus" role="status"></span></div><small style="color:#95a3b1">O instrumento pode ser trocado depois na própria faixa; todas as notas ficam editáveis.</small>';
+dlg.innerHTML='<div class="dialogHeader"><div><div class="eyebrow">GERADOR HARMÔNICO · MOTIVOS</div><h2>Riffs ritmados</h2></div><button id="riffClose">✕ Fechar</button></div><p style="margin:0 0 12px;color:#aebbc7">Frases com motivo rítmico, acordes implícitos e resolução na tônica. A variação altera principalmente a articulação da resposta. Use o BPM atual da playlist.</p><div class="riffSettings"><label>Estilo<select id="riffMode"></select></label><label>Instrumento<select id="riffInst"></select></label><label>Nota central<select id="riffRoot"></select></label><label>Compassos<select id="riffBars"><option>1</option><option>2</option><option selected>4</option><option>8</option><option>16</option></select></label><label>Densidade<select id="riffDensity"><option value="sparse">Espaçado</option><option value="normal" selected>Equilibrado</option><option value="dense">Acelerado</option></select></label><label>Variação da resposta <span id="riffVarText">35%</span><input id="riffVar" type="range" min="0" max="100" value="35"></label><label>Semente<input id="riffSeed" type="number" min="0" max="4294967295" step="1" value="1"></label><div class="toolbar"><button id="riffGenerate" class="primary">Gerar 8 novos</button><button id="riffRegenerate">Usar semente</button></div></div><div id="riffResults" class="riffResults"></div><div class="riffFooter"><label>Inserir em <select id="riffDestination"><option value="new">Nova faixa</option><option value="active">Faixa selecionada (substituir trecho)</option></select></label><label>Posição <select id="riffPosition"><option value="start">Início do arranjo</option><option value="cursor">Compasso da agulha</option></select></label><button id="riffStop">■ Parar</button><span id="riffStatus" role="status"></span></div><small style="color:#95a3b1">O instrumento pode ser trocado depois na própria faixa; todas as notas ficam editáveis.</small>';
 document.body.append(dlg);
 const css=document.createElement('style');css.textContent='.riffSettings{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px;background:#28313a;border:1px solid #3f4a56;border-radius:7px}.riffSettings label{display:grid;gap:4px;color:#aab6c2;font-size:11px}.riffSettings input,.riffSettings select{width:100%;min-width:0}.riffSettings .toolbar{align-self:end}.riffResults{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}.riffCard{padding:10px;background:#242d35;border:1px solid #3f4a56;border-radius:6px;min-width:0}.riffCard strong{font-size:13px}.riffCard small{color:#a7b5c2}.riffCard canvas{display:block;width:100%;height:72px;margin:8px 0;background:#171e24;border-radius:4px}.riffFooter{display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-top:1px solid #3f4a56;padding:10px 0;font-size:11px}.riffFooter label{display:flex;gap:5px;align-items:center}#riffStatus{color:#b5ee6b}.riffLaunch{border-color:#789957!important;color:#c7f3a0!important}@media(max-width:760px){.riffSettings{grid-template-columns:repeat(2,minmax(0,1fr))}.riffResults{grid-template-columns:1fr}}';document.head.append(css);
 const el=id=>document.getElementById(id),option=(id,value,label)=>{let o=document.createElement('option');o.value=value;o.textContent=label;el(id).append(o)};
